@@ -57,6 +57,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const racialSelect = document.getElementById('racial');
     const trollBerserkingCheckbox = document.getElementById('troll-berserking');
     const bloodlustCheckbox = document.getElementById('bloodlust');
+    const t14_4pcCheckbox = document.getElementById('t14-4pc');
 
     // Add event listeners
     hasteRatingInput.addEventListener('input', calculate);
@@ -64,6 +65,7 @@ document.addEventListener('DOMContentLoaded', function() {
     racialSelect.addEventListener('change', updateRacialOptions);
     trollBerserkingCheckbox.addEventListener('change', calculate);
     bloodlustCheckbox.addEventListener('change', calculate);
+    t14_4pcCheckbox.addEventListener('change', calculate);
 
     // Initial calculation
     updateRacialOptions();
@@ -93,6 +95,7 @@ function calculate() {
     const racial = document.getElementById('racial').value;
     const trollBerserking = document.getElementById('troll-berserking').checked;
     const bloodlust = document.getElementById('bloodlust').checked;
+    const t14_4pc = document.getElementById('t14-4pc').checked;
 
     // Calculate haste percentage from rating
     let hastePercent = (hasteRating / HASTE_RATING_PER_PERCENT);
@@ -123,7 +126,7 @@ function calculate() {
 
     // Update display
     updateHasteDisplay(finalHastePercent, hasteMultiplier);
-    updateDoTDurations(hasteMultiplier);
+    updateDoTDurations(hasteMultiplier, t14_4pc);
     updateCastTimes(hasteMultiplier);
 }
 
@@ -137,24 +140,24 @@ function updateHasteDisplay(hastePercent, hasteMultiplier) {
     document.getElementById('gcd').textContent = gcd.toFixed(2) + 's';
 }
 
-function updateDoTDurations(hasteMultiplier) {
+function updateDoTDurations(hasteMultiplier, t14_4pc) {
     // Shadow Word: Pain
-    const swpResult = calculateDoTDuration(DOTS.swp, hasteMultiplier);
+    const swpResult = calculateDoTDuration(DOTS.swp, hasteMultiplier, t14_4pc);
     document.getElementById('swp-duration').textContent =
         `${swpResult.duration.toFixed(2)}s (${swpResult.ticks} ticks)`;
 
     // Vampiric Touch
-    const vtResult = calculateDoTDuration(DOTS.vt, hasteMultiplier);
+    const vtResult = calculateDoTDuration(DOTS.vt, hasteMultiplier, t14_4pc);
     document.getElementById('vt-duration').textContent =
         `${vtResult.duration.toFixed(2)}s (${vtResult.ticks} ticks)`;
 
-    // Devouring Plague
-    const dpResult = calculateDoTDuration(DOTS.dp, hasteMultiplier);
+    // Devouring Plague (not affected by T14 4pc)
+    const dpResult = calculateDoTDuration(DOTS.dp, hasteMultiplier, false);
     document.getElementById('dp-duration').textContent =
         `${dpResult.duration.toFixed(2)}s (${dpResult.ticks} ticks)`;
 }
 
-function calculateDoTDuration(dot, hasteMultiplier) {
+function calculateDoTDuration(dot, hasteMultiplier, t14_4pc) {
     // In MoP, haste adds extra ticks to DoTs
     // The tick interval is reduced by haste
     const hastedTickInterval = dot.baseTickInterval / hasteMultiplier;
@@ -163,7 +166,12 @@ function calculateDoTDuration(dot, hasteMultiplier) {
     const ticksInBaseDuration = Math.floor(dot.baseDuration / hastedTickInterval);
 
     // The actual number of ticks (minimum is base ticks)
-    const totalTicks = Math.max(ticksInBaseDuration, dot.baseTicks);
+    let totalTicks = Math.max(ticksInBaseDuration, dot.baseTicks);
+
+    // T14 4-piece adds +1 tick to SWP and VT
+    if (t14_4pc) {
+        totalTicks += 1;
+    }
 
     // Duration extends to accommodate all ticks
     // In MoP, DoTs would gain extra ticks and duration would extend
