@@ -158,6 +158,7 @@ function calculate() {
     updateHasteDisplay(finalHastePercent, hasteMultiplier);
     updateDoTDurations(hasteMultiplier, t14_4pc);
     updateCastTimes(hasteMultiplier);
+    updateInsanityWindow(hasteMultiplier, t14_4pc);
 }
 
 function updateHasteDisplay(hastePercent, hasteMultiplier) {
@@ -230,6 +231,75 @@ function updateCastTimes(hasteMultiplier) {
     const mfTicks = CASTS.mindFlay.baseTicks;
     document.getElementById('mf-cast').textContent =
         `${mfDuration.toFixed(2)}s (${mfTicks} ticks)`;
+}
+
+function updateInsanityWindow(hasteMultiplier, t14_4pc) {
+    // Calculate components of the Insanity Window
+    const mbCast = CASTS.mindBlast.baseCastTime / hasteMultiplier;
+    const gcd = Math.max(BASE_GCD / hasteMultiplier, MIN_GCD);
+    const mfDuration = CASTS.mindFlay.baseDuration / hasteMultiplier;
+
+    // Calculate DP duration
+    const dpResult = calculateDoTDuration(DOTS.dp, hasteMultiplier, false);
+
+    // Calculate how many full MF casts fit during DP
+    const mfCastsCount = Math.floor(dpResult.duration / mfDuration);
+
+    // Calculate when the last MF snapshot should start (just before DP expires)
+    // We want to clip and restart MF to get one last Insanity snapshot
+    const lastMfStart = dpResult.duration - (mfDuration * 0.3); // Start ~30% through last possible MF
+
+    // Total time from MB cast start to when we can cast MB again
+    // MB cast -> DP GCD -> MF casts during DP -> final MF snapshot -> wait for MB CD
+    const mbCooldown = 8; // Mind Blast has 8 second cooldown
+
+    // Time from MB cast start to DP application
+    const timeToDP = mbCast;
+
+    // Time from DP application to DP expiry
+    const dpWindow = dpResult.duration;
+
+    // We need to finish channeling before next MB
+    // Last MF finishes at: mbCast + gcd + lastMfStart + mfDuration
+    const lastMfEnd = mbCast + gcd + lastMfStart + mfDuration;
+
+    // MB comes off CD at: mbCast + mbCooldown
+    const mbReadyAt = mbCast + mbCooldown;
+
+    // We can cast MB when it's off CD AND we're not channeling
+    const nextMbStart = Math.max(mbReadyAt, lastMfEnd) + gcd;
+
+    // Total Insanity Window
+    const insanityWindow = nextMbStart;
+
+    // If we need to refresh both dots, add VT cast + SW:P GCD
+    const vtCast = CASTS.vampiricTouch.baseCastTime / hasteMultiplier;
+    const bothDotsWindow = insanityWindow + vtCast + gcd;
+
+    // Update display
+    document.getElementById('insanity-window-single').textContent = insanityWindow.toFixed(2) + 's';
+    document.getElementById('insanity-window-both').textContent = bothDotsWindow.toFixed(2) + 's';
+
+    // Update details
+    document.getElementById('insanity-mb-cast').textContent = mbCast.toFixed(2) + 's';
+    document.getElementById('insanity-dp-gcd').textContent = gcd.toFixed(2) + 's';
+    document.getElementById('insanity-dp-duration').textContent =
+        `${dpResult.duration.toFixed(2)}s (${dpResult.ticks} ticks)`;
+    document.getElementById('insanity-mf-count').textContent = mfCastsCount + ' full + 1 clip';
+    document.getElementById('insanity-total').textContent = insanityWindow.toFixed(2) + 's';
+}
+
+function toggleInsanityDetails() {
+    const details = document.getElementById('insanity-details');
+    const button = document.querySelector('.details-toggle');
+
+    if (details.style.display === 'none') {
+        details.style.display = 'block';
+        button.textContent = 'Hide Details';
+    } else {
+        details.style.display = 'none';
+        button.textContent = 'Show Details';
+    }
 }
 
 // Helper function to format time

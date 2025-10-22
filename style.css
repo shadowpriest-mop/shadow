@@ -201,6 +201,35 @@ footer a:hover {
     color: #c4b5fd;
 }
 
+/* Details Toggle Button */
+.details-toggle {
+    margin-top: 15px;
+    padding: 8px 16px;
+    background: rgba(147, 51, 234, 0.2);
+    border: 1px solid #9333ea;
+    border-radius: 4px;
+    color: #c4b5fd;
+    cursor: pointer;
+    font-size: 0.9em;
+    transition: all 0.3s ease;
+}
+
+.details-toggle:hover {
+    background: rgba(147, 51, 234, 0.3);
+    color: #ffffff;
+}
+
+.insanity-details {
+    margin-top: 15px;
+    padding-top: 15px;
+    border-top: 1px solid rgba(147, 51, 234, 0.2);
+}
+
+.insanity-details .stat-row {
+    font-size: 0.9em;
+    opacity: 0.9;
+}
+
 /* Responsive Design */
 @media (max-width: 768px) {
     header h1 {

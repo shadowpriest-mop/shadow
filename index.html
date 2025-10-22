@@ -156,6 +156,41 @@
                         <span class="stat-value" id="swd-cast">Instant</span>
                     </div>
                 </div>
+
+                <div class="stat-display">
+                    <h3>Insanity Window (DoT Refresh Timing)</h3>
+                    <div class="stat-row">
+                        <span class="stat-label">Refresh threshold (one DoT):</span>
+                        <span class="stat-value" id="insanity-window-single">0.00s</span>
+                    </div>
+                    <div class="stat-row">
+                        <span class="stat-label">Refresh threshold (both DoTs):</span>
+                        <span class="stat-value" id="insanity-window-both">0.00s</span>
+                    </div>
+                    <button class="details-toggle" onclick="toggleInsanityDetails()">Show Details</button>
+                    <div id="insanity-details" class="insanity-details" style="display: none;">
+                        <div class="stat-row">
+                            <span class="stat-label">Mind Blast cast:</span>
+                            <span class="stat-value" id="insanity-mb-cast">0.00s</span>
+                        </div>
+                        <div class="stat-row">
+                            <span class="stat-label">DP GCD:</span>
+                            <span class="stat-value" id="insanity-dp-gcd">0.00s</span>
+                        </div>
+                        <div class="stat-row">
+                            <span class="stat-label">DP Duration (ticks):</span>
+                            <span class="stat-value" id="insanity-dp-duration">0.00s (0 ticks)</span>
+                        </div>
+                        <div class="stat-row">
+                            <span class="stat-label">Mind Flay casts during DP:</span>
+                            <span class="stat-value" id="insanity-mf-count">0</span>
+                        </div>
+                        <div class="stat-row">
+                            <span class="stat-label">Total window duration:</span>
+                            <span class="stat-value" id="insanity-total">0.00s</span>
+                        </div>
+                    </div>
+                </div>
             </section>
 
             <section class="info-section">
