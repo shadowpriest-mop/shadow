@@ -57,6 +57,10 @@ document.addEventListener('DOMContentLoaded', function() {
     const racialSelect = document.getElementById('racial');
     const trollBerserkingCheckbox = document.getElementById('troll-berserking');
     const bloodlustCheckbox = document.getElementById('bloodlust');
+    const talentTier3Select = document.getElementById('talent-tier3');
+    const talentTier5Select = document.getElementById('talent-tier5');
+    const talentTier6Select = document.getElementById('talent-tier6');
+    const powerInfusionCheckbox = document.getElementById('power-infusion-active');
     const t14_4pcCheckbox = document.getElementById('t14-4pc');
 
     // Add event listeners
@@ -65,10 +69,15 @@ document.addEventListener('DOMContentLoaded', function() {
     racialSelect.addEventListener('change', updateRacialOptions);
     trollBerserkingCheckbox.addEventListener('change', calculate);
     bloodlustCheckbox.addEventListener('change', calculate);
+    talentTier3Select.addEventListener('change', calculate);
+    talentTier5Select.addEventListener('change', updateTalentOptions);
+    talentTier6Select.addEventListener('change', calculate);
+    powerInfusionCheckbox.addEventListener('change', calculate);
     t14_4pcCheckbox.addEventListener('change', calculate);
 
     // Initial calculation
     updateRacialOptions();
+    updateTalentOptions();
     calculate();
 });
 
@@ -88,6 +97,22 @@ function updateRacialOptions() {
     calculate();
 }
 
+function updateTalentOptions() {
+    const talentTier5 = document.getElementById('talent-tier5').value;
+    const powerInfusionCheckbox = document.getElementById('power-infusion-active');
+    const powerInfusionGroup = powerInfusionCheckbox.closest('.checkbox-group');
+
+    // Show/hide Power Infusion Active option
+    if (talentTier5 === 'power-infusion') {
+        powerInfusionGroup.style.display = 'block';
+    } else {
+        powerInfusionGroup.style.display = 'none';
+        powerInfusionCheckbox.checked = false;
+    }
+
+    calculate();
+}
+
 function calculate() {
     // Get input values
     const hasteRating = parseFloat(document.getElementById('haste-rating').value) || 0;
@@ -95,6 +120,7 @@ function calculate() {
     const racial = document.getElementById('racial').value;
     const trollBerserking = document.getElementById('troll-berserking').checked;
     const bloodlust = document.getElementById('bloodlust').checked;
+    const powerInfusion = document.getElementById('power-infusion-active').checked;
     const t14_4pc = document.getElementById('t14-4pc').checked;
 
     // Calculate haste percentage from rating
@@ -119,6 +145,10 @@ function calculate() {
 
     if (bloodlust) {
         hasteMultiplier *= 1.30; // 30% from Bloodlust/Heroism
+    }
+
+    if (powerInfusion) {
+        hasteMultiplier *= 1.20; // 20% from Power Infusion
     }
 
     // Calculate final haste percentage
