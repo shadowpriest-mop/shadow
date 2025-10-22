@@ -44,12 +44,14 @@ const CASTS = {
 document.addEventListener('DOMContentLoaded', function() {
     // Get all input elements
     const hasteRatingInput = document.getElementById('haste-rating');
+    const shadowformCheckbox = document.getElementById('shadowform');
     const racialSelect = document.getElementById('racial');
     const trollBerserkingCheckbox = document.getElementById('troll-berserking');
     const bloodlustCheckbox = document.getElementById('bloodlust');
 
     // Add event listeners
     hasteRatingInput.addEventListener('input', calculate);
+    shadowformCheckbox.addEventListener('change', calculate);
     racialSelect.addEventListener('change', updateRacialOptions);
     trollBerserkingCheckbox.addEventListener('change', calculate);
     bloodlustCheckbox.addEventListener('change', calculate);
@@ -78,6 +80,7 @@ function updateRacialOptions() {
 function calculate() {
     // Get input values
     const hasteRating = parseFloat(document.getElementById('haste-rating').value) || 0;
+    const shadowform = document.getElementById('shadowform').checked;
     const racial = document.getElementById('racial').value;
     const trollBerserking = document.getElementById('troll-berserking').checked;
     const bloodlust = document.getElementById('bloodlust').checked;
@@ -92,6 +95,11 @@ function calculate() {
 
     // Add temporary buffs (multiplicative)
     let hasteMultiplier = 1 + (hastePercent / 100);
+
+    // Shadowform (5% haste - multiplicative)
+    if (shadowform) {
+        hasteMultiplier *= 1.05; // 5% from Shadowform
+    }
 
     if (trollBerserking && racial === 'troll') {
         hasteMultiplier *= 1.20; // 20% from Berserking
