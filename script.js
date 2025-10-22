@@ -6,8 +6,13 @@ const BASE_GCD = 1.5; // Base GCD in seconds
 const MIN_GCD = 1.0; // Minimum GCD in seconds
 
 // Helper function to round up to 2 decimal places (matches in-game behavior)
+// Handles floating point precision issues
 function roundUp(value) {
-    return Math.ceil(value * 100) / 100;
+    // First, round to 10 decimal places to eliminate floating point errors
+    const cleanedValue = Math.round(value * 10000000000) / 10000000000;
+
+    // Then apply ceiling to 2 decimal places
+    return Math.ceil(cleanedValue * 100) / 100;
 }
 
 // Base DoT information (verified against sim)
