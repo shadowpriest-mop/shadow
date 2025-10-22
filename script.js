@@ -5,6 +5,11 @@ const HASTE_RATING_PER_PERCENT = 425.25; // Haste rating needed for 1% haste at 
 const BASE_GCD = 1.5; // Base GCD in seconds
 const MIN_GCD = 1.0; // Minimum GCD in seconds
 
+// Helper function to round up to 2 decimal places (matches in-game behavior)
+function roundUp(value) {
+    return Math.ceil(value * 100) / 100;
+}
+
 // Base DoT information
 const DOTS = {
     swp: {
@@ -119,7 +124,9 @@ function calculate() {
 }
 
 function updateHasteDisplay(hastePercent, hasteMultiplier) {
-    document.getElementById('total-haste').textContent = hastePercent.toFixed(2) + '%';
+    // Round up haste percentage (matches in-game display)
+    const displayHaste = roundUp(hastePercent);
+    document.getElementById('total-haste').textContent = displayHaste.toFixed(2) + '%';
 
     // Calculate GCD
     const gcd = Math.max(BASE_GCD / hasteMultiplier, MIN_GCD);
