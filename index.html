@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Shadow Priest - MoP Classic Helper</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Shadow Priest - MoP Classic</h1>
+            <p class="subtitle">Haste Calculator & DoT Duration Tool</p>
+        </header>
+
+        <main>
+            <section class="input-section">
+                <h2>Character Stats</h2>
+
+                <div class="form-group">
+                    <label for="haste-rating">Haste Rating:</label>
+                    <input type="number" id="haste-rating" min="0" step="1" value="0" placeholder="Enter haste rating">
+                </div>
+
+                <div class="form-group">
+                    <label for="racial">Racial:</label>
+                    <select id="racial">
+                        <option value="none">None</option>
+                        <option value="troll">Troll (Berserking - 20% when active)</option>
+                        <option value="goblin">Goblin (Time is Money - 1% passive)</option>
+                        <option value="worgen">Worgen (Darkflight - Sprint, no haste)</option>
+                        <option value="human">Human</option>
+                        <option value="dwarf">Dwarf</option>
+                        <option value="night-elf">Night Elf</option>
+                        <option value="gnome">Gnome</option>
+                        <option value="draenei">Draenei</option>
+                        <option value="undead">Undead</option>
+                        <option value="blood-elf">Blood Elf</option>
+                    </select>
+                </div>
+
+                <div class="form-group checkbox-group">
+                    <label>
+                        <input type="checkbox" id="troll-berserking">
+                        Troll Berserking Active (20% haste for 10 sec)
+                    </label>
+                </div>
+
+                <div class="form-group checkbox-group">
+                    <label>
+                        <input type="checkbox" id="bloodlust">
+                        Bloodlust/Heroism/Time Warp (30% haste)
+                    </label>
+                </div>
+            </section>
+
+            <section class="results-section">
+                <h2>Results</h2>
+
+                <div class="stat-display">
+                    <h3>Haste Summary</h3>
+                    <div class="stat-row">
+                        <span class="stat-label">Total Haste %:</span>
+                        <span class="stat-value" id="total-haste">0.00%</span>
+                    </div>
+                    <div class="stat-row">
+                        <span class="stat-label">GCD:</span>
+                        <span class="stat-value" id="gcd">1.50s</span>
+                    </div>
+                </div>
+
+                <div class="stat-display">
+                    <h3>DoT Durations</h3>
+                    <div class="stat-row">
+                        <span class="stat-label">Shadow Word: Pain:</span>
+                        <span class="stat-value" id="swp-duration">18.00s (9 ticks)</span>
+                    </div>
+                    <div class="stat-row">
+                        <span class="stat-label">Vampiric Touch:</span>
+                        <span class="stat-value" id="vt-duration">15.00s (5 ticks)</span>
+                    </div>
+                    <div class="stat-row">
+                        <span class="stat-label">Devouring Plague (3 orbs):</span>
+                        <span class="stat-value" id="dp-duration">6.00s (6 ticks)</span>
+                    </div>
+                </div>
+
+                <div class="stat-display">
+                    <h3>Cast Times</h3>
+                    <div class="stat-row">
+                        <span class="stat-label">Mind Flay (channel):</span>
+                        <span class="stat-value" id="mf-cast">3.00s (3 ticks)</span>
+                    </div>
+                    <div class="stat-row">
+                        <span class="stat-label">Mind Blast:</span>
+                        <span class="stat-value" id="mb-cast">1.50s</span>
+                    </div>
+                    <div class="stat-row">
+                        <span class="stat-label">Shadow Word: Death:</span>
+                        <span class="stat-value" id="swd-cast">Instant</span>
+                    </div>
+                </div>
+            </section>
+
+            <section class="info-section">
+                <h2>About Mind Flay: Insanity</h2>
+                <p>
+                    Mind Flay: Insanity is a proc that makes your next Mind Flay instant and increases its damage.
+                    To maximize this proc, you want to avoid refreshing DoTs during the buff window when possible.
+                </p>
+                <p class="tip">
+                    <strong>Tip:</strong> Refresh your DoTs early (with ~30% duration remaining) if a Mind Flay: Insanity
+                    proc is about to occur. This prevents having to refresh during the buff, maximizing your damage window.
+                </p>
+            </section>
+        </main>
+
+        <footer>
+            <p>MoP Classic - Shadow Priest Tool | <a href="https://github.com/yourusername/shadow" target="_blank">GitHub</a></p>
+        </footer>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
