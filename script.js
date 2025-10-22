@@ -10,38 +10,42 @@ function roundUp(value) {
     return Math.ceil(value * 100) / 100;
 }
 
-// Base DoT information
+// Base DoT information (verified against sim)
 const DOTS = {
     swp: {
         name: 'Shadow Word: Pain',
-        baseDuration: 18,
-        baseTickInterval: 2,
-        baseTicks: 9
+        baseDuration: 18,       // 6 ticks × 3 seconds
+        baseTickInterval: 3,    // 3 seconds per tick
+        baseTicks: 6            // 6 base ticks
     },
     vt: {
         name: 'Vampiric Touch',
-        baseDuration: 15,
-        baseTickInterval: 3,
-        baseTicks: 5
+        baseDuration: 15,       // 5 ticks × 3 seconds
+        baseTickInterval: 3,    // 3 seconds per tick
+        baseTicks: 5            // 5 base ticks
     },
     dp: {
         name: 'Devouring Plague',
-        baseDuration: 6,
-        baseTickInterval: 1,
-        baseTicks: 6
+        baseDuration: 6,        // 6 ticks × 1 second
+        baseTickInterval: 1,    // 1 second per tick
+        baseTicks: 6            // 6 base ticks
     }
 };
 
-// Base cast times
+// Base cast times (verified against sim)
 const CASTS = {
     mindFlay: {
         name: 'Mind Flay',
-        baseDuration: 3,
-        baseTicks: 3
+        baseDuration: 3,        // 3 second channel
+        baseTicks: 3            // 3 ticks
     },
     mindBlast: {
         name: 'Mind Blast',
-        baseCastTime: 1.5
+        baseCastTime: 1.5       // 1.5 second cast
+    },
+    vampiricTouch: {
+        name: 'Vampiric Touch',
+        baseCastTime: 1.5       // 1.5 second cast
     }
 };
 
@@ -173,16 +177,21 @@ function calculateDoTDuration(dot, hasteMultiplier) {
 }
 
 function updateCastTimes(hasteMultiplier) {
-    // Mind Flay (channel)
-    const mfDuration = CASTS.mindFlay.baseDuration / hasteMultiplier;
-    const mfTicks = CASTS.mindFlay.baseTicks;
-    document.getElementById('mf-cast').textContent =
-        `${mfDuration.toFixed(2)}s (${mfTicks} ticks)`;
+    // Vampiric Touch
+    const vtCast = CASTS.vampiricTouch.baseCastTime / hasteMultiplier;
+    document.getElementById('vt-cast').textContent =
+        `${vtCast.toFixed(2)}s`;
 
     // Mind Blast
     const mbCast = CASTS.mindBlast.baseCastTime / hasteMultiplier;
     document.getElementById('mb-cast').textContent =
         `${mbCast.toFixed(2)}s`;
+
+    // Mind Flay (channel)
+    const mfDuration = CASTS.mindFlay.baseDuration / hasteMultiplier;
+    const mfTicks = CASTS.mindFlay.baseTicks;
+    document.getElementById('mf-cast').textContent =
+        `${mfDuration.toFixed(2)}s (${mfTicks} ticks)`;
 }
 
 // Helper function to format time
