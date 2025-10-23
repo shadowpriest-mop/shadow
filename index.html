@@ -13,7 +13,14 @@
             <p class="subtitle">Haste Calculator & DoT Duration Tool</p>
         </header>
 
+        <nav class="tabs">
+            <button class="tab-button active" onclick="switchTab('configuration')">Configuration</button>
+            <button class="tab-button" onclick="switchTab('results')">Results</button>
+            <button class="tab-button" onclick="switchTab('about')">About</button>
+        </nav>
+
         <main>
+            <div id="configuration-tab" class="tab-content active">
             <section class="input-section">
                 <h2>Character Stats</h2>
 
@@ -105,7 +112,9 @@
                     </label>
                 </div>
             </section>
+            </div>
 
+            <div id="results-tab" class="tab-content">
             <section class="results-section">
                 <h2>Results</h2>
 
@@ -192,7 +201,9 @@
                     </div>
                 </div>
             </section>
+            </div>
 
+            <div id="about-tab" class="tab-content">
             <section class="info-section">
                 <h2>About Solace and Insanity (Mind Flay: Insanity)</h2>
                 <p>
@@ -205,6 +216,7 @@
                     extra empowered Mind Flay before DP falls off.
                 </p>
             </section>
+            </div>
         </main>
 
         <footer>

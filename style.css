@@ -45,6 +45,46 @@ header h1 {
     font-weight: 300;
 }
 
+/* Tabs */
+.tabs {
+    display: flex;
+    gap: 0;
+    background: rgba(20, 20, 30, 0.8);
+    border-bottom: 2px solid rgba(147, 51, 234, 0.3);
+}
+
+.tab-button {
+    flex: 1;
+    padding: 15px 20px;
+    background: transparent;
+    border: none;
+    color: #c4b5fd;
+    font-size: 1em;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    border-bottom: 3px solid transparent;
+}
+
+.tab-button:hover {
+    background: rgba(147, 51, 234, 0.1);
+    color: #ffffff;
+}
+
+.tab-button.active {
+    background: rgba(147, 51, 234, 0.2);
+    color: #ffffff;
+    border-bottom: 3px solid #9333ea;
+}
+
+.tab-content {
+    display: none;
+}
+
+.tab-content.active {
+    display: block;
+}
+
 /* Main Content */
 main {
     padding: 30px;
