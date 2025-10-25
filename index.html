@@ -16,6 +16,7 @@
         <nav class="tabs">
             <button class="tab-button active" onclick="switchTab('configuration')">Configuration</button>
             <button class="tab-button" onclick="switchTab('results')">Results</button>
+            <button class="tab-button" onclick="switchTab('analyzer')">Analyzer</button>
             <button class="tab-button" onclick="switchTab('about')">About</button>
         </nav>
 
@@ -197,6 +198,73 @@
                         <div class="stat-row">
                             <span class="stat-label">Total window duration:</span>
                             <span class="stat-value" id="insanity-total">0.00s</span>
+                        </div>
+                    </div>
+                </div>
+            </section>
+            </div>
+
+            <div id="analyzer-tab" class="tab-content">
+            <section class="analyzer-section">
+                <h2>Warcraft Logs Analyzer</h2>
+
+                <div class="form-group">
+                    <label for="wcl-report">WCL Report ID or URL:</label>
+                    <input type="text" id="wcl-report" placeholder="DC2WjNJKnzYtMPLG or full URL">
+                </div>
+
+                <div class="form-group">
+                    <label for="player-select">Select Player:</label>
+                    <select id="player-select" disabled>
+                        <option value="">Load report first</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label for="encounter-select">Select Encounter:</label>
+                    <select id="encounter-select" disabled>
+                        <option value="">Load report first</option>
+                    </select>
+                </div>
+
+                <button class="analyze-button" onclick="analyzeLog()" disabled id="analyze-btn">Analyze</button>
+
+                <div id="loading-indicator" style="display: none;">
+                    <p>Loading report data...</p>
+                </div>
+
+                <div id="analysis-results" style="display: none;">
+                    <h3>Analysis Results</h3>
+
+                    <div class="stat-display">
+                        <h3>DoT Uptimes</h3>
+                        <div class="stat-row">
+                            <span class="stat-label">Shadow Word: Pain:</span>
+                            <span class="stat-value" id="swp-uptime">0%</span>
+                        </div>
+                        <div class="stat-row">
+                            <span class="stat-label">Vampiric Touch:</span>
+                            <span class="stat-value" id="vt-uptime">0%</span>
+                        </div>
+                        <div class="stat-row">
+                            <span class="stat-label">Devouring Plague:</span>
+                            <span class="stat-value" id="dp-uptime">0%</span>
+                        </div>
+                    </div>
+
+                    <div class="stat-display">
+                        <h3>Cast Summary</h3>
+                        <div class="stat-row">
+                            <span class="stat-label">Mind Blast casts:</span>
+                            <span class="stat-value" id="mb-casts">0</span>
+                        </div>
+                        <div class="stat-row">
+                            <span class="stat-label">Devouring Plague casts:</span>
+                            <span class="stat-value" id="dp-casts">0</span>
+                        </div>
+                        <div class="stat-row">
+                            <span class="stat-label">Mind Flay ticks:</span>
+                            <span class="stat-value" id="mf-ticks">0</span>
                         </div>
                     </div>
                 </div>

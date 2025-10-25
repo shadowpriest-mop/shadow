@@ -352,3 +352,106 @@ function switchTab(tabName) {
     // Add active class to clicked button
     event.target.classList.add('active');
 }
+
+// ====== WARCRAFT LOGS ANALYZER ======
+
+// WCL API constants
+const WCL_API_URL = 'https://classic.warcraftlogs.com/v1/report';
+
+// Parse report ID from input (handles both full URLs and IDs)
+function parseReportId(input) {
+    const urlMatch = input.match(/reports?\/([a-zA-Z0-9]+)/);
+    if (urlMatch) {
+        return urlMatch[1];
+    }
+    // Already just an ID
+    if (/^[a-zA-Z0-9]+$/.test(input.trim())) {
+        return input.trim();
+    }
+    return null;
+}
+
+// Load WCL report when input changes
+document.addEventListener('DOMContentLoaded', function() {
+    const wclInput = document.getElementById('wcl-report');
+    if (wclInput) {
+        wclInput.addEventListener('blur', loadReport);
+        wclInput.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                loadReport();
+            }
+        });
+    }
+});
+
+async function loadReport() {
+    const input = document.getElementById('wcl-report').value;
+    const reportId = parseReportId(input);
+
+    if (!reportId) {
+        alert('Please enter a valid WCL report ID or URL');
+        return;
+    }
+
+    const loadingIndicator = document.getElementById('loading-indicator');
+    const playerSelect = document.getElementById('player-select');
+    const encounterSelect = document.getElementById('encounter-select');
+    const analyzeBtn = document.getElementById('analyze-btn');
+
+    loadingIndicator.style.display = 'block';
+    playerSelect.disabled = true;
+    encounterSelect.disabled = true;
+    analyzeBtn.disabled = true;
+
+    try {
+        // Note: WCL v1 API is public but limited. v2 requires auth.
+        // For now, we'll show a message about API keys
+        alert('WCL API Integration Coming Soon!\n\nTo analyze logs, you\'ll need:\n1. WCL API credentials\n2. Or use the manual input option\n\nFor now, this is a placeholder showing the UI structure.');
+
+        // Placeholder data for UI demonstration
+        playerSelect.innerHTML = `
+            <option value="">Select a player</option>
+            <option value="player1">Kiwiandapple (Shadow Priest)</option>
+            <option value="player2">OtherPlayer (Shadow Priest)</option>
+        `;
+        playerSelect.disabled = false;
+
+        encounterSelect.innerHTML = `
+            <option value="">Select an encounter</option>
+            <option value="1">Boss Fight 1</option>
+            <option value="2">Boss Fight 2</option>
+        `;
+        encounterSelect.disabled = false;
+        analyzeBtn.disabled = false;
+
+    } catch (error) {
+        console.error('Error loading report:', error);
+        alert('Error loading report. Please check the report ID and try again.');
+    } finally {
+        loadingIndicator.style.display = 'none';
+    }
+}
+
+function analyzeLog() {
+    const playerSelect = document.getElementById('player-select');
+    const encounterSelect = document.getElementById('encounter-select');
+
+    if (!playerSelect.value || !encounterSelect.value) {
+        alert('Please select both a player and an encounter');
+        return;
+    }
+
+    // Show results section
+    const resultsSection = document.getElementById('analysis-results');
+    resultsSection.style.display = 'block';
+
+    // Placeholder analysis data
+    document.getElementById('swp-uptime').textContent = '95.2%';
+    document.getElementById('vt-uptime').textContent = '97.8%';
+    document.getElementById('dp-uptime').textContent = '89.3%';
+    document.getElementById('mb-casts').textContent = '45';
+    document.getElementById('dp-casts').textContent = '38';
+    document.getElementById('mf-ticks').textContent = '342';
+
+    alert('Analysis complete! (Placeholder data)\n\nFull WCL integration coming soon.');
+}
