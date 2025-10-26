@@ -2,7 +2,7 @@
 // Based on Wrath analyzer architecture, simplified for MVP
 
 const WCL_API_BASE = 'https://www.warcraftlogs.com/v1';
-const WCL_API_KEY = '259b121232ec91e17f4d2b48300801be'; // Public API key from user
+let WCL_API_KEY = null; // Will be set by user
 
 // Tracked spell IDs for MoP Shadow Priest
 const TRACKED_SPELLS = [
@@ -22,6 +22,22 @@ const TRACKED_SPELLS = [
 class WCLService {
   constructor() {
     this.cache = {};
+    this.apiKey = null;
+  }
+
+  /**
+   * Set the API key
+   */
+  setApiKey(key) {
+    this.apiKey = key;
+    WCL_API_KEY = key;
+  }
+
+  /**
+   * Check if API key is set
+   */
+  hasApiKey() {
+    return this.apiKey !== null && this.apiKey.length > 0;
   }
 
   /**
@@ -44,17 +60,28 @@ class WCLService {
    * Fetch report summary (fights, players, etc.)
    */
   async fetchReport(reportId) {
+    if (!this.hasApiKey()) {
+      throw new Error('Please enter your WCL API key first');
+    }
+
     const cacheKey = `report_${reportId}`;
     if (this.cache[cacheKey]) {
       return this.cache[cacheKey];
     }
 
-    const url = `${WCL_API_BASE}/report/fights/${reportId}?api_key=${WCL_API_KEY}`;
+    const url = `${WCL_API_BASE}/report/fights/${reportId}?api_key=${this.apiKey}`;
 
     try {
       const response = await fetch(url);
+
       if (!response.ok) {
-        throw new Error(`Failed to fetch report: ${response.statusText}`);
+        const text = await response.text();
+        console.error('WCL API Error:', text);
+
+        if (response.status === 401 || response.status === 403) {
+          throw new Error('Invalid API key. Please check your WCL API key.');
+        }
+        throw new Error(`WCL API error: ${response.status} ${response.statusText}`);
       }
 
       const data = await response.json();
