@@ -149,14 +149,25 @@ class WCLService {
   async fetchAllEvents(reportId, fight, player) {
     console.log('Fetching events for:', player.name, 'in fight', fight.id);
 
-    // Fetch different event types in parallel
-    const [casts, damage, buffs, debuffs, resources] = await Promise.all([
-      this.fetchEvents(reportId, fight.id, player.id, 'casts'),
-      this.fetchEvents(reportId, fight.id, player.id, 'damage-done'),
-      this.fetchEvents(reportId, fight.id, player.id, 'buffs'),
-      this.fetchEvents(reportId, fight.id, player.id, 'debuffs'),
-      this.fetchEvents(reportId, fight.id, player.id, 'resources')
-    ]);
+    // Fetch different event types SEQUENTIALLY to avoid rate limiting
+    console.log('Fetching casts...');
+    const casts = await this.fetchEvents(reportId, fight.id, player.id, 'casts');
+    await this.delay(100); // Rate limit protection
+
+    console.log('Fetching damage...');
+    const damage = await this.fetchEvents(reportId, fight.id, player.id, 'damage-done');
+    await this.delay(100);
+
+    console.log('Fetching buffs...');
+    const buffs = await this.fetchEvents(reportId, fight.id, player.id, 'buffs');
+    await this.delay(100);
+
+    console.log('Fetching debuffs...');
+    const debuffs = await this.fetchEvents(reportId, fight.id, player.id, 'debuffs');
+    await this.delay(100);
+
+    console.log('Fetching resources...');
+    const resources = await this.fetchEvents(reportId, fight.id, player.id, 'resources');
 
     // Filter events by fight time window
     const fightStart = fight.start_time;
