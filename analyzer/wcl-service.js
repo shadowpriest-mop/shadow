@@ -1,7 +1,7 @@
 // Warcraft Logs API Service for MoP
 // Based on Wrath analyzer architecture, simplified for MVP
 
-const WCL_API_BASE = 'https://www.warcraftlogs.com/v1';
+const WCL_API_BASE = 'https://classic.warcraftlogs.com/v1';
 const WCL_API_KEY = '07c25d1094baa9a68f268a1ec73198d3'; // v1 API key
 
 // Tracked spell IDs for MoP Shadow Priest
