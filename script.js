@@ -373,23 +373,6 @@ function parseReportId(input) {
 
 // Load WCL report when input changes
 document.addEventListener('DOMContentLoaded', function() {
-    // Load saved API key
-    const savedApiKey = localStorage.getItem('wcl_api_key');
-    if (savedApiKey) {
-        document.getElementById('wcl-api-key').value = savedApiKey;
-    }
-
-    // Save API key when it changes
-    const apiKeyInput = document.getElementById('wcl-api-key');
-    if (apiKeyInput) {
-        apiKeyInput.addEventListener('blur', function() {
-            const key = this.value.trim();
-            if (key) {
-                localStorage.setItem('wcl_api_key', key);
-            }
-        });
-    }
-
     const wclInput = document.getElementById('wcl-report');
     if (wclInput) {
         wclInput.addEventListener('blur', loadReport);
@@ -405,23 +388,13 @@ document.addEventListener('DOMContentLoaded', function() {
 let currentReportData = null;
 
 async function loadReport() {
-    const apiKey = document.getElementById('wcl-api-key').value.trim();
     const input = document.getElementById('wcl-report').value;
-
-    if (!apiKey) {
-        alert('Please enter your WCL API key first.\n\nGet one free at: https://www.warcraftlogs.com/api/clients');
-        return;
-    }
-
     const reportId = wclService.extractReportId(input);
 
     if (!reportId) {
         alert('Please enter a valid WCL report ID or URL');
         return;
     }
-
-    // Set the API key
-    wclService.setApiKey(apiKey);
 
     const loadingIndicator = document.getElementById('loading-indicator');
     const playerSelect = document.getElementById('player-select');
