@@ -119,13 +119,22 @@ class WCLService {
 
         console.log('Response status:', response.status, response.statusText); // Debug logging
 
+        // Read response as text first to check what we got
+        const text = await response.text();
+
         if (!response.ok) {
-          const text = await response.text();
           console.error('WCL Events API Error:', text);
           throw new Error(`Failed to fetch events: ${response.statusText}`);
         }
 
-        const data = await response.json();
+        // Check if response is HTML (rate limit error page)
+        if (text.trim().startsWith('<') || text.startsWith('HTTP')) {
+          console.error('WCL returned HTML instead of JSON:', text.substring(0, 200));
+          throw new Error('Rate limited or access denied. Response was HTML, not JSON.');
+        }
+
+        // Parse JSON
+        const data = JSON.parse(text);
         events.push(...data.events);
 
         // Check if there are more events
@@ -152,19 +161,19 @@ class WCLService {
     // Fetch different event types SEQUENTIALLY to avoid rate limiting
     console.log('Fetching casts...');
     const casts = await this.fetchEvents(reportId, fight.id, player.id, 'casts');
-    await this.delay(100); // Rate limit protection
+    await this.delay(500); // Increased delay for rate limit protection
 
     console.log('Fetching damage...');
     const damage = await this.fetchEvents(reportId, fight.id, player.id, 'damage-done');
-    await this.delay(100);
+    await this.delay(500);
 
     console.log('Fetching buffs...');
     const buffs = await this.fetchEvents(reportId, fight.id, player.id, 'buffs');
-    await this.delay(100);
+    await this.delay(500);
 
     console.log('Fetching debuffs...');
     const debuffs = await this.fetchEvents(reportId, fight.id, player.id, 'debuffs');
-    await this.delay(100);
+    await this.delay(500);
 
     console.log('Fetching resources...');
     const resources = await this.fetchEvents(reportId, fight.id, player.id, 'resources');
