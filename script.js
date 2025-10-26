@@ -384,9 +384,12 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 });
 
+// Store loaded report data globally
+let currentReportData = null;
+
 async function loadReport() {
     const input = document.getElementById('wcl-report').value;
-    const reportId = parseReportId(input);
+    const reportId = wclService.extractReportId(input);
 
     if (!reportId) {
         alert('Please enter a valid WCL report ID or URL');
@@ -404,35 +407,51 @@ async function loadReport() {
     analyzeBtn.disabled = true;
 
     try {
-        // Note: WCL v1 API is public but limited. v2 requires auth.
-        // For now, we'll show a message about API keys
-        alert('WCL API Integration Coming Soon!\n\nTo analyze logs, you\'ll need:\n1. WCL API credentials\n2. Or use the manual input option\n\nFor now, this is a placeholder showing the UI structure.');
+        // Fetch report data from WCL
+        const reportData = await wclService.fetchReport(reportId);
+        currentReportData = reportData;
 
-        // Placeholder data for UI demonstration
-        playerSelect.innerHTML = `
-            <option value="">Select a player</option>
-            <option value="player1">Kiwiandapple (Shadow Priest)</option>
-            <option value="player2">OtherPlayer (Shadow Priest)</option>
-        `;
+        // Find Shadow Priests
+        const shadowPriests = wclService.getShadowPriests(reportData);
+
+        if (shadowPriests.length === 0) {
+            alert('No Shadow Priests found in this report!');
+            return;
+        }
+
+        // Populate player dropdown
+        playerSelect.innerHTML = '<option value="">Select a player</option>' +
+            shadowPriests.map(player =>
+                `<option value="${player.id}">${player.name} (${player.type})</option>`
+            ).join('');
         playerSelect.disabled = false;
 
-        encounterSelect.innerHTML = `
-            <option value="">Select an encounter</option>
-            <option value="1">Boss Fight 1</option>
-            <option value="2">Boss Fight 2</option>
-        `;
+        // Find boss encounters
+        const encounters = wclService.getBossEncounters(reportData);
+
+        if (encounters.length === 0) {
+            alert('No boss encounters found in this report!');
+            return;
+        }
+
+        // Populate encounter dropdown
+        encounterSelect.innerHTML = '<option value="">Select an encounter</option>' +
+            encounters.map(fight =>
+                `<option value="${fight.id}">${fight.name} (${Math.round((fight.end_time - fight.start_time) / 1000)}s)</option>`
+            ).join('');
         encounterSelect.disabled = false;
+
         analyzeBtn.disabled = false;
 
     } catch (error) {
         console.error('Error loading report:', error);
-        alert('Error loading report. Please check the report ID and try again.');
+        alert('Error loading report: ' + error.message);
     } finally {
         loadingIndicator.style.display = 'none';
     }
 }
 
-function analyzeLog() {
+async function analyzeLog() {
     const playerSelect = document.getElementById('player-select');
     const encounterSelect = document.getElementById('encounter-select');
 
@@ -441,17 +460,66 @@ function analyzeLog() {
         return;
     }
 
-    // Show results section
-    const resultsSection = document.getElementById('analysis-results');
-    resultsSection.style.display = 'block';
+    if (!currentReportData) {
+        alert('Please load a report first');
+        return;
+    }
 
-    // Placeholder analysis data
-    document.getElementById('swp-uptime').textContent = '95.2%';
-    document.getElementById('vt-uptime').textContent = '97.8%';
-    document.getElementById('dp-uptime').textContent = '89.3%';
-    document.getElementById('mb-casts').textContent = '45';
-    document.getElementById('dp-casts').textContent = '38';
-    document.getElementById('mf-ticks').textContent = '342';
+    const playerId = parseInt(playerSelect.value);
+    const fightId = parseInt(encounterSelect.value);
 
-    alert('Analysis complete! (Placeholder data)\n\nFull WCL integration coming soon.');
+    const loadingIndicator = document.getElementById('loading-indicator');
+    loadingIndicator.style.display = 'block';
+
+    try {
+        // Find player and fight objects
+        const player = currentReportData.friendlies.find(p => p.id === playerId);
+        const fight = currentReportData.fights.find(f => f.id === fightId);
+
+        if (!player || !fight) {
+            alert('Could not find player or fight data');
+            return;
+        }
+
+        // Extract report ID from current data
+        const reportId = wclService.extractReportId(document.getElementById('wcl-report').value);
+
+        // Fetch all events for this player/fight
+        const events = await wclService.fetchAllEvents(reportId, fight, player);
+
+        // Analyze events
+        const analyzer = new EventAnalyzer(events, {});
+        const stats = analyzer.analyze();
+
+        // Show results section
+        const resultsSection = document.getElementById('analysis-results');
+        resultsSection.style.display = 'block';
+
+        // Update DoT uptimes
+        document.getElementById('swp-uptime').textContent =
+            stats.dotUptimes[589] ? `${stats.dotUptimes[589].percent}%` : '0%';
+        document.getElementById('vt-uptime').textContent =
+            stats.dotUptimes[34914] ? `${stats.dotUptimes[34914].percent}%` : '0%';
+        document.getElementById('dp-uptime').textContent =
+            stats.dotUptimes[2944] ? `${stats.dotUptimes[2944].percent}%` : '0%';
+
+        // Update cast counts
+        document.getElementById('mb-casts').textContent =
+            stats.casts[8092] ? stats.casts[8092].count : '0';
+        document.getElementById('dp-casts').textContent =
+            stats.casts[2944] ? stats.casts[2944].count : '0';
+
+        // Count Mind Flay ticks (both normal and Insanity)
+        const mfTicks = analyzer.getTickCount(15407);
+        const mfiTicks = analyzer.getTickCount(129197);
+        document.getElementById('mf-ticks').textContent = mfTicks + mfiTicks;
+
+        console.log('Analysis complete:', stats);
+
+    } catch (error) {
+        console.error('Error analyzing log:', error);
+        alert('Error analyzing log: ' + error.message);
+    } finally {
+        loadingIndicator.style.display = 'none';
+    }
 }
