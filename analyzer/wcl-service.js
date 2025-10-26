@@ -5,7 +5,7 @@ const WCL_API_BASE = 'https://classic.warcraftlogs.com/v1';
 const WCL_API_KEY = '07c25d1094baa9a68f268a1ec73198d3'; // v1 API key
 
 // Tracked spell IDs for MoP Shadow Priest
-const TRACKED_SPELLS = [
+const TRACKED_CASTS = [
   589,    // Shadow Word: Pain
   34914,  // Vampiric Touch
   2944,   // Devouring Plague
@@ -16,8 +16,17 @@ const TRACKED_SPELLS = [
   34433,  // Shadowfiend
   120644, // Halo
   121135, // Cascade
-  110744  // Divine Star
+  110744, // Divine Star
+  47585,  // Dispersion
+  15286   // Vampiric Embrace
 ];
+
+// Tracked damage IDs (includes casts + damage-only events)
+const TRACKED_DAMAGE = TRACKED_CASTS.concat([
+  120696, // Halo (damage)
+  127628, // Cascade (damage)
+  122128  // Divine Star (damage)
+]);
 
 class WCLService {
   constructor() {
@@ -94,25 +103,30 @@ class WCLService {
   /**
    * Fetch events for a specific encounter and player
    */
-  async fetchEvents(reportId, fightId, playerId, eventType) {
+  async fetchEvents(reportId, fight, player, eventType, spellIds = []) {
     const events = [];
     let hasMore = true;
-    let start = 0;
+    let start = fight.start_time;
 
     while (hasMore) {
+      // Build filter like Wrath analyzer: source.name="PlayerName" AND ability.id IN (...)
+      let filter = `source.name="${player.name}"`;
+      if (spellIds.length > 0) {
+        filter += ` AND ability.id IN (${spellIds.join(',')})`;
+      }
+
       const url = `${WCL_API_BASE}/report/events/${eventType}/${reportId}?` +
                   `start=${start}&` +
-                  `end=999999999&` +
-                  `sourceid=${playerId}&` +
-                  `filter=source.id=${playerId}&` +
+                  `end=${fight.end_time}&` +
+                  `filter=${encodeURIComponent(filter)}&` +
                   `api_key=${WCL_API_KEY}`;
 
       console.log('Fetching events URL:', url); // Debug logging
 
       try {
         // Add delay between requests to be nice to WCL API
-        if (start > 0) {
-          await this.delay(50);
+        if (start > fight.start_time) {
+          await this.delay(50); // Delay between pagination requests
         }
 
         const response = await fetch(url);
@@ -137,8 +151,8 @@ class WCLService {
         const data = JSON.parse(text);
         events.push(...data.events);
 
-        // Check if there are more events
-        if (data.nextPageTimestamp) {
+        // Check if there are more events (and we haven't exceeded fight end)
+        if (data.nextPageTimestamp && data.nextPageTimestamp <= fight.end_time) {
           start = data.nextPageTimestamp;
         } else {
           hasMore = false;
@@ -160,23 +174,23 @@ class WCLService {
 
     // Fetch different event types SEQUENTIALLY to avoid rate limiting
     console.log('Fetching casts...');
-    const casts = await this.fetchEvents(reportId, fight.id, player.id, 'casts');
+    const casts = await this.fetchEvents(reportId, fight, player, 'casts', TRACKED_CASTS);
     await this.delay(500); // Increased delay for rate limit protection
 
     console.log('Fetching damage...');
-    const damage = await this.fetchEvents(reportId, fight.id, player.id, 'damage-done');
+    const damage = await this.fetchEvents(reportId, fight, player, 'damage-done', TRACKED_DAMAGE);
     await this.delay(500);
 
     console.log('Fetching buffs...');
-    const buffs = await this.fetchEvents(reportId, fight.id, player.id, 'buffs');
+    const buffs = await this.fetchEvents(reportId, fight, player, 'buffs', []); // No filter, get all buffs
     await this.delay(500);
 
     console.log('Fetching debuffs...');
-    const debuffs = await this.fetchEvents(reportId, fight.id, player.id, 'debuffs');
+    const debuffs = await this.fetchEvents(reportId, fight, player, 'debuffs', []); // No filter, get all debuffs
     await this.delay(500);
 
     console.log('Fetching resources...');
-    const resources = await this.fetchEvents(reportId, fight.id, player.id, 'resources');
+    const resources = await this.fetchEvents(reportId, fight, player, 'resources', []); // No filter
 
     // Filter events by fight time window
     const fightStart = fight.start_time;
