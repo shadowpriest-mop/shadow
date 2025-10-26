@@ -107,6 +107,8 @@ class WCLService {
                   `filter=source.id=${playerId}&` +
                   `api_key=${WCL_API_KEY}`;
 
+      console.log('Fetching events URL:', url); // Debug logging
+
       try {
         // Add delay between requests to be nice to WCL API
         if (start > 0) {
@@ -114,7 +116,12 @@ class WCLService {
         }
 
         const response = await fetch(url);
+
+        console.log('Response status:', response.status, response.statusText); // Debug logging
+
         if (!response.ok) {
+          const text = await response.text();
+          console.error('WCL Events API Error:', text);
           throw new Error(`Failed to fetch events: ${response.statusText}`);
         }
 
