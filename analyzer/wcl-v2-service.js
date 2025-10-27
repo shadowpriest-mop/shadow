@@ -165,7 +165,14 @@ class WCLv2Service {
               endTime
               encounterID
             }
-            playerDetails(translate: true)
+            masterData {
+              actors(type: "Player") {
+                id
+                name
+                type
+                subType
+              }
+            }
           }
         }
       }
@@ -213,45 +220,27 @@ class WCLv2Service {
   }
 
   /**
-   * Helper: Get Shadow Priests from report playerDetails
+   * Helper: Get Shadow Priests from report masterData
    */
   getShadowPriests(report) {
-    if (!report || !report.playerDetails) return [];
+    if (!report || !report.masterData || !report.masterData.actors) return [];
 
     const shadowPriests = [];
-    const details = report.playerDetails;
+    const actors = report.masterData.actors;
 
-    console.log('playerDetails structure:', details);
+    console.log('masterData.actors structure:', actors);
 
-    // v2 API playerDetails structure - it's a JSON object
-    // Try multiple possible structures
-    let allPlayers = [];
-
-    if (details.data?.players) {
-      allPlayers = details.data.players;
-    } else if (details.tanks || details.healers || details.dps) {
-      allPlayers = [
-        ...(details.tanks || []),
-        ...(details.healers || []),
-        ...(details.dps || [])
-      ];
-    } else if (Array.isArray(details)) {
-      allPlayers = details;
-    }
-
-    console.log('All players found:', allPlayers);
-
-    for (const player of allPlayers) {
-      // Check if player is a Shadow Priest
-      const isPriest = player.type === 'Priest' || player.class === 'Priest';
-      const isShadow = player.specs?.some(s => s.spec === 'Shadow' || s === 'Shadow') ||
-                       player.spec === 'Shadow';
+    for (const actor of actors) {
+      // Check if actor is a Shadow Priest
+      // type = "Priest", subType = "Shadow"
+      const isPriest = actor.type === 'Priest';
+      const isShadow = actor.subType === 'Shadow';
 
       if (isPriest && isShadow) {
         shadowPriests.push({
-          id: player.id,
-          name: player.name,
-          type: player.type || player.class
+          id: actor.id,
+          name: actor.name,
+          type: actor.type
         });
       }
     }
