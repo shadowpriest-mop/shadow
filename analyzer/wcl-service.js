@@ -131,24 +131,27 @@ class WCLService {
 
         const response = await fetch(url);
 
-        console.log('Response status:', response.status, response.statusText); // Debug logging
+        console.log(`[${eventType}] Response status:`, response.status, response.statusText);
 
-        // Read response as text first to check what we got
-        const text = await response.text();
-
+        // Check response status
         if (!response.ok) {
-          console.error('WCL Events API Error:', text);
-          throw new Error(`Failed to fetch events: ${response.statusText}`);
+          const text = await response.text();
+          console.error(`[${eventType}] HTTP error:`, response.status, text.substring(0, 200));
+          throw new Error(`HTTP error! status: ${response.status}`);
         }
 
-        // Check if response is HTML (rate limit error page)
-        if (text.trim().startsWith('<') || text.startsWith('HTTP')) {
-          console.error('WCL returned HTML instead of JSON:', text.substring(0, 200));
-          throw new Error('Rate limited or access denied. Response was HTML, not JSON.');
+        // Check content type
+        const contentType = response.headers.get('content-type');
+        if (!contentType || !contentType.includes('application/json')) {
+          const text = await response.text();
+          console.error(`[${eventType}] Received non-JSON response:`, contentType);
+          console.error(`[${eventType}] Response text:`, text.substring(0, 300));
+          throw new Error(`Expected JSON but got: ${contentType}. You may have hit WCL's rate limit!`);
         }
 
         // Parse JSON
-        const data = JSON.parse(text);
+        const data = await response.json();
+        console.log(`[${eventType}] Got ${data.events.length} events`);
         events.push(...data.events);
 
         // Check if there are more events (and we haven't exceeded fight end)
