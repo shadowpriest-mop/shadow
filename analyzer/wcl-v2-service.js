@@ -219,24 +219,42 @@ class WCLv2Service {
     const shadowPriests = [];
     const details = report.playerDetails;
 
-    // playerDetails is an object with tank/healer/dps arrays
-    const allPlayers = [
-      ...(details.data?.playerDetails?.dps || []),
-      ...(details.data?.playerDetails?.healers || []),
-      ...(details.data?.playerDetails?.tanks || [])
-    ];
+    console.log('playerDetails structure:', details);
+
+    // v2 API playerDetails structure - it's a JSON object
+    // Try multiple possible structures
+    let allPlayers = [];
+
+    if (details.data?.players) {
+      allPlayers = details.data.players;
+    } else if (details.tanks || details.healers || details.dps) {
+      allPlayers = [
+        ...(details.tanks || []),
+        ...(details.healers || []),
+        ...(details.dps || [])
+      ];
+    } else if (Array.isArray(details)) {
+      allPlayers = details;
+    }
+
+    console.log('All players found:', allPlayers);
 
     for (const player of allPlayers) {
-      // Check if player is a Shadow Priest (spec ID or class check)
-      if (player.type === 'Priest' && player.specs && player.specs.some(s => s.spec === 'Shadow')) {
+      // Check if player is a Shadow Priest
+      const isPriest = player.type === 'Priest' || player.class === 'Priest';
+      const isShadow = player.specs?.some(s => s.spec === 'Shadow' || s === 'Shadow') ||
+                       player.spec === 'Shadow';
+
+      if (isPriest && isShadow) {
         shadowPriests.push({
           id: player.id,
           name: player.name,
-          type: player.type
+          type: player.type || player.class
         });
       }
     }
 
+    console.log('Shadow Priests found:', shadowPriests);
     return shadowPriests;
   }
 

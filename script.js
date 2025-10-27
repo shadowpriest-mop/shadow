@@ -360,7 +360,129 @@ function switchTab(tabName) {
 // ====== WARCRAFT LOGS ANALYZER (WCL v2 API) ======
 // Uses client credentials - no user login required!
 
-// Placeholder for log analysis (TODO: Implement with v2 GraphQL API)
+// Store loaded report data globally
+let currentReportData = null;
+
+// Load WCL report when input changes
+document.addEventListener('DOMContentLoaded', function() {
+    const wclInput = document.getElementById('wcl-report');
+    if (wclInput) {
+        wclInput.addEventListener('blur', loadReport);
+        wclInput.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                loadReport();
+            }
+        });
+    }
+});
+
+async function loadReport() {
+    const input = document.getElementById('wcl-report').value.trim();
+    const reportId = wclV2Service.extractReportId(input);
+
+    if (!reportId) {
+        alert('Please enter a valid WCL report ID or URL');
+        return;
+    }
+
+    const loadingIndicator = document.getElementById('loading-indicator');
+    const playerSelect = document.getElementById('player-select');
+    const encounterSelect = document.getElementById('encounter-select');
+    const analyzeBtn = document.getElementById('analyze-btn');
+
+    loadingIndicator.style.display = 'block';
+    playerSelect.disabled = true;
+    encounterSelect.disabled = true;
+    analyzeBtn.disabled = true;
+
+    try {
+        // Fetch report data from WCL v2 API (authentication happens automatically)
+        console.log('Fetching report:', reportId);
+        const reportData = await wclV2Service.fetchReport(reportId);
+        currentReportData = reportData;
+
+        console.log('Report data:', reportData);
+
+        // Find Shadow Priests
+        const shadowPriests = wclV2Service.getShadowPriests(reportData);
+
+        if (shadowPriests.length === 0) {
+            alert('No Shadow Priests found in this report!');
+            return;
+        }
+
+        // Populate player dropdown
+        playerSelect.innerHTML = '<option value="">Select a player</option>' +
+            shadowPriests.map(player =>
+                `<option value="${player.name}">${player.name} (${player.type})</option>`
+            ).join('');
+        playerSelect.disabled = false;
+
+        // Find boss encounters
+        const encounters = wclV2Service.getBossEncounters(reportData);
+
+        if (encounters.length === 0) {
+            alert('No boss encounters found in this report!');
+            return;
+        }
+
+        // Populate encounter dropdown
+        encounterSelect.innerHTML = '<option value="">Select an encounter</option>' +
+            encounters.map(fight =>
+                `<option value="${fight.id}">${fight.name} (${Math.round((fight.endTime - fight.startTime) / 1000)}s)</option>`
+            ).join('');
+        encounterSelect.disabled = false;
+
+        analyzeBtn.disabled = false;
+
+    } catch (error) {
+        console.error('Error loading report:', error);
+        alert('Error loading report: ' + error.message);
+    } finally {
+        loadingIndicator.style.display = 'none';
+    }
+}
+
 async function analyzeLog() {
-    alert('Log analysis with WCL v2 API is coming soon! Authentication happens automatically in the background.');
+    const playerSelect = document.getElementById('player-select');
+    const encounterSelect = document.getElementById('encounter-select');
+
+    if (!playerSelect.value || !encounterSelect.value) {
+        alert('Please select both a player and an encounter');
+        return;
+    }
+
+    if (!currentReportData) {
+        alert('Please load a report first');
+        return;
+    }
+
+    const playerName = playerSelect.value;
+    const fightId = parseInt(encounterSelect.value);
+
+    const loadingIndicator = document.getElementById('loading-indicator');
+    loadingIndicator.style.display = 'block';
+
+    try {
+        // Find fight object
+        const fight = currentReportData.fights.find(f => f.id === fightId);
+
+        if (!fight) {
+            alert('Could not find fight data');
+            return;
+        }
+
+        // Extract report ID from current data
+        const reportId = wclV2Service.extractReportId(document.getElementById('wcl-report').value);
+
+        // TODO: Fetch events and analyze
+        console.log('Would analyze:', { reportId, playerName, fight });
+        alert('Event fetching and analysis coming soon! For now, v2 authentication is working.');
+
+    } catch (error) {
+        console.error('Error analyzing log:', error);
+        alert('Error analyzing log: ' + error.message);
+    } finally {
+        loadingIndicator.style.display = 'none';
+    }
 }
