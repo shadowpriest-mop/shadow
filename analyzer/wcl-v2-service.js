@@ -229,18 +229,29 @@ class WCLv2Service {
     const actors = report.masterData.actors;
 
     console.log('masterData.actors structure:', actors);
+    console.log('First actor example:', actors[0]);
 
     for (const actor of actors) {
+      console.log('Checking actor:', actor.name, 'type:', actor.type, 'subType:', actor.subType);
+
       // Check if actor is a Shadow Priest
-      // type = "Priest", subType = "Shadow"
-      const isPriest = actor.type === 'Priest';
-      const isShadow = actor.subType === 'Shadow';
+      // Try multiple possible field names and values
+      const isPriest = actor.type === 'Priest' ||
+                       actor.class === 'Priest' ||
+                       actor.type === 'priest';
+
+      const isShadow = actor.subType === 'Shadow' ||
+                       actor.spec === 'Shadow' ||
+                       actor.subType === 'shadow' ||
+                       actor.spec === 'shadow';
+
+      console.log(`  isPriest: ${isPriest}, isShadow: ${isShadow}`);
 
       if (isPriest && isShadow) {
         shadowPriests.push({
           id: actor.id,
           name: actor.name,
-          type: actor.type
+          type: actor.type || actor.class
         });
       }
     }
