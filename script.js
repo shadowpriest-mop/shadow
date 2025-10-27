@@ -386,6 +386,63 @@ function switchTab(tabName) {
 // Store loaded report data globally
 let currentReportData = null;
 
+// Helper function to calculate DoT uptimes
+function calculateDotUptimes(events, fight, fightDuration) {
+    // MoP Shadow Priest DoT spell IDs
+    const dotSpells = {
+        589: 'Shadow Word: Pain',
+        34914: 'Vampiric Touch',
+        2944: 'Devouring Plague'
+    };
+
+    const uptimes = {};
+
+    Object.keys(dotSpells).forEach(spellIdStr => {
+        const spellId = parseInt(spellIdStr);
+
+        // Find all debuff events for this spell
+        const debuffEvents = events.filter(e =>
+            e.abilityGameID === spellId &&
+            (e.type === 'applydebuff' || e.type === 'refreshdebuff' || e.type === 'removedebuff')
+        );
+
+        console.log(`${dotSpells[spellId]} debuff events:`, debuffEvents.length);
+
+        let totalUptime = 0;
+        let currentStart = null;
+
+        debuffEvents.forEach(event => {
+            if (event.type === 'applydebuff' || event.type === 'refreshdebuff') {
+                // DoT applied or refreshed
+                if (!currentStart) {
+                    currentStart = event.timestamp;
+                }
+            } else if (event.type === 'removedebuff') {
+                // DoT fell off
+                if (currentStart) {
+                    totalUptime += (event.timestamp - currentStart);
+                    currentStart = null;
+                }
+            }
+        });
+
+        // If DoT is still active at fight end
+        if (currentStart) {
+            totalUptime += (fight.endTime - currentStart);
+        }
+
+        // Calculate percentage
+        const uptimePercent = (totalUptime / fightDuration) * 100;
+        uptimes[spellId] = {
+            uptime: totalUptime,
+            duration: fightDuration,
+            percent: Math.round(uptimePercent * 10) / 10 // Round to 1 decimal
+        };
+    });
+
+    return uptimes;
+}
+
 // Make loadReport available globally
 window.loadReport = async function loadReport() {
     console.log('loadReport() called');
@@ -565,6 +622,13 @@ window.analyzeLog = async function analyzeLog() {
         console.log('Cast counts by spell:', castCounts);
         console.log('Damage counts by spell:', damageCounts);
 
+        // Calculate DoT uptimes
+        const fightDuration = fight.endTime - fight.startTime;
+        console.log('Fight duration (ms):', fightDuration);
+
+        const dotUptimes = calculateDotUptimes(events, fight, fightDuration);
+        console.log('DoT uptimes:', dotUptimes);
+
         // Update UI with results
         document.getElementById('mb-casts').textContent = castCounts[8092]?.count || '0';
         document.getElementById('dp-casts').textContent = castCounts[2944]?.count || '0';
@@ -573,10 +637,10 @@ window.analyzeLog = async function analyzeLog() {
         const mfTicks = (damageCounts[15407]?.count || 0) + (damageCounts[129197]?.count || 0);
         document.getElementById('mf-ticks').textContent = mfTicks;
 
-        // TODO: Calculate DoT uptimes properly
-        document.getElementById('swp-uptime').textContent = 'N/A';
-        document.getElementById('vt-uptime').textContent = 'N/A';
-        document.getElementById('dp-uptime').textContent = 'N/A';
+        // Update DoT uptimes
+        document.getElementById('swp-uptime').textContent = dotUptimes[589] ? dotUptimes[589].percent + '%' : 'N/A';
+        document.getElementById('vt-uptime').textContent = dotUptimes[34914] ? dotUptimes[34914].percent + '%' : 'N/A';
+        document.getElementById('dp-uptime').textContent = dotUptimes[2944] ? dotUptimes[2944].percent + '%' : 'N/A';
 
         // Show results
         resultsSection.style.display = 'block';
