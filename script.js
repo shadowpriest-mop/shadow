@@ -531,13 +531,14 @@ window.analyzeLog = async function analyzeLog() {
                 console.log(`Event ${index}:`, event);
             }
 
-            if (!event.ability) {
-                if (index < 5) console.log(`  No ability on event ${index}`);
+            // WCL v2 API: abilityGameID is directly on event, not in ability object
+            if (!event.abilityGameID) {
+                if (index < 5) console.log(`  No abilityGameID on event ${index}`);
                 return;
             }
 
-            const spellId = event.ability.guid;
-            const spellName = event.ability.name;
+            const spellId = event.abilityGameID;
+            const spellName = event.abilityGameID; // We'll just use ID for now
 
             if (event.type === 'cast') {
                 castEventCount++;
@@ -545,6 +546,9 @@ window.analyzeLog = async function analyzeLog() {
                     castCounts[spellId] = { name: spellName, count: 0 };
                 }
                 castCounts[spellId].count++;
+                if (castEventCount <= 10) {
+                    console.log(`Cast event: ${spellName} (ID: ${spellId})`);
+                }
             } else if (event.type === 'damage') {
                 damageEventCount++;
                 if (!damageCounts[spellId]) {
