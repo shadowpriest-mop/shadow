@@ -491,6 +491,7 @@ window.analyzeLog = async function analyzeLog() {
         // Extract report ID from current data
         const reportId = wclV2Service.extractReportId(document.getElementById('wcl-report').value);
 
+        console.log('=== ANALYZE STARTING ===');
         console.log('Fetching events for:', { reportId, playerName, fightId, startTime: fight.startTime, endTime: fight.endTime });
 
         // Fetch events from WCL v2 API
@@ -502,33 +503,50 @@ window.analyzeLog = async function analyzeLog() {
             fight.endTime
         );
 
-        console.log('Events data received:', eventsData);
+        console.log('=== EVENTS DATA RECEIVED ===');
+        console.log('Full eventsData object:', eventsData);
+        console.log('eventsData type:', typeof eventsData);
+        console.log('eventsData.data exists?', !!eventsData?.data);
 
         // Parse the events
         if (!eventsData || !eventsData.data) {
-            alert('No event data returned from WCL');
+            console.error('NO EVENT DATA - eventsData:', eventsData);
+            alert('No event data returned from WCL. Check console for details.');
             return;
         }
 
         const events = eventsData.data;
+        console.log('=== EVENTS ARRAY ===');
         console.log('Total events:', events.length);
+        console.log('First 3 events:', events.slice(0, 3));
 
         // Simple analysis - count casts and damage events by spell
         const castCounts = {};
         const damageCounts = {};
+        let castEventCount = 0;
+        let damageEventCount = 0;
 
-        events.forEach(event => {
-            if (!event.ability) return;
+        events.forEach((event, index) => {
+            if (index < 5) {
+                console.log(`Event ${index}:`, event);
+            }
+
+            if (!event.ability) {
+                if (index < 5) console.log(`  No ability on event ${index}`);
+                return;
+            }
 
             const spellId = event.ability.guid;
             const spellName = event.ability.name;
 
             if (event.type === 'cast') {
+                castEventCount++;
                 if (!castCounts[spellId]) {
                     castCounts[spellId] = { name: spellName, count: 0 };
                 }
                 castCounts[spellId].count++;
             } else if (event.type === 'damage') {
+                damageEventCount++;
                 if (!damageCounts[spellId]) {
                     damageCounts[spellId] = { name: spellName, count: 0 };
                 }
@@ -536,8 +554,11 @@ window.analyzeLog = async function analyzeLog() {
             }
         });
 
-        console.log('Cast counts:', castCounts);
-        console.log('Damage counts:', damageCounts);
+        console.log('=== EVENT COUNTS ===');
+        console.log('Total cast events found:', castEventCount);
+        console.log('Total damage events found:', damageEventCount);
+        console.log('Cast counts by spell:', castCounts);
+        console.log('Damage counts by spell:', damageCounts);
 
         // Update UI with results
         document.getElementById('mb-casts').textContent = castCounts[8092]?.count || '0';
