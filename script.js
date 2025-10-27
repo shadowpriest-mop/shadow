@@ -349,8 +349,12 @@ function switchTab(tabName) {
     // Show selected tab content
     document.getElementById(tabName + '-tab').classList.add('active');
 
-    // Add active class to clicked button
-    event.target.classList.add('active');
+    // Add active class to the button that matches this tab
+    tabButtons.forEach(button => {
+        if (button.getAttribute('onclick').includes(`'${tabName}'`)) {
+            button.classList.add('active');
+        }
+    });
 }
 
 // ====== WARCRAFT LOGS ANALYZER ======
