@@ -169,16 +169,24 @@ class WCLv2Service {
               actors(type: "Player") {
                 id
                 name
+                gameID
                 type
                 subType
               }
             }
+            rankings
           }
         }
       }
     `;
 
     const data = await this.query(query, { code: reportCode });
+
+    // Get player specs from rankings data if available
+    if (data.reportData.report.rankings) {
+      console.log('Rankings data available:', data.reportData.report.rankings);
+    }
+
     return data.reportData.report;
   }
 
@@ -220,44 +228,38 @@ class WCLv2Service {
   }
 
   /**
-   * Helper: Get Shadow Priests from report masterData
+   * Helper: Get Priests from report masterData
+   * Note: WCL v2 masterData doesn't include spec, so we return all Priests
+   * Spec will be determined later from cast analysis
    */
   getShadowPriests(report) {
     if (!report || !report.masterData || !report.masterData.actors) return [];
 
-    const shadowPriests = [];
+    const priests = [];
     const actors = report.masterData.actors;
 
     console.log('masterData.actors structure:', actors);
     console.log('First actor example:', actors[0]);
 
     for (const actor of actors) {
-      console.log('Checking actor:', actor.name, 'type:', actor.type, 'subType:', actor.subType);
-
-      // Check if actor is a Shadow Priest
-      // Try multiple possible field names and values
-      const isPriest = actor.type === 'Priest' ||
-                       actor.class === 'Priest' ||
-                       actor.type === 'priest';
-
-      const isShadow = actor.subType === 'Shadow' ||
-                       actor.spec === 'Shadow' ||
-                       actor.subType === 'shadow' ||
-                       actor.spec === 'shadow';
-
-      console.log(`  isPriest: ${isPriest}, isShadow: ${isShadow}`);
-
-      if (isPriest && isShadow) {
-        shadowPriests.push({
+      // In WCL v2 masterData: type = "Player", subType = class name (e.g., "Priest")
+      if (actor.subType === 'Priest') {
+        priests.push({
           id: actor.id,
           name: actor.name,
-          type: actor.type || actor.class
+          type: 'Priest' // Use class name for display
         });
+        console.log('Found Priest:', actor.name);
       }
     }
 
-    console.log('Shadow Priests found:', shadowPriests);
-    return shadowPriests;
+    console.log('Priests found:', priests);
+
+    if (priests.length === 0) {
+      console.warn('No Priests found in report. All actors:', actors.map(a => `${a.name} (${a.subType})`));
+    }
+
+    return priests;
   }
 
   /**

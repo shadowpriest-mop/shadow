@@ -415,17 +415,17 @@ window.loadReport = async function loadReport() {
 
         console.log('Report data:', reportData);
 
-        // Find Shadow Priests
-        const shadowPriests = wclV2Service.getShadowPriests(reportData);
+        // Find Priests (spec will be validated when analyzing casts)
+        const priests = wclV2Service.getShadowPriests(reportData);
 
-        if (shadowPriests.length === 0) {
-            alert('No Shadow Priests found in this report!');
+        if (priests.length === 0) {
+            alert('No Priests found in this report!');
             return;
         }
 
         // Populate player dropdown
         playerSelect.innerHTML = '<option value="">Select a player</option>' +
-            shadowPriests.map(player =>
+            priests.map(player =>
                 `<option value="${player.name}">${player.name} (${player.type})</option>`
             ).join('');
         playerSelect.disabled = false;
