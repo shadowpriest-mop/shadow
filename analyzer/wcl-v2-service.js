@@ -233,27 +233,35 @@ class WCLv2Service {
    * Spec will be determined later from cast analysis
    */
   getShadowPriests(report) {
-    if (!report || !report.masterData || !report.masterData.actors) return [];
+    console.log('=== getShadowPriests v2.3+ CALLED ===');
+
+    if (!report || !report.masterData || !report.masterData.actors) {
+      console.error('Missing report data:', { report: !!report, masterData: !!report?.masterData, actors: !!report?.masterData?.actors });
+      return [];
+    }
 
     const priests = [];
     const actors = report.masterData.actors;
 
-    console.log('masterData.actors structure:', actors);
+    console.log('Total actors in report:', actors.length);
     console.log('First actor example:', actors[0]);
 
     for (const actor of actors) {
       // In WCL v2 masterData: type = "Player", subType = class name (e.g., "Priest")
+      console.log(`Checking: ${actor.name} - subType: "${actor.subType}"`);
+
       if (actor.subType === 'Priest') {
         priests.push({
           id: actor.id,
           name: actor.name,
           type: 'Priest' // Use class name for display
         });
-        console.log('Found Priest:', actor.name);
+        console.log('✓ Found Priest:', actor.name);
       }
     }
 
-    console.log('Priests found:', priests);
+    console.log('=== Total Priests found:', priests.length, '===');
+    console.log('Priests array:', priests);
 
     if (priests.length === 0) {
       console.warn('No Priests found in report. All actors:', actors.map(a => `${a.name} (${a.subType})`));
