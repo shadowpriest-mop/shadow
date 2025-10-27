@@ -9,7 +9,7 @@
 <body>
     <div class="container">
         <header>
-            <h1>Shadow Priest - MoP Classic <span style="font-size: 0.5em; color: #999;">v2.0.2</span></h1>
+            <h1>Shadow Priest - MoP Classic <span style="font-size: 0.5em; color: #999;">v2.1</span></h1>
             <p class="subtitle">Haste Calculator & DoT Duration Tool</p>
         </header>
 
@@ -207,14 +207,9 @@
             <div id="analyzer-tab" class="tab-content">
             <section class="analyzer-section">
                 <h2>Warcraft Logs Analyzer</h2>
+                <p class="subtitle">Authentication handled automatically - just paste your log URL!</p>
 
-                <div class="wcl-auth-status" id="wcl-auth-status">
-                    <p>Please log in to Warcraft Logs to analyze reports.</p>
-                    <button class="analyze-button" onclick="loginToWCL()" id="wcl-login-btn">Login to WCL</button>
-                    <button class="analyze-button" onclick="logoutFromWCL()" id="wcl-logout-btn" style="display: none;">Logout</button>
-                </div>
-
-                <div id="analyzer-form" style="display: none;">
+                <div id="analyzer-form">
                     <div class="form-group">
                         <label for="wcl-report">WCL Report ID or URL:</label>
                         <input type="text" id="wcl-report" placeholder="DC2WjNJKnzYtMPLG or full URL">

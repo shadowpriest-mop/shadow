@@ -358,60 +358,9 @@ function switchTab(tabName) {
 }
 
 // ====== WARCRAFT LOGS ANALYZER (WCL v2 API) ======
-// Note: Log analysis functions will be implemented after OAuth is working
+// Uses client credentials - no user login required!
 
 // Placeholder for log analysis (TODO: Implement with v2 GraphQL API)
 async function analyzeLog() {
-    alert('Log analysis with WCL v2 API is coming soon! For now, you can test the OAuth login.');
+    alert('Log analysis with WCL v2 API is coming soon! Authentication happens automatically in the background.');
 }
-
-// ====================================
-// WCL v2 OAuth Functions
-// ====================================
-
-async function loginToWCL() {
-    await wclV2Service.startOAuthFlow();
-}
-
-function logoutFromWCL() {
-    wclV2Service.logout();
-    updateAuthUI();
-}
-
-function updateAuthUI() {
-    const authStatus = document.getElementById('wcl-auth-status');
-    const loginBtn = document.getElementById('wcl-login-btn');
-    const logoutBtn = document.getElementById('wcl-logout-btn');
-    const analyzerForm = document.getElementById('analyzer-form');
-
-    if (wclV2Service.isAuthenticated()) {
-        authStatus.innerHTML = '<p style="color: #4CAF50;">✓ Connected to Warcraft Logs</p>';
-        loginBtn.style.display = 'none';
-        logoutBtn.style.display = 'inline-block';
-        analyzerForm.style.display = 'block';
-    } else {
-        authStatus.innerHTML = '<p>Please log in to Warcraft Logs to analyze reports.</p>';
-        loginBtn.style.display = 'inline-block';
-        logoutBtn.style.display = 'none';
-        analyzerForm.style.display = 'none';
-    }
-}
-
-// Handle OAuth callback on page load
-async function handleOAuthCallback() {
-    try {
-        const wasCallback = await wclV2Service.handleOAuthCallback();
-        if (wasCallback) {
-            console.log('OAuth callback handled successfully');
-        }
-    } catch (error) {
-        console.error('OAuth callback error:', error);
-        alert('Failed to log in to WCL: ' + error.message);
-    }
-    updateAuthUI();
-}
-
-// Initialize OAuth on page load
-window.addEventListener('DOMContentLoaded', async function() {
-    await handleOAuthCallback();
-});
