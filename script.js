@@ -1,4 +1,5 @@
 // MoP Shadow Priest Haste Calculator
+console.log('script.js loading...');
 
 // Constants for MoP (Level 90)
 const HASTE_RATING_PER_PERCENT = 425.25; // Haste rating needed for 1% haste at level 90
@@ -91,17 +92,21 @@ document.addEventListener('DOMContentLoaded', function() {
         console.log('Adding WCL report event listeners');
         wclInput.addEventListener('blur', function() {
             console.log('Blur event triggered');
-            loadReport();
+            window.loadReport();
         });
         wclInput.addEventListener('keypress', function(e) {
             console.log('Keypress event:', e.key);
             if (e.key === 'Enter') {
-                loadReport();
+                window.loadReport();
             }
         });
     } else {
         console.error('Could not find wcl-report input element!');
     }
+
+    console.log('DOMContentLoaded complete - all event listeners added');
+    console.log('window.loadReport available:', typeof window.loadReport);
+    console.log('window.analyzeLog available:', typeof window.analyzeLog);
 });
 
 function updateRacialOptions() {
@@ -381,7 +386,8 @@ function switchTab(tabName) {
 // Store loaded report data globally
 let currentReportData = null;
 
-async function loadReport() {
+// Make loadReport available globally
+window.loadReport = async function loadReport() {
     console.log('loadReport() called');
     const input = document.getElementById('wcl-report').value.trim();
     const reportId = wclV2Service.extractReportId(input);
@@ -449,7 +455,8 @@ async function loadReport() {
     }
 }
 
-async function analyzeLog() {
+// Make analyzeLog available globally
+window.analyzeLog = async function analyzeLog() {
     const playerSelect = document.getElementById('player-select');
     const encounterSelect = document.getElementById('encounter-select');
 

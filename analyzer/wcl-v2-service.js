@@ -2,6 +2,8 @@
 // For MoP Classic Shadow Priest Analyzer
 // Uses client credentials flow - no user login required (like v1 API)
 
+console.log('wcl-v2-service.js loading...');
+
 const WCL_CLIENT_ID = 'a036e79f-2e07-4588-bc67-d46cd2f907f8';
 const WCL_CLIENT_SECRET = '2j26APf8DGSppFDstkqJ8H2hCaC74YWc4GWpapEg';
 const WCL_TOKEN_URL = 'https://classic.warcraftlogs.com/oauth/token';
@@ -271,6 +273,7 @@ class WCLv2Service {
 
 // Create global instance
 const wclV2Service = new WCLv2Service();
+console.log('wclV2Service initialized:', wclV2Service);
 
 // Export for use in other modules
 if (typeof module !== 'undefined' && module.exports) {
