@@ -68,7 +68,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const powerInfusionCheckbox = document.getElementById('power-infusion-active');
     const t14_4pcCheckbox = document.getElementById('t14-4pc');
 
-    // Add event listeners
+    // Add event listeners for calculator
     hasteRatingInput.addEventListener('input', calculate);
     shadowformCheckbox.addEventListener('change', calculate);
     racialSelect.addEventListener('change', updateRacialOptions);
@@ -84,6 +84,24 @@ document.addEventListener('DOMContentLoaded', function() {
     updateRacialOptions();
     updateTalentOptions();
     calculate();
+
+    // Add event listeners for WCL analyzer
+    const wclInput = document.getElementById('wcl-report');
+    if (wclInput) {
+        console.log('Adding WCL report event listeners');
+        wclInput.addEventListener('blur', function() {
+            console.log('Blur event triggered');
+            loadReport();
+        });
+        wclInput.addEventListener('keypress', function(e) {
+            console.log('Keypress event:', e.key);
+            if (e.key === 'Enter') {
+                loadReport();
+            }
+        });
+    } else {
+        console.error('Could not find wcl-report input element!');
+    }
 });
 
 function updateRacialOptions() {
@@ -363,20 +381,8 @@ function switchTab(tabName) {
 // Store loaded report data globally
 let currentReportData = null;
 
-// Load WCL report when input changes
-document.addEventListener('DOMContentLoaded', function() {
-    const wclInput = document.getElementById('wcl-report');
-    if (wclInput) {
-        wclInput.addEventListener('blur', loadReport);
-        wclInput.addEventListener('keypress', function(e) {
-            if (e.key === 'Enter') {
-                loadReport();
-            }
-        });
-    }
-});
-
 async function loadReport() {
+    console.log('loadReport() called');
     const input = document.getElementById('wcl-report').value.trim();
     const reportId = wclV2Service.extractReportId(input);
 
