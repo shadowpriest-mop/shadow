@@ -191,7 +191,7 @@ class WCLv2Service {
   }
 
   /**
-   * Fetch events for a fight
+   * Fetch events for a fight (with pagination support)
    */
   async fetchEvents(reportCode, fightID, playerName, startTime, endTime) {
     const query = `
@@ -215,16 +215,51 @@ class WCLv2Service {
     // Filter for player's casts and damage
     const filterExpression = `source.name = "${playerName}"`;
 
-    const variables = {
-      code: reportCode,
-      fightIDs: [fightID],
-      startTime: startTime,
-      endTime: endTime,
-      filterExpression: filterExpression
-    };
+    let allEvents = [];
+    let currentStartTime = startTime;
+    let pageCount = 0;
+    const maxPages = 100; // Safety limit to prevent infinite loops
 
-    const data = await this.query(query, variables);
-    return data.reportData.report.events;
+    // Fetch all pages
+    while (pageCount < maxPages) {
+      pageCount++;
+      console.log(`Fetching events page ${pageCount}, startTime: ${currentStartTime}`);
+
+      const variables = {
+        code: reportCode,
+        fightIDs: [fightID],
+        startTime: currentStartTime,
+        endTime: endTime,
+        filterExpression: filterExpression
+      };
+
+      const data = await this.query(query, variables);
+      const eventsPage = data.reportData.report.events;
+
+      if (!eventsPage || !eventsPage.data) {
+        console.log('No more events data');
+        break;
+      }
+
+      console.log(`Page ${pageCount}: ${eventsPage.data.length} events`);
+      allEvents = allEvents.concat(eventsPage.data);
+
+      // Check if there are more pages
+      if (!eventsPage.nextPageTimestamp) {
+        console.log('No more pages (no nextPageTimestamp)');
+        break;
+      }
+
+      // Move to next page
+      currentStartTime = eventsPage.nextPageTimestamp;
+    }
+
+    console.log(`Total events fetched: ${allEvents.length} across ${pageCount} pages`);
+
+    return {
+      data: allEvents,
+      pageCount: pageCount
+    };
   }
 
   /**

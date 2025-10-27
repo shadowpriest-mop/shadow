@@ -505,6 +505,7 @@ window.analyzeLog = async function analyzeLog() {
 
         console.log('=== EVENTS DATA RECEIVED ===');
         console.log('Full eventsData object:', eventsData);
+        console.log('Pages fetched:', eventsData.pageCount);
         console.log('eventsData type:', typeof eventsData);
         console.log('eventsData.data exists?', !!eventsData?.data);
 
@@ -517,7 +518,7 @@ window.analyzeLog = async function analyzeLog() {
 
         const events = eventsData.data;
         console.log('=== EVENTS ARRAY ===');
-        console.log('Total events:', events.length);
+        console.log(`Total events: ${events.length} (from ${eventsData.pageCount} pages)`);
         console.log('First 3 events:', events.slice(0, 3));
 
         // Simple analysis - count casts and damage events by spell
