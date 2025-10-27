@@ -474,7 +474,10 @@ window.analyzeLog = async function analyzeLog() {
     const fightId = parseInt(encounterSelect.value);
 
     const loadingIndicator = document.getElementById('loading-indicator');
+    const resultsSection = document.getElementById('analysis-results');
+
     loadingIndicator.style.display = 'block';
+    resultsSection.style.display = 'none';
 
     try {
         // Find fight object
@@ -488,9 +491,69 @@ window.analyzeLog = async function analyzeLog() {
         // Extract report ID from current data
         const reportId = wclV2Service.extractReportId(document.getElementById('wcl-report').value);
 
-        // TODO: Fetch events and analyze
-        console.log('Would analyze:', { reportId, playerName, fight });
-        alert('Event fetching and analysis coming soon! For now, v2 authentication is working.');
+        console.log('Fetching events for:', { reportId, playerName, fightId, startTime: fight.startTime, endTime: fight.endTime });
+
+        // Fetch events from WCL v2 API
+        const eventsData = await wclV2Service.fetchEvents(
+            reportId,
+            fightId,
+            playerName,
+            fight.startTime,
+            fight.endTime
+        );
+
+        console.log('Events data received:', eventsData);
+
+        // Parse the events
+        if (!eventsData || !eventsData.data) {
+            alert('No event data returned from WCL');
+            return;
+        }
+
+        const events = eventsData.data;
+        console.log('Total events:', events.length);
+
+        // Simple analysis - count casts and damage events by spell
+        const castCounts = {};
+        const damageCounts = {};
+
+        events.forEach(event => {
+            if (!event.ability) return;
+
+            const spellId = event.ability.guid;
+            const spellName = event.ability.name;
+
+            if (event.type === 'cast') {
+                if (!castCounts[spellId]) {
+                    castCounts[spellId] = { name: spellName, count: 0 };
+                }
+                castCounts[spellId].count++;
+            } else if (event.type === 'damage') {
+                if (!damageCounts[spellId]) {
+                    damageCounts[spellId] = { name: spellName, count: 0 };
+                }
+                damageCounts[spellId].count++;
+            }
+        });
+
+        console.log('Cast counts:', castCounts);
+        console.log('Damage counts:', damageCounts);
+
+        // Update UI with results
+        document.getElementById('mb-casts').textContent = castCounts[8092]?.count || '0';
+        document.getElementById('dp-casts').textContent = castCounts[2944]?.count || '0';
+
+        // Count Mind Flay ticks (damage events for Mind Flay and Mind Flay: Insanity)
+        const mfTicks = (damageCounts[15407]?.count || 0) + (damageCounts[129197]?.count || 0);
+        document.getElementById('mf-ticks').textContent = mfTicks;
+
+        // TODO: Calculate DoT uptimes properly
+        document.getElementById('swp-uptime').textContent = 'N/A';
+        document.getElementById('vt-uptime').textContent = 'N/A';
+        document.getElementById('dp-uptime').textContent = 'N/A';
+
+        // Show results
+        resultsSection.style.display = 'block';
 
     } catch (error) {
         console.error('Error analyzing log:', error);
