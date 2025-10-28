@@ -43,6 +43,11 @@ const SPELL_ICONS = {
   20572: 'berserking.jpg', // Blood Fury (Orc) - using berserking icon
   28730: 'dispel.jpg',     // Arcane Torrent (Blood Elf)
 
+  // Enchants & Procs
+  126734: 'synapsesprings.jpg', // Synapse Springs (Engineering)
+  55637: 'lightweave.jpg', // Lightweave Embroidery (Tailoring) - needs icon
+  75170: 'lifeblood.jpg',  // Lifeblood (Herbalism) - needs icon
+
   // Raid Buffs
   2825: 'bloodlust.jpg',   // Bloodlust
   32182: 'heroism.jpg',    // Heroism
