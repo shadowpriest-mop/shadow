@@ -695,7 +695,7 @@ function renderCastTimeline(casts, fight) {
 }
 
 /**
- * Create a single cast element
+ * Create a single cast element (Wrath-style compact layout)
  */
 function createCastElement(cast, index, fight) {
     const div = document.createElement('div');
@@ -707,48 +707,44 @@ function createCastElement(cast, index, fight) {
     const statusClass = statHighlights.getStatusClass(overallStatus);
     div.dataset.status = statusClass;
 
-    // Format timestamp (relative to fight start)
-    const relativeTime = ((cast.castStart - fight.startTime) / 1000).toFixed(1);
+    // Format timestamp (relative to fight start, like Wrath: "00:00.75")
+    const relativeSeconds = (cast.castStart - fight.startTime) / 1000;
+    const minutes = Math.floor(relativeSeconds / 60);
+    const seconds = (relativeSeconds % 60).toFixed(2);
+    const timeText = `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(5, '0')}`;
 
     // Format damage
-    const damageText = cast.totalDamage > 0 ? cast.totalDamage.toLocaleString() : '—';
+    const damageText = cast.totalDamage > 0 ? cast.totalDamage.toLocaleString() : '0';
 
-    // Format latency
-    const latencyText = cast.nextCastLatency !== undefined ?
-        (cast.nextCastLatency / 1000).toFixed(2) + 's' : '—';
+    // Format hits (like Wrath: "5/5" or "3/3")
+    const totalHits = cast.instances ? cast.instances.length : 0;
+    const hitsText = `${cast.hits}/${totalHits}`;
 
-    // Format hits
-    const hitsText = cast.hits > 0 ? cast.hits : '—';
-    const critsText = cast.crits > 0 ? ` (${cast.crits} crit)` : '';
+    // Get target name (if available)
+    const targetText = cast.targetName || '';
 
-    // Build HTML
+    // Build compact HTML (Wrath-style)
     div.innerHTML = `
         <div class="cast-header" onclick="toggleCastDetails(${index})">
             <span class="cast-status ${statusClass}"></span>
-            <div class="cast-header-content">
-                <span class="cast-time">${relativeTime}s</span>
-                <div class="cast-spell">
-                    <span class="cast-spell-name">${cast.name}</span>
-                </div>
-                <div class="cast-metrics">
-                    <div class="cast-metric">
-                        <span class="cast-metric-label">Damage</span>
-                        <span class="cast-metric-value">${damageText}</span>
-                    </div>
-                    <div class="cast-metric">
-                        <span class="cast-metric-label">Hits</span>
-                        <span class="cast-metric-value">${hitsText}${critsText}</span>
-                    </div>
-                    <div class="cast-metric">
-                        <span class="cast-metric-label">Latency</span>
-                        <span class="cast-metric-value">${latencyText}</span>
-                    </div>
-                </div>
-                <span class="cast-expand-icon">▶</span>
+            <div class="cast-icon-wrapper">
+                <div class="cast-icon">?</div>
             </div>
+            <div class="cast-main-content">
+                <div class="cast-info">
+                    <div class="cast-time">${timeText}</div>
+                    <div class="cast-spell-name">${cast.name}</div>
+                    ${targetText ? `<div class="cast-target">${targetText}</div>` : ''}
+                </div>
+                <div class="cast-stats">
+                    <div class="cast-stat-line"><span class="cast-stat-label">Hits:</span> ${hitsText}</div>
+                    <div class="cast-stat-line"><span class="cast-stat-label">Damage:</span> ${damageText}</div>
+                </div>
+            </div>
+            <span class="cast-expand-icon">▶</span>
         </div>
         <div class="cast-details">
-            ${createCastDetailsHTML(cast)}
+            ${createCastDetailsHTML(cast, fight)}
         </div>
     `;
 
@@ -756,97 +752,122 @@ function createCastElement(cast, index, fight) {
 }
 
 /**
- * Create the detailed cast information HTML
+ * Create the detailed cast information HTML (Wrath-style)
  */
-function createCastDetailsHTML(cast) {
+function createCastDetailsHTML(cast, fight) {
     let html = '<div class="cast-details-section">';
-    html += '<h4>Cast Information</h4>';
     html += '<div class="cast-details-grid">';
 
-    // Cast time
+    // Cast Time
     html += `
         <div class="cast-details-item">
-            <span class="cast-details-label">Cast Duration:</span>
+            <span class="cast-details-label">Cast Time:</span>
             <span class="cast-details-value">${(cast.castTimeMs / 1000).toFixed(2)}s</span>
         </div>
     `;
 
-    // Damage
-    html += `
-        <div class="cast-details-item">
-            <span class="cast-details-label">Total Damage:</span>
-            <span class="cast-details-value">${cast.totalDamage.toLocaleString()}</span>
-        </div>
-    `;
+    // Delay (if available)
+    if (cast.nextCastLatency !== undefined) {
+        const status = statHighlights.castLatency(cast);
+        const cssClass = statHighlights.getTextClass(status);
+        html += `
+            <div class="cast-details-item">
+                <span class="cast-details-label">Delay:</span>
+                <span class="cast-details-value ${cssClass}">${cast.nextCastLatency}ms</span>
+            </div>
+        `;
+    }
 
-    // Hits/Crits
-    html += `
-        <div class="cast-details-item">
-            <span class="cast-details-label">Hits / Crits:</span>
-            <span class="cast-details-value">${cast.hits} / ${cast.crits}</span>
-        </div>
-    `;
+    // DoT downtime (if applicable)
+    if (cast.dotDowntime !== undefined) {
+        const status = statHighlights.dotDowntime(cast);
+        const cssClass = statHighlights.getTextClass(status);
+        html += `
+            <div class="cast-details-item">
+                <span class="cast-details-label">DoT downtime:</span>
+                <span class="cast-details-value ${cssClass}">${cast.dotDowntime > 0 ? (cast.dotDowntime / 1000).toFixed(2) + 's' : '---'}</span>
+            </div>
+        `;
+    } else if ([589, 34914, 2944].includes(cast.spellId)) {
+        // Show --- for DoTs with no downtime data
+        html += `
+            <div class="cast-details-item">
+                <span class="cast-details-label">DoT downtime:</span>
+                <span class="cast-details-value">---</span>
+            </div>
+        `;
+    }
+
+    // Clipped Previous (for DoTs)
+    if (cast.clippedPreviousCast !== undefined) {
+        html += `
+            <div class="cast-details-item">
+                <span class="cast-details-label">Clipped Previous:</span>
+                <span class="cast-details-value ${cast.clippedPreviousCast ? 'text-warning' : 'table-accent'}">${cast.clippedPreviousCast ? 'true (' + cast.clippedTicks + ' ticks)' : 'false'}</span>
+            </div>
+        `;
+    } else if ([589, 34914, 2944].includes(cast.spellId)) {
+        html += `
+            <div class="cast-details-item">
+                <span class="cast-details-label">Clipped Previous:</span>
+                <span class="cast-details-value table-accent">false</span>
+            </div>
+        `;
+    }
+
+    // Clipped early (for channels)
+    if (cast.clippedEarly !== undefined) {
+        html += `
+            <div class="cast-details-item">
+                <span class="cast-details-label">Clipped early:</span>
+                <span class="cast-details-value ${cast.clippedEarly ? 'text-notice' : 'table-accent'}">${cast.clippedEarly ? 'true' : 'false'}</span>
+            </div>
+        `;
+    } else if ([15407, 129197, 48045].includes(cast.spellId)) {
+        html += `
+            <div class="cast-details-item">
+                <span class="cast-details-label">Clipped early:</span>
+                <span class="cast-details-value table-accent">false</span>
+            </div>
+        `;
+    }
 
     html += '</div></div>';
 
-    // Quality metrics section
-    if (cast.nextCastLatency !== undefined || cast.dotDowntime !== undefined ||
-        cast.clippedPreviousCast || cast.clippedEarly || cast.timeOffCooldown !== undefined) {
+    // Buffs section (placeholder for now)
+    html += '<div class="cast-details-section">';
+    html += '<h4>Buffs:</h4>';
+    html += '</div>';
 
+    // Hits section (like Wrath)
+    if (cast.instances && cast.instances.length > 0) {
         html += '<div class="cast-details-section">';
-        html += '<h4>Quality Metrics</h4>';
-        html += '<div class="cast-details-grid">';
+        html += '<h4>Hits:</h4>';
+        html += '<div class="cast-hits-list">';
 
-        if (cast.nextCastLatency !== undefined) {
-            const status = statHighlights.castLatency(cast);
-            const cssClass = statHighlights.getTextClass(status);
+        cast.instances.forEach(instance => {
+            // Format timestamp
+            const relativeSeconds = (instance.timestamp - fight.startTime) / 1000;
+            const minutes = Math.floor(relativeSeconds / 60);
+            const seconds = (relativeSeconds % 60).toFixed(2);
+            const timeText = `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(5, '0')}`;
+
+            // Format damage with resist info
+            let damageText = instance.amount.toLocaleString();
+            if (instance.resisted) {
+                damageText = `0 (R: ${instance.amount})`;
+            } else if (instance.critical) {
+                damageText += ' (Crit)';
+            }
+
             html += `
-                <div class="cast-details-item">
-                    <span class="cast-details-label">Delay to Next Cast:</span>
-                    <span class="cast-details-value ${cssClass}">${(cast.nextCastLatency / 1000).toFixed(2)}s</span>
+                <div class="cast-hit-item">
+                    <span class="cast-hit-time">${timeText}</span>
+                    <span class="cast-hit-target">Target</span>
+                    <span class="cast-hit-damage">Damage: ${damageText}</span>
                 </div>
             `;
-        }
-
-        if (cast.dotDowntime !== undefined) {
-            const status = statHighlights.dotDowntime(cast);
-            const cssClass = statHighlights.getTextClass(status);
-            html += `
-                <div class="cast-details-item">
-                    <span class="cast-details-label">DoT Downtime:</span>
-                    <span class="cast-details-value ${cssClass}">${(cast.dotDowntime / 1000).toFixed(2)}s</span>
-                </div>
-            `;
-        }
-
-        if (cast.clippedPreviousCast) {
-            html += `
-                <div class="cast-details-item">
-                    <span class="cast-details-label">Clipped Previous DoT:</span>
-                    <span class="cast-details-value text-warning">Yes (${cast.clippedTicks} tick${cast.clippedTicks !== 1 ? 's' : ''})</span>
-                </div>
-            `;
-        }
-
-        if (cast.clippedEarly) {
-            html += `
-                <div class="cast-details-item">
-                    <span class="cast-details-label">Clipped Channel Early:</span>
-                    <span class="cast-details-value text-notice">Yes</span>
-                </div>
-            `;
-        }
-
-        if (cast.timeOffCooldown !== undefined) {
-            const status = statHighlights.cooldownUsage(cast);
-            const cssClass = statHighlights.getTextClass(status);
-            html += `
-                <div class="cast-details-item">
-                    <span class="cast-details-label">MB Off Cooldown:</span>
-                    <span class="cast-details-value ${cssClass}">${(cast.timeOffCooldown / 1000).toFixed(2)}s</span>
-                </div>
-            `;
-        }
+        });
 
         html += '</div></div>';
     }
