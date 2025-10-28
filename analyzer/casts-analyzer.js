@@ -156,22 +156,34 @@ class CastsAnalyzer {
   }
 
   /**
-   * Calculate channel metrics: early clipping of Mind Flay
+   * Calculate channel metrics: early clipping of Mind Flay and other channels
    */
   calculateChannelMetrics() {
     const EARLY_CLIP_THRESHOLD = 0.67; // 67% to next tick
-    const MIND_FLAY_ID = 15407;
 
     for (const cast of this.casts) {
-      if (cast.spellId !== MIND_FLAY_ID) continue;
+      if (!this.isChannelSpell(cast.spellId)) continue;
 
-      // Mind Flay has 3 ticks at 1s intervals (3s total channel)
-      const expectedDuration = 3000;
+      // Mind Flay and Mind Flay: Insanity have 3 ticks at 1s intervals (3s total channel)
+      // Mind Sear has 5 ticks at 1s intervals (5s total channel)
+      let expectedDuration, tickInterval;
+
+      if (cast.spellId === 15407 || cast.spellId === 129197) {
+        // Mind Flay / Mind Flay: Insanity
+        expectedDuration = 3000;
+        tickInterval = 1000;
+      } else if (cast.spellId === 48045) {
+        // Mind Sear
+        expectedDuration = 5000;
+        tickInterval = 1000;
+      } else {
+        continue; // Unknown channel
+      }
+
       const actualDuration = cast.castTimeMs;
 
       // Check if we stopped early
       if (actualDuration < expectedDuration) {
-        const tickInterval = 1000; // 1s per tick
         const lastTickTime = Math.floor(actualDuration / tickInterval) * tickInterval;
         const timeToNextTick = lastTickTime + tickInterval - actualDuration;
 
@@ -259,7 +271,7 @@ class CastsAnalyzer {
    * Check if spell is a channel
    */
   isChannelSpell(spellId) {
-    return spellId === 15407; // Mind Flay
+    return [15407, 129197, 48045].includes(spellId); // Mind Flay, Mind Flay: Insanity, Mind Sear
   }
 
   /**
@@ -267,15 +279,60 @@ class CastsAnalyzer {
    */
   getSpellName(spellId) {
     const names = {
+      // DoTs
       589: 'Shadow Word: Pain',
       34914: 'Vampiric Touch',
       2944: 'Devouring Plague',
+
+      // Direct Damage
       8092: 'Mind Blast',
-      15407: 'Mind Flay',
+      73510: 'Mind Spike',
       32379: 'Shadow Word: Death',
-      73510: 'Mind Spike'
+
+      // Channels
+      15407: 'Mind Flay',
+      129197: 'Mind Flay: Insanity',
+      48045: 'Mind Sear',
+
+      // AoE Spells
+      120517: 'Halo', // Cast
+      120644: 'Halo', // Damage component
+      120696: 'Halo', // Heal component
+      121135: 'Cascade', // Cast
+      127628: 'Cascade', // Damage component
+      127627: 'Cascade', // Heal component
+      110744: 'Divine Star', // Cast
+      122128: 'Divine Star', // Damage component
+      110745: 'Divine Star', // Heal component
+
+      // Pet Abilities
+      34433: 'Shadowfiend',
+      123040: 'Mindbender',
+
+      // Cooldowns & Buffs
+      47585: 'Dispersion',
+      15286: 'Vampiric Embrace',
+      10060: 'Power Infusion',
+
+      // Utility
+      17: 'Power Word: Shield',
+      2061: 'Flash Heal',
+      2060: 'Greater Heal',
+      2050: 'Heal',
+      32546: 'Binding Heal',
+      33076: 'Prayer of Mending',
+      596: 'Prayer of Healing',
+      64044: 'Psychic Horror',
+      15487: 'Silence',
+      8122: 'Psychic Scream',
+      73325: 'Leap of Faith',
+      527: 'Dispel Magic',
+      528: 'Cure Disease',
+
+      // Shadowform
+      15473: 'Shadowform'
     };
-    return names[spellId] || 'Unknown Spell';
+    return names[spellId] || `Unknown (${spellId})`;
   }
 }
 
