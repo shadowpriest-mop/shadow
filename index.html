@@ -9,7 +9,7 @@
 <body>
     <div class="container">
         <header>
-            <h1>Shadow Priest - MoP Classic <span style="font-size: 0.5em; color: #999;">v2.9</span></h1>
+            <h1>Shadow Priest - MoP Classic <span style="font-size: 0.5em; color: #999;">v2.10</span></h1>
             <p class="subtitle">Haste Calculator & DoT Duration Tool</p>
         </header>
 
@@ -273,8 +273,44 @@
 
                     <div id="cast-timeline" style="display: none;">
                         <h3>Cast Timeline</h3>
-                        <p class="subtitle">Click on any cast to expand and see detailed information</p>
 
+                        <!-- Spell Filter Buttons -->
+                        <div class="spell-filters">
+                            <button class="spell-filter-btn active" data-spell="timeline" onclick="filterBySpell('timeline')">
+                                <span class="filter-label">Timeline</span>
+                            </button>
+                            <button class="spell-filter-btn" data-spell="2944" onclick="filterBySpell(2944)">
+                                <img src="analyzer/icons/plague.jpg" alt="DP" class="filter-icon">
+                                <span class="filter-label">DP</span>
+                            </button>
+                            <button class="spell-filter-btn" data-spell="34914" onclick="filterBySpell(34914)">
+                                <img src="analyzer/icons/vt.jpg" alt="VT" class="filter-icon">
+                                <span class="filter-label">VT</span>
+                            </button>
+                            <button class="spell-filter-btn" data-spell="589" onclick="filterBySpell(589)">
+                                <img src="analyzer/icons/swp.jpg" alt="SW:P" class="filter-icon">
+                                <span class="filter-label">SW:P</span>
+                            </button>
+                            <button class="spell-filter-btn" data-spell="8092" onclick="filterBySpell(8092)">
+                                <img src="analyzer/icons/mb.jpg" alt="MB" class="filter-icon">
+                                <span class="filter-label">MB</span>
+                            </button>
+                            <button class="spell-filter-btn" data-spell="32379" onclick="filterBySpell(32379)">
+                                <img src="analyzer/icons/swd.jpg" alt="SW:D" class="filter-icon">
+                                <span class="filter-label">SW:D</span>
+                            </button>
+                            <button class="spell-filter-btn" data-spell="15407" onclick="filterBySpell(15407)">
+                                <img src="analyzer/icons/flay.jpg" alt="MF" class="filter-icon">
+                                <span class="filter-label">MF</span>
+                            </button>
+                        </div>
+
+                        <!-- Stats Overview Panel -->
+                        <div id="stats-overview" class="stats-overview">
+                            <!-- Stats will be populated by JavaScript -->
+                        </div>
+
+                        <!-- Existing quality filters -->
                         <div class="cast-filters">
                             <label>
                                 <input type="checkbox" id="filter-warnings" checked> Show Warnings
@@ -322,6 +358,7 @@
     <script src="analyzer/cast-details.js"></script>
     <script src="analyzer/stat-highlights.js"></script>
     <script src="analyzer/casts-analyzer.js"></script>
+    <script src="analyzer/cast-stats-calculator.js"></script>
     <script src="analyzer/spell-icons.js"></script>
     <script src="analyzer/event-analyzer.js"></script>
     <script src="script.js"></script>
