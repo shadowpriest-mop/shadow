@@ -306,7 +306,8 @@ class CastsAnalyzer {
       110745: 'Divine Star', // Heal component
 
       // Pet Abilities
-      34433: 'Shadowfiend',
+      132603: 'Shadowfiend', // MoP Shadowfiend cast
+      34433: 'Shadowfiend', // Legacy spell ID
       123040: 'Mindbender',
 
       // Cooldowns & Buffs
@@ -330,7 +331,6 @@ class CastsAnalyzer {
       105706: 'Potion of the Mogu',
 
       // Common Buffs & Procs
-      132603: 'Surge of Darkness', // Free Mind Spike proc
       87160: 'Mind Melt', // Mind Spike debuff
       81292: 'Shadow Orb', // Shadow Orb visual
 
