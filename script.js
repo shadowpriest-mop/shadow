@@ -623,9 +623,14 @@ window.analyzeLog = async function analyzeLog() {
         console.log('Damage counts by spell:', damageCounts);
 
         // Calculate DoT uptimes
+        console.log('Fight object:', fight);
+        console.log('Fight startTime:', fight.startTime);
+        console.log('Fight endTime:', fight.endTime);
+
         const fightDuration = fight.endTime - fight.startTime;
         console.log('Fight duration (ms):', fightDuration);
 
+        console.log('About to call calculateDotUptimes...');
         const dotUptimes = calculateDotUptimes(events, fight, fightDuration);
         console.log('DoT uptimes:', dotUptimes);
 
