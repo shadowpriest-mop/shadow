@@ -647,8 +647,19 @@ window.analyzeLog = async function analyzeLog() {
         document.getElementById('vt-uptime').textContent = dotUptimes[34914] ? dotUptimes[34914].percent + '%' : 'N/A';
         document.getElementById('dp-uptime').textContent = dotUptimes[2944] ? dotUptimes[2944].percent + '%' : 'N/A';
 
+        // Analyze casts with quality metrics
+        console.log('=== ANALYZING CASTS ===');
+        const castsAnalyzer = new CastsAnalyzer(events, {});
+        const casts = castsAnalyzer.analyze();
+        console.log('Analyzed casts:', casts.length);
+        console.log('First cast:', casts[0]);
+
+        // Render cast timeline
+        renderCastTimeline(casts, fight);
+
         // Show results
         resultsSection.style.display = 'block';
+        document.getElementById('cast-timeline').style.display = 'block';
 
     } catch (error) {
         console.error('Error analyzing log:', error);
@@ -656,4 +667,234 @@ window.analyzeLog = async function analyzeLog() {
     } finally {
         loadingIndicator.style.display = 'none';
     }
+}
+
+// ============ Cast Timeline Rendering ============
+
+/**
+ * Render the cast timeline
+ */
+function renderCastTimeline(casts, fight) {
+    const castList = document.getElementById('cast-list');
+    castList.innerHTML = '';
+
+    if (!casts || casts.length === 0) {
+        castList.innerHTML = '<p style="color: #9ca3af; text-align: center; padding: 20px;">No casts found</p>';
+        return;
+    }
+
+    console.log(`Rendering ${casts.length} casts`);
+
+    casts.forEach((cast, index) => {
+        const castElement = createCastElement(cast, index, fight);
+        castList.appendChild(castElement);
+    });
+
+    // Setup filter handlers
+    setupCastFilters();
+}
+
+/**
+ * Create a single cast element
+ */
+function createCastElement(cast, index, fight) {
+    const div = document.createElement('div');
+    div.className = 'cast-item';
+    div.dataset.castIndex = index;
+
+    // Get quality status
+    const overallStatus = statHighlights.overall(cast);
+    const statusClass = statHighlights.getStatusClass(overallStatus);
+    div.dataset.status = statusClass;
+
+    // Format timestamp (relative to fight start)
+    const relativeTime = ((cast.castStart - fight.startTime) / 1000).toFixed(1);
+
+    // Format damage
+    const damageText = cast.totalDamage > 0 ? cast.totalDamage.toLocaleString() : '—';
+
+    // Format latency
+    const latencyText = cast.nextCastLatency !== undefined ?
+        (cast.nextCastLatency / 1000).toFixed(2) + 's' : '—';
+
+    // Format hits
+    const hitsText = cast.hits > 0 ? cast.hits : '—';
+    const critsText = cast.crits > 0 ? ` (${cast.crits} crit)` : '';
+
+    // Build HTML
+    div.innerHTML = `
+        <div class="cast-header" onclick="toggleCastDetails(${index})">
+            <span class="cast-status ${statusClass}"></span>
+            <div class="cast-header-content">
+                <span class="cast-time">${relativeTime}s</span>
+                <div class="cast-spell">
+                    <span class="cast-spell-name">${cast.name}</span>
+                </div>
+                <div class="cast-metrics">
+                    <div class="cast-metric">
+                        <span class="cast-metric-label">Damage</span>
+                        <span class="cast-metric-value">${damageText}</span>
+                    </div>
+                    <div class="cast-metric">
+                        <span class="cast-metric-label">Hits</span>
+                        <span class="cast-metric-value">${hitsText}${critsText}</span>
+                    </div>
+                    <div class="cast-metric">
+                        <span class="cast-metric-label">Latency</span>
+                        <span class="cast-metric-value">${latencyText}</span>
+                    </div>
+                </div>
+                <span class="cast-expand-icon">▶</span>
+            </div>
+        </div>
+        <div class="cast-details">
+            ${createCastDetailsHTML(cast)}
+        </div>
+    `;
+
+    return div;
+}
+
+/**
+ * Create the detailed cast information HTML
+ */
+function createCastDetailsHTML(cast) {
+    let html = '<div class="cast-details-section">';
+    html += '<h4>Cast Information</h4>';
+    html += '<div class="cast-details-grid">';
+
+    // Cast time
+    html += `
+        <div class="cast-details-item">
+            <span class="cast-details-label">Cast Duration:</span>
+            <span class="cast-details-value">${(cast.castTimeMs / 1000).toFixed(2)}s</span>
+        </div>
+    `;
+
+    // Damage
+    html += `
+        <div class="cast-details-item">
+            <span class="cast-details-label">Total Damage:</span>
+            <span class="cast-details-value">${cast.totalDamage.toLocaleString()}</span>
+        </div>
+    `;
+
+    // Hits/Crits
+    html += `
+        <div class="cast-details-item">
+            <span class="cast-details-label">Hits / Crits:</span>
+            <span class="cast-details-value">${cast.hits} / ${cast.crits}</span>
+        </div>
+    `;
+
+    html += '</div></div>';
+
+    // Quality metrics section
+    if (cast.nextCastLatency !== undefined || cast.dotDowntime !== undefined ||
+        cast.clippedPreviousCast || cast.clippedEarly || cast.timeOffCooldown !== undefined) {
+
+        html += '<div class="cast-details-section">';
+        html += '<h4>Quality Metrics</h4>';
+        html += '<div class="cast-details-grid">';
+
+        if (cast.nextCastLatency !== undefined) {
+            const status = statHighlights.castLatency(cast);
+            const cssClass = statHighlights.getTextClass(status);
+            html += `
+                <div class="cast-details-item">
+                    <span class="cast-details-label">Delay to Next Cast:</span>
+                    <span class="cast-details-value ${cssClass}">${(cast.nextCastLatency / 1000).toFixed(2)}s</span>
+                </div>
+            `;
+        }
+
+        if (cast.dotDowntime !== undefined) {
+            const status = statHighlights.dotDowntime(cast);
+            const cssClass = statHighlights.getTextClass(status);
+            html += `
+                <div class="cast-details-item">
+                    <span class="cast-details-label">DoT Downtime:</span>
+                    <span class="cast-details-value ${cssClass}">${(cast.dotDowntime / 1000).toFixed(2)}s</span>
+                </div>
+            `;
+        }
+
+        if (cast.clippedPreviousCast) {
+            html += `
+                <div class="cast-details-item">
+                    <span class="cast-details-label">Clipped Previous DoT:</span>
+                    <span class="cast-details-value text-warning">Yes (${cast.clippedTicks} tick${cast.clippedTicks !== 1 ? 's' : ''})</span>
+                </div>
+            `;
+        }
+
+        if (cast.clippedEarly) {
+            html += `
+                <div class="cast-details-item">
+                    <span class="cast-details-label">Clipped Channel Early:</span>
+                    <span class="cast-details-value text-notice">Yes</span>
+                </div>
+            `;
+        }
+
+        if (cast.timeOffCooldown !== undefined) {
+            const status = statHighlights.cooldownUsage(cast);
+            const cssClass = statHighlights.getTextClass(status);
+            html += `
+                <div class="cast-details-item">
+                    <span class="cast-details-label">MB Off Cooldown:</span>
+                    <span class="cast-details-value ${cssClass}">${(cast.timeOffCooldown / 1000).toFixed(2)}s</span>
+                </div>
+            `;
+        }
+
+        html += '</div></div>';
+    }
+
+    return html;
+}
+
+/**
+ * Toggle cast details expansion
+ */
+window.toggleCastDetails = function(index) {
+    const castItem = document.querySelector(`[data-cast-index="${index}"]`);
+    if (castItem) {
+        castItem.classList.toggle('expanded');
+    }
+}
+
+/**
+ * Setup cast filter handlers
+ */
+function setupCastFilters() {
+    const filterWarnings = document.getElementById('filter-warnings');
+    const filterNotices = document.getElementById('filter-notices');
+    const filterNormal = document.getElementById('filter-normal');
+
+    [filterWarnings, filterNotices, filterNormal].forEach(checkbox => {
+        checkbox.addEventListener('change', filterCasts);
+    });
+}
+
+/**
+ * Filter casts based on selected filters
+ */
+function filterCasts() {
+    const showWarnings = document.getElementById('filter-warnings').checked;
+    const showNotices = document.getElementById('filter-notices').checked;
+    const showNormal = document.getElementById('filter-normal').checked;
+
+    const castItems = document.querySelectorAll('.cast-item');
+
+    castItems.forEach(item => {
+        const status = item.dataset.status;
+        let show = false;
+
+        if (status === 'warning' && showWarnings) show = true;
+        if (status === 'notice' && showNotices) show = true;
+        if (status === 'normal' && showNormal) show = true;
+
+        item.style.display = show ? 'block' : 'none';
+    });
 }

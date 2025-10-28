@@ -9,7 +9,7 @@
 <body>
     <div class="container">
         <header>
-            <h1>Shadow Priest - MoP Classic <span style="font-size: 0.5em; color: #999;">v2.7.1</span></h1>
+            <h1>Shadow Priest - MoP Classic <span style="font-size: 0.5em; color: #999;">v2.8</span></h1>
             <p class="subtitle">Haste Calculator & DoT Duration Tool</p>
         </header>
 
@@ -270,6 +270,27 @@
                             <span class="stat-value" id="mf-ticks">0</span>
                         </div>
                     </div>
+
+                    <div id="cast-timeline" style="display: none;">
+                        <h3>Cast Timeline</h3>
+                        <p class="subtitle">Click on any cast to expand and see detailed information</p>
+
+                        <div class="cast-filters">
+                            <label>
+                                <input type="checkbox" id="filter-warnings" checked> Show Warnings
+                            </label>
+                            <label>
+                                <input type="checkbox" id="filter-notices" checked> Show Notices
+                            </label>
+                            <label>
+                                <input type="checkbox" id="filter-normal" checked> Show Normal
+                            </label>
+                        </div>
+
+                        <div id="cast-list" class="cast-list">
+                            <!-- Casts will be rendered here -->
+                        </div>
+                    </div>
                 </div>
                 </div>
             </section>
@@ -298,6 +319,9 @@
 
     <!-- Analyzer modules -->
     <script src="analyzer/wcl-v2-service.js"></script>
+    <script src="analyzer/cast-details.js"></script>
+    <script src="analyzer/stat-highlights.js"></script>
+    <script src="analyzer/casts-analyzer.js"></script>
     <script src="analyzer/event-analyzer.js"></script>
     <script src="script.js"></script>
 </body>
