@@ -723,12 +723,18 @@ function createCastElement(cast, index, fight) {
     // Get target name (if available)
     const targetText = cast.targetName || '';
 
+    // Get icon for this spell
+    const iconPath = getSpellIcon(cast.spellId);
+    const iconHTML = iconPath
+        ? `<img src="${iconPath}" alt="${cast.name}">`
+        : '?';
+
     // Build compact HTML (Wrath-style)
     div.innerHTML = `
         <div class="cast-header" onclick="toggleCastDetails(${index})">
             <span class="cast-status ${statusClass}"></span>
             <div class="cast-icon-wrapper">
-                <div class="cast-icon">?</div>
+                <div class="cast-icon">${iconHTML}</div>
             </div>
             <div class="cast-main-content">
                 <div class="cast-info">
