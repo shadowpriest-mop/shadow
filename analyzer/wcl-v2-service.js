@@ -182,6 +182,11 @@ class WCLv2Service {
 
     const data = await this.query(query, { code: reportCode });
 
+    console.log('=== RAW API RESPONSE ===');
+    console.log('Full response:', JSON.stringify(data, null, 2));
+    console.log('Fights count:', data.reportData.report.fights?.length || 0);
+    console.log('Actors count:', data.reportData.report.masterData?.actors?.length || 0);
+
     // Get player specs from rankings data if available
     if (data.reportData.report.rankings) {
       console.log('Rankings data available:', data.reportData.report.rankings);
