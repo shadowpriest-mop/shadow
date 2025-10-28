@@ -314,6 +314,26 @@ class CastsAnalyzer {
       15286: 'Vampiric Embrace',
       10060: 'Power Infusion',
 
+      // Racial Abilities
+      26297: 'Berserking', // Troll racial
+      20572: 'Blood Fury', // Orc racial
+      28730: 'Arcane Torrent', // Blood Elf racial
+
+      // Enchants & Procs
+      126734: 'Synapse Springs', // Engineering enchant
+      55637: 'Lightweave Embroidery', // Tailoring proc
+      96230: 'Swordguard Embroidery', // Tailoring proc
+      75170: 'Lifeblood', // Herbalism
+
+      // Potions & Consumables
+      105702: 'Potion of the Jade Serpent',
+      105706: 'Potion of the Mogu',
+
+      // Common Buffs & Procs
+      132603: 'Surge of Darkness', // Free Mind Spike proc
+      87160: 'Mind Melt', // Mind Spike debuff
+      81292: 'Shadow Orb', // Shadow Orb visual
+
       // Utility
       17: 'Power Word: Shield',
       2061: 'Flash Heal',
