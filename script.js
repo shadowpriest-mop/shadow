@@ -654,6 +654,14 @@ window.analyzeLog = async function analyzeLog() {
         console.log('Analyzed casts:', casts.length);
         console.log('First cast:', casts[0]);
 
+        // Store globally for filtering
+        window.allCasts = casts;
+        window.currentFight = fight;
+        window.statsCalculator = new CastStatsCalculator(casts, fight);
+
+        // Render stats overview (Timeline view by default)
+        renderStatsOverview('timeline');
+
         // Render cast timeline
         renderCastTimeline(casts, fight);
 
@@ -924,4 +932,122 @@ function filterCasts() {
 
         item.style.display = show ? 'block' : 'none';
     });
+}
+
+// ============ Stats Overview Panel ============
+
+/**
+ * Render stats overview panel
+ * @param {string|number} filter - 'timeline' for all casts, or spell ID for specific spell
+ */
+function renderStatsOverview(filter) {
+    const statsOverview = document.getElementById('stats-overview');
+    if (!window.statsCalculator || !window.allCasts) {
+        statsOverview.innerHTML = '<p style="color: #9ca3af;">No data available</p>';
+        return;
+    }
+
+    // Get filtered casts
+    let filteredCasts = window.allCasts;
+    if (filter !== 'timeline') {
+        filteredCasts = window.allCasts.filter(c => c.spellId === parseInt(filter));
+    }
+
+    // Calculate stats
+    const stats = window.statsCalculator.calculateStats(filteredCasts);
+
+    // Format active time
+    const activeMinutes = Math.floor(stats.activeTime / 60000);
+    const activeSeconds = Math.floor((stats.activeTime % 60000) / 1000);
+    const activeTimeStr = `${activeMinutes}:${String(activeSeconds).padStart(2, '0')}`;
+
+    // Build HTML
+    let html = '';
+
+    // Basic stats
+    html += createStatField('Casts', stats.castCount);
+    html += createStatField('Damage', stats.totalDamage.toLocaleString());
+    html += createStatField('Active DPS', stats.activeDps.toFixed(1));
+    html += createStatField('Active Time', activeTimeStr);
+
+    // Break if showing detailed stats (per-spell view)
+    if (filter !== 'timeline') {
+        html += '<div class="stat-field-break"></div>';
+        html += createStatField('Hits', stats.hits);
+        html += createStatField('Avg Hit', stats.avgHit.toFixed(1));
+        html += createStatField('Crit Rate', stats.critRate.toFixed(1) + '%');
+        html += createStatField('Damage/GCD', stats.damagePerGcd.toFixed(0));
+    }
+
+    // DoT stats (if applicable)
+    if (filter === 'timeline' || [589, 34914, 2944].includes(parseInt(filter))) {
+        html += '<div class="stat-field-break"></div>';
+        if (stats.avgDotDowntime > 0) {
+            html += createStatField('Avg DoT Downtime', (stats.avgDotDowntime / 1000).toFixed(1) + 's');
+        }
+        if (stats.clippedDots > 0) {
+            html += createStatField('Clipped DoTs', `${stats.clippedDots} (${stats.clippedDotsPercent.toFixed(1)}%)`);
+        }
+    }
+
+    // Cooldown stats (MB)
+    if (filter === 'timeline' && stats.avgOffCooldown > 0) {
+        html += createStatField('Avg Off Cooldown', (stats.avgOffCooldown / 1000).toFixed(1) + 's');
+    }
+
+    // Channel stats (MF)
+    if (filter === 'timeline' || [15407, 129197].includes(parseInt(filter))) {
+        html += '<div class="stat-field-break"></div>';
+        if (stats.avgMfDelay > 0) {
+            html += createStatField('Avg MF Delay', stats.avgMfDelay.toFixed(0) + 'ms');
+        }
+        if (stats.earlyMfClips > 0) {
+            html += createStatField('Early MF Clips', `${stats.earlyMfClips} (${stats.earlyMfClipsPercent.toFixed(1)}%)`);
+        }
+        if (stats.clippedMfDps > 0) {
+            html += createStatField('Clipped MF DPS', '~' + stats.clippedMfDps.toFixed(1));
+        }
+    }
+
+    // Encounter stats
+    html += '<div class="stat-field-break"></div>';
+    html += createStatField('GCD Usage', stats.gcdUsage.toFixed(0) + '%');
+
+    statsOverview.innerHTML = html;
+}
+
+/**
+ * Create a stat field HTML
+ */
+function createStatField(label, value) {
+    return `
+        <div class="stat-field">
+            <div class="stat-field-label">${label}</div>
+            <div class="stat-field-value">${value}</div>
+        </div>
+    `;
+}
+
+/**
+ * Filter timeline by spell
+ */
+window.filterBySpell = function(filter) {
+    if (!window.allCasts || !window.currentFight) return;
+
+    // Update button states
+    document.querySelectorAll('.spell-filter-btn').forEach(btn => {
+        btn.classList.remove('active');
+    });
+    document.querySelector(`[data-spell="${filter}"]`).classList.add('active');
+
+    // Re-render stats for this filter
+    renderStatsOverview(filter);
+
+    // Re-render timeline with filtered casts
+    let filteredCasts = window.allCasts;
+    if (filter !== 'timeline') {
+        filteredCasts = window.allCasts.filter(c => c.spellId === parseInt(filter));
+    }
+
+    renderCastTimeline(filteredCasts, window.currentFight);
 }

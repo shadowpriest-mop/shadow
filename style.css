@@ -552,6 +552,89 @@ footer a:hover {
     font-family: 'Courier New', monospace;
 }
 
+/* Spell Filters */
+.spell-filters {
+    display: flex;
+    gap: 6px;
+    margin-bottom: 15px;
+    flex-wrap: wrap;
+}
+
+.spell-filter-btn {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 12px;
+    background: rgba(30, 30, 46, 0.6);
+    border: 2px solid rgba(147, 51, 234, 0.3);
+    border-radius: 4px;
+    color: #c4b5fd;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    font-size: 0.9em;
+    font-weight: 500;
+}
+
+.spell-filter-btn:hover {
+    background: rgba(147, 51, 234, 0.2);
+    border-color: rgba(147, 51, 234, 0.5);
+}
+
+.spell-filter-btn.active {
+    background: rgba(147, 51, 234, 0.3);
+    border-color: #9333ea;
+    color: #ffffff;
+}
+
+.filter-icon {
+    width: 24px;
+    height: 24px;
+    border-radius: 3px;
+}
+
+.filter-label {
+    font-weight: 600;
+}
+
+/* Stats Overview Panel */
+.stats-overview {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 8px;
+    margin-bottom: 15px;
+    padding: 15px;
+    background: rgba(30, 30, 46, 0.6);
+    border-radius: 6px;
+    border: 1px solid rgba(147, 51, 234, 0.2);
+}
+
+.stat-field {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+}
+
+.stat-field-label {
+    color: #9ca3af;
+    font-size: 0.75em;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.stat-field-value {
+    color: #e0e0e0;
+    font-size: 1.1em;
+    font-weight: 600;
+    font-family: 'Courier New', monospace;
+}
+
+.stat-field-break {
+    grid-column: 1 / -1;
+    height: 0;
+    border-bottom: 1px solid rgba(147, 51, 234, 0.2);
+    margin: 4px 0;
+}
+
 /* Text color classes for quality indicators */
 .table-accent {
     color: #10b981; /* Green */
