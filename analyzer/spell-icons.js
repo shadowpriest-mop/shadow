@@ -73,7 +73,16 @@ const SPELL_ICONS = {
   15473: 'shadowform.jpg', // Shadowform
 
   // Fade
-  586: 'fade.jpg'          // Fade
+  586: 'fade.jpg',         // Fade
+
+  // Priest Talents
+  121536: 'feather.jpg',   // Angelic Feather
+  108945: 'bulwark.jpg',   // Angelic Bulwark
+  19236: 'dp.jpg',         // Desperate Prayer
+  605: 'dominatemind.jpg', // Dominate Mind
+  108921: 'psyfiend.jpg',  // Psyfiend
+  112833: 'spectralguise.jpg', // Spectral Guise
+  108920: 'voidtendrils.jpg'   // Void Tendrils
 };
 
 /**

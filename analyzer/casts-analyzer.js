@@ -350,7 +350,16 @@ class CastsAnalyzer {
       528: 'Cure Disease',
 
       // Shadowform
-      15473: 'Shadowform'
+      15473: 'Shadowform',
+
+      // Priest Talents
+      121536: 'Angelic Feather',
+      108945: 'Angelic Bulwark',
+      19236: 'Desperate Prayer',
+      605: 'Dominate Mind',
+      108921: 'Psyfiend',
+      112833: 'Spectral Guise',
+      108920: 'Void Tendrils'
     };
     return names[spellId] || `Unknown (${spellId})`;
   }
