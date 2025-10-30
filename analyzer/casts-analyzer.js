@@ -117,10 +117,11 @@ class CastsAnalyzer {
   }
 
   /**
-   * Calculate DoT metrics: downtime before refresh, clipping previous cast
+   * Calculate DoT metrics with MoP Pandemic mechanics
    */
   calculateDotMetrics() {
     const MAX_ACTIVE_DOWNTIME = 10000; // Ignore gaps > 10s
+    const PANDEMIC_PERCENT = 0.30; // Can refresh in last 30% without penalty
 
     const dotSpells = [589, 34914, 2944]; // SWP, VT, DP
 
@@ -132,27 +133,85 @@ class CastsAnalyzer {
 
       if (!previous) continue;
 
-      // Calculate downtime (gap between previous DoT expiring and new cast)
       const duration = this.getBaseDotDuration(cast.spellId);
+      const tickInterval = this.getTickInterval(cast.spellId);
       const previousExpiry = previous.castStart + duration;
-      const downtime = cast.castStart - previousExpiry;
+      const pandemicWindow = duration * PANDEMIC_PERCENT; // Last 30% of duration
 
-      // Only track downtime if reasonable
-      if (downtime > 0 && downtime <= MAX_ACTIVE_DOWNTIME) {
-        cast.dotDowntime = downtime;
-      }
+      // Time between refresh and when previous would expire
+      const timeToExpiry = previousExpiry - cast.castStart;
 
-      // Check if we clipped previous DoT (refreshed before it expired)
-      if (downtime < 0) {
+      // Initialize DoT quality metrics
+      cast.dotQuality = {};
+
+      if (timeToExpiry < 0) {
+        // ===== REFRESHED TOO LATE (Downtime) =====
+        const downtime = Math.abs(timeToExpiry);
+
+        if (downtime <= MAX_ACTIVE_DOWNTIME) {
+          cast.dotDowntime = downtime;
+          cast.dotQuality.status = 'late';
+          cast.dotQuality.message = `${(downtime / 1000).toFixed(1)}s downtime`;
+
+          // Calculate DPS lost from downtime
+          const ticksLost = downtime / tickInterval;
+          const avgTickDamage = this.getAvgTickDamage(cast, previous);
+          cast.dotQuality.dpsLost = (ticksLost * avgTickDamage * 1000) / downtime;
+        }
+
+      } else if (timeToExpiry <= pandemicWindow) {
+        // ===== REFRESHED IN PANDEMIC WINDOW (Optimal) =====
+        cast.dotQuality.status = 'optimal';
+        cast.dotQuality.message = `Pandemic (${(timeToExpiry / 1000).toFixed(1)}s remaining)`;
+        cast.dotQuality.dpsLost = 0;
+
+      } else {
+        // ===== REFRESHED TOO EARLY (Lost Ticks) =====
         cast.clippedPreviousCast = true;
 
-        // Calculate how many ticks were lost
-        const tickInterval = this.getTickInterval(cast.spellId);
-        const timeRemaining = Math.abs(downtime);
-        const ticksLost = Math.floor(timeRemaining / tickInterval);
+        // Calculate ticks lost (time outside pandemic window / tick interval)
+        const timeWasted = timeToExpiry - pandemicWindow;
+        const ticksLost = Math.floor(timeWasted / tickInterval);
         cast.clippedTicks = ticksLost;
+
+        cast.dotQuality.status = 'early';
+        cast.dotQuality.message = `Clipped ${ticksLost} tick${ticksLost !== 1 ? 's' : ''} early`;
+
+        // Calculate DPS lost from wasted ticks
+        const avgTickDamage = this.getAvgTickDamage(cast, previous);
+        const totalDamageWasted = ticksLost * avgTickDamage;
+
+        // Estimate active time (use fight duration as fallback)
+        const activeTime = cast.castEnd - previous.castStart;
+        cast.dotQuality.dpsLost = activeTime > 0 ? (totalDamageWasted * 1000) / activeTime : 0;
       }
     }
+  }
+
+  /**
+   * Get average tick damage for a DoT cast
+   * Uses actual damage from instances if available, otherwise estimates
+   */
+  getAvgTickDamage(cast, previousCast) {
+    // Try to use actual damage from previous cast
+    if (previousCast && previousCast.instances && previousCast.instances.length > 0) {
+      const totalDamage = previousCast.instances.reduce((sum, inst) => sum + inst.amount, 0);
+      return totalDamage / previousCast.instances.length;
+    }
+
+    // Try current cast
+    if (cast.instances && cast.instances.length > 0) {
+      const totalDamage = cast.instances.reduce((sum, inst) => sum + inst.amount, 0);
+      return totalDamage / cast.instances.length;
+    }
+
+    // Fallback: estimate from total damage / expected ticks
+    if (previousCast && previousCast.totalDamage > 0) {
+      const expectedTicks = this.getBaseDotDuration(cast.spellId) / this.getTickInterval(cast.spellId);
+      return previousCast.totalDamage / expectedTicks;
+    }
+
+    return 0;
   }
 
   /**

@@ -11,20 +11,29 @@ const Status = {
 
 class StatHighlights {
   /**
-   * Get overall cast quality status
+   * Get overall cast quality status (with MoP Pandemic support)
    */
   overall(cast) {
     // Check for major issues (WARNING)
     if (cast.failed) return Status.WARNING;
-    if (cast.clippedTicks >= 2) return Status.WARNING;
+
+    // DoT quality check (Pandemic-aware)
+    if (cast.dotQuality) {
+      if (cast.dotQuality.status === 'early' && cast.clippedTicks >= 2) return Status.WARNING;
+      if (cast.dotQuality.status === 'late' && cast.dotDowntime > 3000) return Status.WARNING;
+    }
+
     if (cast.timeOffCooldown && cast.timeOffCooldown > 5000) return Status.WARNING;
-    if (cast.dotDowntime && cast.dotDowntime > 3000) return Status.WARNING;
 
     // Check for minor issues (NOTICE)
-    if (cast.clippedTicks === 1) return Status.NOTICE;
+    if (cast.dotQuality) {
+      if (cast.dotQuality.status === 'early' && cast.clippedTicks === 1) return Status.NOTICE;
+      if (cast.dotQuality.status === 'late' && cast.dotDowntime > 1000) return Status.NOTICE;
+      // Optimal refreshes (pandemic) are not flagged
+    }
+
     if (cast.clippedEarly) return Status.NOTICE;
     if (cast.timeOffCooldown && cast.timeOffCooldown > 2000) return Status.NOTICE;
-    if (cast.dotDowntime && cast.dotDowntime > 1000) return Status.NOTICE;
     if (cast.nextCastLatency && cast.nextCastLatency > 300) return Status.NOTICE;
 
     // Otherwise normal
@@ -63,14 +72,40 @@ class StatHighlights {
   }
 
   /**
-   * Get DoT clipping quality status
+   * Get DoT clipping quality status (Pandemic-aware)
    */
   dotClipping(cast) {
-    if (!cast.clippedPreviousCast) return Status.NORMAL;
+    if (!cast.dotQuality) return Status.NORMAL;
 
-    if (cast.clippedTicks >= 2) return Status.WARNING;
-    if (cast.clippedTicks === 1) return Status.NOTICE;
+    if (cast.dotQuality.status === 'optimal') return Status.NORMAL;
+    if (cast.dotQuality.status === 'late') {
+      if (cast.dotDowntime > 3000) return Status.WARNING;
+      if (cast.dotDowntime > 1000) return Status.NOTICE;
+    }
+    if (cast.dotQuality.status === 'early') {
+      if (cast.clippedTicks >= 2) return Status.WARNING;
+      if (cast.clippedTicks === 1) return Status.NOTICE;
+    }
+
     return Status.NORMAL;
+  }
+
+  /**
+   * Get DoT refresh quality status (MoP-specific)
+   */
+  dotRefresh(cast) {
+    if (!cast.dotQuality) return Status.NORMAL;
+
+    switch (cast.dotQuality.status) {
+      case 'optimal':
+        return Status.NORMAL;
+      case 'late':
+        return cast.dotDowntime > 3000 ? Status.WARNING : Status.NOTICE;
+      case 'early':
+        return cast.clippedTicks >= 2 ? Status.WARNING : Status.NOTICE;
+      default:
+        return Status.NORMAL;
+    }
   }
 
   /**

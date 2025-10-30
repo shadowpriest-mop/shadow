@@ -792,39 +792,33 @@ function createCastDetailsHTML(cast, fight) {
         `;
     }
 
-    // DoT downtime (if applicable)
-    if (cast.dotDowntime !== undefined) {
-        const status = statHighlights.dotDowntime(cast);
+    // DoT Refresh Quality (Pandemic-aware for MoP)
+    if (cast.dotQuality && [589, 34914, 2944].includes(cast.spellId)) {
+        const status = statHighlights.dotRefresh(cast);
         const cssClass = statHighlights.getTextClass(status);
-        html += `
-            <div class="cast-details-item">
-                <span class="cast-details-label">DoT downtime:</span>
-                <span class="cast-details-value ${cssClass}">${cast.dotDowntime > 0 ? (cast.dotDowntime / 1000).toFixed(2) + 's' : '---'}</span>
-            </div>
-        `;
-    } else if ([589, 34914, 2944].includes(cast.spellId)) {
-        // Show --- for DoTs with no downtime data
-        html += `
-            <div class="cast-details-item">
-                <span class="cast-details-label">DoT downtime:</span>
-                <span class="cast-details-value">---</span>
-            </div>
-        `;
-    }
 
-    // Clipped Previous (for DoTs)
-    if (cast.clippedPreviousCast !== undefined) {
         html += `
             <div class="cast-details-item">
-                <span class="cast-details-label">Clipped Previous:</span>
-                <span class="cast-details-value ${cast.clippedPreviousCast ? 'text-warning' : 'table-accent'}">${cast.clippedPreviousCast ? 'true (' + cast.clippedTicks + ' ticks)' : 'false'}</span>
+                <span class="cast-details-label">Refresh Quality:</span>
+                <span class="cast-details-value ${cssClass}">${cast.dotQuality.message}</span>
             </div>
         `;
+
+        // Show DPS lost if applicable
+        if (cast.dotQuality.dpsLost > 0) {
+            html += `
+                <div class="cast-details-item">
+                    <span class="cast-details-label">DPS Lost:</span>
+                    <span class="cast-details-value text-warning">~${cast.dotQuality.dpsLost.toFixed(1)}</span>
+                </div>
+            `;
+        }
     } else if ([589, 34914, 2944].includes(cast.spellId)) {
+        // First cast of this DoT
         html += `
             <div class="cast-details-item">
-                <span class="cast-details-label">Clipped Previous:</span>
-                <span class="cast-details-value table-accent">false</span>
+                <span class="cast-details-label">Refresh Quality:</span>
+                <span class="cast-details-value">Initial cast</span>
             </div>
         `;
     }
