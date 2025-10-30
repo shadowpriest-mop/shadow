@@ -2,12 +2,24 @@
 // Adapted from Wrath analyzer casts-analyzer.ts
 // Calculates cast quality metrics: delays, clipping, downtime
 
+// Import spell data and haste utilities
+const { getSpellData, DamageType } = require('./spell-data.js');
+const {
+  calculateHaste,
+  calculateTickInterval,
+  canInferHaste,
+  getHasteError,
+  inferHasteRating,
+  ERROR_THRESHOLD
+} = require('./haste.js');
+
 class CastsAnalyzer {
   constructor(events, settings) {
     this.events = events;
     this.settings = settings;
     this.casts = [];
     this.activeDots = new Map(); // Track active DoTs by target
+    this.baseStats = { hasteRating: 0 }; // Will be updated from events
   }
 
   /**
@@ -17,7 +29,10 @@ class CastsAnalyzer {
     // Step 1: Parse events into CastDetails objects
     this.parseCasts();
 
-    // Step 2: Calculate quality metrics
+    // Step 2: Infer haste for each cast
+    this.calculateHaste();
+
+    // Step 3: Calculate quality metrics
     this.calculateCastLatencies();
     this.calculateDotMetrics();
     this.calculateChannelMetrics();
@@ -37,9 +52,10 @@ class CastsAnalyzer {
       const spellId = castEvent.abilityGameID;
 
       // Create CastDetails object
+      const spellData = getSpellData(spellId);
       const cast = new CastDetails({
         spellId: spellId,
-        name: this.getSpellName(spellId),
+        name: spellData ? spellData.name : `Unknown (${spellId})`,
         rank: 0, // MoP has no spell ranks
         castStart: castEvent.timestamp,
         castEnd: castEvent.timestamp, // Will update with last damage
@@ -79,8 +95,9 @@ class CastsAnalyzer {
 
     // For instant casts and direct damage, match within 100ms window
     // For DoTs and channels, match within duration window
-    const isDoT = this.isDoTSpell(spellId);
-    const isChannel = this.isChannelSpell(spellId);
+    const spellData = getSpellData(spellId);
+    const isDoT = spellData && spellData.damageType === DamageType.DOT;
+    const isChannel = spellData && spellData.damageType === DamageType.CHANNEL;
     const matchWindow = isDoT ? 30000 : (isChannel ? 5000 : 100);
 
     for (const dmgEvent of damageEvents) {
@@ -95,6 +112,67 @@ class CastsAnalyzer {
     }
 
     return instances;
+  }
+
+  /**
+   * Calculate haste for each cast
+   * Uses actual tick intervals and cast times to infer haste when combatant data unavailable
+   */
+  calculateHaste() {
+    // TODO: Extract base haste from combatant info events if available
+    // For now, infer from cast times
+
+    for (const cast of this.casts) {
+      const spellData = getSpellData(cast.spellId);
+      if (!spellData) {
+        cast.haste = 1.0; // No haste data
+        continue;
+      }
+
+      // Start with base haste (1.0 = no haste)
+      cast.haste = 1.0;
+
+      // Try to infer haste from actual cast/tick times
+      if (canInferHaste(cast, spellData)) {
+        const error = getHasteError(cast, spellData);
+
+        // Only update haste if error is within reasonable bounds
+        if (Math.abs(error) < ERROR_THRESHOLD) {
+          // Calculate inferred haste
+          let actualDelta, baseDelta;
+
+          switch (spellData.damageType) {
+            case DamageType.CHANNEL:
+              if (cast.instances.length > 0) {
+                actualDelta = cast.instances[0].timestamp - cast.castEnd;
+                baseDelta = (spellData.maxDuration / spellData.maxTicks) * 1000;
+                cast.haste = baseDelta / actualDelta;
+              }
+              break;
+
+            case DamageType.DOT:
+              if (cast.instances.length > 1) {
+                actualDelta = cast.instances[cast.instances.length - 1].timestamp -
+                             cast.instances[cast.instances.length - 2].timestamp;
+                baseDelta = spellData.baseTickTime * 1000;
+                cast.haste = baseDelta / actualDelta;
+              }
+              break;
+
+            default:
+              if (cast.castTimeMs > 500) {
+                actualDelta = cast.castTimeMs;
+                baseDelta = spellData.baseCastTime * 1000;
+                cast.haste = baseDelta / actualDelta;
+              }
+              break;
+          }
+        }
+      }
+
+      // Cap haste at reasonable values (10% to 200%)
+      cast.haste = Math.max(0.5, Math.min(2.0, cast.haste || 1.0));
+    }
   }
 
   /**
@@ -133,8 +211,19 @@ class CastsAnalyzer {
 
       if (!previous) continue;
 
-      const duration = this.getBaseDotDuration(cast.spellId);
-      const tickInterval = this.getTickInterval(cast.spellId);
+      // Get spell data and calculate haste-adjusted values
+      const spellData = getSpellData(cast.spellId);
+      if (!spellData) continue;
+
+      // Calculate tick interval using previous cast's haste (DoTs snapshot haste at cast time)
+      const hastedTickInterval = calculateTickInterval(spellData, previous.haste) * 1000; // Convert to ms
+
+      // Duration is fixed (doesn't scale with haste in MoP)
+      const duration = spellData.maxDuration * 1000;
+
+      // Calculate expected ticks based on haste
+      const expectedTicks = Math.floor(duration / hastedTickInterval);
+
       const previousExpiry = previous.castStart + duration;
       const pandemicWindow = duration * PANDEMIC_PERCENT; // Last 30% of duration
 
@@ -153,8 +242,8 @@ class CastsAnalyzer {
           cast.dotQuality.status = 'late';
           cast.dotQuality.message = `${(downtime / 1000).toFixed(1)}s downtime`;
 
-          // Calculate DPS lost from downtime
-          const ticksLost = downtime / tickInterval;
+          // Calculate DPS lost from downtime (use hasted tick interval)
+          const ticksLost = downtime / hastedTickInterval;
           const avgTickDamage = this.getAvgTickDamage(cast, previous);
           cast.dotQuality.dpsLost = (ticksLost * avgTickDamage * 1000) / downtime;
         }
@@ -169,9 +258,9 @@ class CastsAnalyzer {
         // ===== REFRESHED TOO EARLY (Lost Ticks) =====
         cast.clippedPreviousCast = true;
 
-        // Calculate ticks lost (time outside pandemic window / tick interval)
+        // Calculate ticks lost (time outside pandemic window / hasted tick interval)
         const timeWasted = timeToExpiry - pandemicWindow;
-        const ticksLost = Math.floor(timeWasted / tickInterval);
+        const ticksLost = Math.floor(timeWasted / hastedTickInterval);
         cast.clippedTicks = ticksLost;
 
         cast.dotQuality.status = 'early';
@@ -185,6 +274,10 @@ class CastsAnalyzer {
         const activeTime = cast.castEnd - previous.castStart;
         cast.dotQuality.dpsLost = activeTime > 0 ? (totalDamageWasted * 1000) / activeTime : 0;
       }
+
+      // Store haste info for debugging
+      cast.hastedTickInterval = hastedTickInterval;
+      cast.expectedTicks = expectedTicks;
     }
   }
 
@@ -207,8 +300,11 @@ class CastsAnalyzer {
 
     // Fallback: estimate from total damage / expected ticks
     if (previousCast && previousCast.totalDamage > 0) {
-      const expectedTicks = this.getBaseDotDuration(cast.spellId) / this.getTickInterval(cast.spellId);
-      return previousCast.totalDamage / expectedTicks;
+      const spellData = getSpellData(cast.spellId);
+      if (spellData && previousCast.hastedTickInterval) {
+        const expectedTicks = Math.floor((spellData.maxDuration * 1000) / previousCast.hastedTickInterval);
+        return previousCast.totalDamage / expectedTicks;
+      }
     }
 
     return 0;
@@ -221,33 +317,22 @@ class CastsAnalyzer {
     const EARLY_CLIP_THRESHOLD = 0.67; // 67% to next tick
 
     for (const cast of this.casts) {
-      if (!this.isChannelSpell(cast.spellId)) continue;
+      const spellData = getSpellData(cast.spellId);
+      if (!spellData || spellData.damageType !== DamageType.CHANNEL) continue;
 
-      // Mind Flay and Mind Flay: Insanity have 3 ticks at 1s intervals (3s total channel)
-      // Mind Sear has 5 ticks at 1s intervals (5s total channel)
-      let expectedDuration, tickInterval;
-
-      if (cast.spellId === 15407 || cast.spellId === 129197) {
-        // Mind Flay / Mind Flay: Insanity
-        expectedDuration = 3000;
-        tickInterval = 1000;
-      } else if (cast.spellId === 48045) {
-        // Mind Sear
-        expectedDuration = 5000;
-        tickInterval = 1000;
-      } else {
-        continue; // Unknown channel
-      }
+      // Calculate hasted channel duration and tick interval
+      const hastedTickInterval = calculateTickInterval(spellData, cast.haste) * 1000;
+      const expectedDuration = spellData.maxDuration * 1000 / cast.haste; // Channels scale with haste
 
       const actualDuration = cast.castTimeMs;
 
       // Check if we stopped early
       if (actualDuration < expectedDuration) {
-        const lastTickTime = Math.floor(actualDuration / tickInterval) * tickInterval;
-        const timeToNextTick = lastTickTime + tickInterval - actualDuration;
+        const lastTickTime = Math.floor(actualDuration / hastedTickInterval) * hastedTickInterval;
+        const timeToNextTick = lastTickTime + hastedTickInterval - actualDuration;
 
         // If we were close to the next tick, flag as early clip
-        if (timeToNextTick < tickInterval * EARLY_CLIP_THRESHOLD) {
+        if (timeToNextTick < hastedTickInterval * EARLY_CLIP_THRESHOLD) {
           cast.clippedEarly = true;
         }
       }
@@ -296,45 +381,8 @@ class CastsAnalyzer {
   }
 
   /**
-   * Get base DoT duration (in ms)
-   */
-  getBaseDotDuration(spellId) {
-    const durations = {
-      589: 18000,   // Shadow Word: Pain - 18s
-      34914: 15000, // Vampiric Touch - 15s
-      2944: 6000    // Devouring Plague - 6s
-    };
-    return durations[spellId] || 0;
-  }
-
-  /**
-   * Get DoT tick interval (in ms)
-   */
-  getTickInterval(spellId) {
-    const intervals = {
-      589: 2000,   // Shadow Word: Pain - 2s per tick
-      34914: 3000, // Vampiric Touch - 3s per tick
-      2944: 1000   // Devouring Plague - 1s per tick
-    };
-    return intervals[spellId] || 0;
-  }
-
-  /**
-   * Check if spell is a DoT
-   */
-  isDoTSpell(spellId) {
-    return [589, 34914, 2944].includes(spellId);
-  }
-
-  /**
-   * Check if spell is a channel
-   */
-  isChannelSpell(spellId) {
-    return [15407, 129197, 48045].includes(spellId); // Mind Flay, Mind Flay: Insanity, Mind Sear
-  }
-
-  /**
-   * Get spell name from ID
+   * Get spell name from ID (deprecated - kept for backwards compatibility)
+   * Use getSpellData(spellId).name instead
    */
   getSpellName(spellId) {
     const names = {

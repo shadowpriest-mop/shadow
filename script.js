@@ -780,6 +780,36 @@ function createCastDetailsHTML(cast, fight) {
         </div>
     `;
 
+    // Haste (if available)
+    if (cast.haste && cast.haste !== 1.0) {
+        const hastePercent = ((cast.haste - 1) * 100).toFixed(1);
+        html += `
+            <div class="cast-details-item">
+                <span class="cast-details-label">Haste:</span>
+                <span class="cast-details-value">${hastePercent}%</span>
+            </div>
+        `;
+    }
+
+    // DoT tick info (if available)
+    if (cast.hastedTickInterval) {
+        html += `
+            <div class="cast-details-item">
+                <span class="cast-details-label">Tick Interval:</span>
+                <span class="cast-details-value">${(cast.hastedTickInterval / 1000).toFixed(2)}s</span>
+            </div>
+        `;
+    }
+
+    if (cast.expectedTicks) {
+        html += `
+            <div class="cast-details-item">
+                <span class="cast-details-label">Expected Ticks:</span>
+                <span class="cast-details-value">${cast.expectedTicks} ticks</span>
+            </div>
+        `;
+    }
+
     // Delay (if available)
     if (cast.nextCastLatency !== undefined) {
         const status = statHighlights.castLatency(cast);
