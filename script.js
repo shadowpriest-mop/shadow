@@ -317,7 +317,7 @@ function updateInsanityWindow(hasteMultiplier, t14_4pc) {
     document.getElementById('insanity-total').textContent = insanityWindow.toFixed(2) + 's';
 }
 
-function toggleInsanityDetails() {
+window.toggleInsanityDetails = function toggleInsanityDetails() {
     const details = document.getElementById('insanity-details');
     const button = document.querySelector('.details-toggle');
 
@@ -356,7 +356,7 @@ function calculateBreakpoints(dot, targetTicks) {
 }
 
 // Tab switching functionality
-function switchTab(tabName) {
+window.switchTab = function switchTab(tabName) {
     // Hide all tab contents
     const tabContents = document.querySelectorAll('.tab-content');
     tabContents.forEach(content => {
