@@ -2,16 +2,8 @@
 // Adapted from Wrath analyzer casts-analyzer.ts
 // Calculates cast quality metrics: delays, clipping, downtime
 
-// Import spell data and haste utilities
-const { getSpellData, DamageType } = require('./spell-data.js');
-const {
-  calculateHaste,
-  calculateTickInterval,
-  canInferHaste,
-  getHasteError,
-  inferHasteRating,
-  ERROR_THRESHOLD
-} = require('./haste.js');
+// Note: Depends on spell-data.js and haste.js being loaded first
+// Uses global: getSpellData, DamageType, HasteUtils
 
 class CastsAnalyzer {
   constructor(events, settings) {
@@ -133,11 +125,11 @@ class CastsAnalyzer {
       cast.haste = 1.0;
 
       // Try to infer haste from actual cast/tick times
-      if (canInferHaste(cast, spellData)) {
-        const error = getHasteError(cast, spellData);
+      if (HasteUtils.canInferHaste(cast, spellData)) {
+        const error = HasteUtils.getHasteError(cast, spellData);
 
         // Only update haste if error is within reasonable bounds
-        if (Math.abs(error) < ERROR_THRESHOLD) {
+        if (Math.abs(error) < HasteUtils.ERROR_THRESHOLD) {
           // Calculate inferred haste
           let actualDelta, baseDelta;
 
@@ -216,7 +208,7 @@ class CastsAnalyzer {
       if (!spellData) continue;
 
       // Calculate tick interval using previous cast's haste (DoTs snapshot haste at cast time)
-      const hastedTickInterval = calculateTickInterval(spellData, previous.haste) * 1000; // Convert to ms
+      const hastedTickInterval = HasteUtils.calculateTickInterval(spellData, previous.haste) * 1000; // Convert to ms
 
       // Duration is fixed (doesn't scale with haste in MoP)
       const duration = spellData.maxDuration * 1000;
@@ -321,7 +313,7 @@ class CastsAnalyzer {
       if (!spellData || spellData.damageType !== DamageType.CHANNEL) continue;
 
       // Calculate hasted channel duration and tick interval
-      const hastedTickInterval = calculateTickInterval(spellData, cast.haste) * 1000;
+      const hastedTickInterval = HasteUtils.calculateTickInterval(spellData, cast.haste) * 1000;
       const expectedDuration = spellData.maxDuration * 1000 / cast.haste; // Channels scale with haste
 
       const actualDuration = cast.castTimeMs;

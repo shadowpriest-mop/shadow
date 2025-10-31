@@ -249,6 +249,17 @@ function getSpellFromDamageId(damageId) {
 }
 
 // Export for use in other modules
+// Browser globals
+if (typeof window !== 'undefined') {
+  window.DamageType = DamageType;
+  window.SpellId = SpellId;
+  window.SPELL_DATA = SPELL_DATA;
+  window.mapSpellId = mapSpellId;
+  window.getSpellData = getSpellData;
+  window.getSpellFromDamageId = getSpellFromDamageId;
+}
+
+// Node.js exports
 if (typeof module !== 'undefined' && module.exports) {
   module.exports = {
     DamageType,

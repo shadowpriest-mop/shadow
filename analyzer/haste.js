@@ -197,6 +197,24 @@ function canInferHaste(cast, spellData) {
 }
 
 // Export for use in other modules
+// Browser globals
+if (typeof window !== 'undefined') {
+  window.HasteUtils = {
+    HASTE_RATING_PER_PERCENT,
+    BASE_GCD,
+    MIN_GCD,
+    ERROR_THRESHOLD,
+    calculateHaste,
+    calculateCastTime,
+    calculateDotDuration,
+    calculateTickInterval,
+    inferHasteRating,
+    getHasteError,
+    canInferHaste
+  };
+}
+
+// Node.js exports
 if (typeof module !== 'undefined' && module.exports) {
   module.exports = {
     HASTE_RATING_PER_PERCENT,
