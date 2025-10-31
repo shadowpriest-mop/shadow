@@ -1,10 +1,8 @@
 // MoP Shadow Priest Haste Calculator
 console.log('script.js loading...');
 
-// Constants for MoP (Level 90)
-const HASTE_RATING_PER_PERCENT = 425.25; // Haste rating needed for 1% haste at level 90
-const BASE_GCD = 1.5; // Base GCD in seconds
-const MIN_GCD = 1.0; // Minimum GCD in seconds
+// Constants imported from haste.js (loaded via HasteUtils global)
+// Use HasteUtils.HASTE_RATING_PER_PERCENT, etc.
 
 // Helper function to round up to 2 decimal places (matches in-game behavior)
 // Handles floating point precision issues
@@ -152,7 +150,7 @@ function calculate() {
     const t14_4pc = document.getElementById('t14-4pc').checked;
 
     // Calculate haste percentage from rating
-    let hastePercent = (hasteRating / HASTE_RATING_PER_PERCENT);
+    let hastePercent = (hasteRating / HasteUtils.HASTE_RATING_PER_PERCENT);
 
     // Add racial bonuses
     if (racial === 'goblin') {
@@ -195,7 +193,7 @@ function updateHasteDisplay(hastePercent, hasteMultiplier) {
     document.getElementById('total-haste').textContent = displayHaste.toFixed(2) + '%';
 
     // Calculate GCD
-    const gcd = Math.max(BASE_GCD / hasteMultiplier, MIN_GCD);
+    const gcd = Math.max(HasteUtils.BASE_GCD / hasteMultiplier, HasteUtils.MIN_GCD);
     document.getElementById('gcd').textContent = gcd.toFixed(2) + 's';
 }
 
@@ -264,7 +262,7 @@ function updateCastTimes(hasteMultiplier) {
 function updateInsanityWindow(hasteMultiplier, t14_4pc) {
     // Calculate components of the Insanity Window
     const mbCast = CASTS.mindBlast.baseCastTime / hasteMultiplier;
-    const gcd = Math.max(BASE_GCD / hasteMultiplier, MIN_GCD);
+    const gcd = Math.max(HasteUtils.BASE_GCD / hasteMultiplier, HasteUtils.MIN_GCD);
     const mfDuration = CASTS.mindFlay.baseDuration / hasteMultiplier;
 
     // Calculate DP duration
@@ -348,7 +346,7 @@ function calculateBreakpoints(dot, targetTicks) {
         breakpoints.push({
             ticks: requiredTicks,
             hastePercent: requiredHastePercent,
-            hasteRating: Math.ceil(requiredHastePercent * HASTE_RATING_PER_PERCENT)
+            hasteRating: Math.ceil(requiredHastePercent * HasteUtils.HASTE_RATING_PER_PERCENT)
         });
     }
 
