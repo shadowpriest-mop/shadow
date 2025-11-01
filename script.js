@@ -510,6 +510,28 @@ window.loadReport = async function loadReport() {
     }
 }
 
+// Extract unique targets from events
+function extractTargetsFromEvents(events) {
+    const targets = new Map();
+
+    events.forEach(event => {
+        // Look for damage and cast events that have target information
+        if (event.targetID && event.targetID > 0) {
+            const key = `${event.targetID}-${event.targetInstance || 0}`;
+            if (!targets.has(key)) {
+                targets.set(key, {
+                    id: event.targetID,
+                    instance: event.targetInstance || 0,
+                    name: 'Unknown Target',
+                    displayName: `Target ${event.targetID}${event.targetInstance ? ` (${event.targetInstance})` : ''}`
+                });
+            }
+        }
+    });
+
+    return Array.from(targets.values());
+}
+
 // Make analyzeLog available globally
 window.analyzeLog = async function analyzeLog() {
     const playerSelect = document.getElementById('player-select');
@@ -572,6 +594,29 @@ window.analyzeLog = async function analyzeLog() {
 
         const events = eventsData.data;
 
+        // Extract targets and populate target filter
+        const targets = extractTargetsFromEvents(events);
+        window.allTargets = targets; // Store globally
+
+        const targetFilter = document.getElementById('target-filter');
+        const targetFilterGroup = document.getElementById('target-filter-group');
+
+        // Populate target filter dropdown
+        targetFilter.innerHTML = '<option value="all">All Targets</option>';
+        targets.forEach(target => {
+            const option = document.createElement('option');
+            option.value = `${target.id}-${target.instance}`;
+            option.textContent = target.displayName;
+            targetFilter.appendChild(option);
+        });
+
+        // Show target filter if there are multiple targets
+        if (targets.length > 1) {
+            targetFilterGroup.style.display = 'block';
+        } else {
+            targetFilterGroup.style.display = 'none';
+        }
+
         // Simple analysis - count casts and damage events by spell
         const castCounts = {};
         const damageCounts = {};
@@ -619,6 +664,12 @@ window.analyzeLog = async function analyzeLog() {
         // Render cast timeline
         renderCastTimeline(casts, fight);
 
+        // Add target filter event listener
+        targetFilter.addEventListener('change', () => {
+            renderCastTimeline(window.allCasts, window.currentFight);
+            renderStatsOverview('timeline');
+        });
+
         // Show results
         resultsSection.style.display = 'block';
         document.getElementById('cast-timeline').style.display = 'block';
@@ -645,9 +696,27 @@ function renderCastTimeline(casts, fight) {
         return;
     }
 
-    console.log(`Rendering ${casts.length} casts`);
+    // Apply target filter
+    const targetFilter = document.getElementById('target-filter');
+    const selectedTarget = targetFilter ? targetFilter.value : 'all';
 
-    casts.forEach((cast, index) => {
+    let filteredCasts = casts;
+    if (selectedTarget && selectedTarget !== 'all') {
+        const [targetId, targetInstance] = selectedTarget.split('-').map(Number);
+        filteredCasts = casts.filter(cast => {
+            return cast.targetId === targetId &&
+                   (cast.targetInstance || 0) === (targetInstance || 0);
+        });
+    }
+
+    console.log(`Rendering ${filteredCasts.length} of ${casts.length} casts (filtered by target: ${selectedTarget})`);
+
+    if (filteredCasts.length === 0) {
+        castList.innerHTML = '<p style="color: #9ca3af; text-align: center; padding: 20px;">No casts found for selected target</p>';
+        return;
+    }
+
+    filteredCasts.forEach((cast, index) => {
         const castElement = createCastElement(cast, index, fight);
         castList.appendChild(castElement);
     });

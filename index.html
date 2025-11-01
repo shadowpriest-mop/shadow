@@ -10,7 +10,7 @@
 <body>
     <div class="container">
         <header>
-            <h1>Shadow Priest - MoP Classic <span style="font-size: 0.5em; color: #999;">v2.11</span></h1>
+            <h1>Shadow Priest - MoP Classic <span style="font-size: 0.5em; color: #999;">v2.12</span></h1>
             <p class="subtitle">Log Analyzer & Rotation Helper</p>
         </header>
 
@@ -235,6 +235,14 @@
                     </select>
                 </div>
 
+                <div class="form-group" id="target-filter-group" style="display: none;">
+                    <label for="target-filter">Filter by Target:</label>
+                    <select id="target-filter">
+                        <option value="all">All Targets</option>
+                    </select>
+                    <small style="display: block; margin-top: 5px; color: #999;">Filter casts to only show actions on specific targets</small>
+                </div>
+
                 <button class="analyze-button" onclick="analyzeLog()" disabled id="analyze-btn">Analyze</button>
 
                 <div id="loading-indicator" style="display: none;">
@@ -326,15 +334,15 @@
     </div>
 
     <!-- Analyzer modules -->
-    <script src="analyzer/spell-data.js?v=2.11"></script>
-    <script src="analyzer/haste.js?v=2.11"></script>
-    <script src="analyzer/wcl-v2-service.js?v=2.11"></script>
-    <script src="analyzer/cast-details.js?v=2.11"></script>
-    <script src="analyzer/stat-highlights.js?v=2.11"></script>
-    <script src="analyzer/casts-analyzer.js?v=2.11"></script>
-    <script src="analyzer/cast-stats-calculator.js?v=2.11"></script>
-    <script src="analyzer/spell-icons.js?v=2.11"></script>
-    <script src="analyzer/event-analyzer.js?v=2.11"></script>
-    <script src="script.js?v=2.11"></script>
+    <script src="analyzer/spell-data.js?v=2.12"></script>
+    <script src="analyzer/haste.js?v=2.12"></script>
+    <script src="analyzer/wcl-v2-service.js?v=2.12"></script>
+    <script src="analyzer/cast-details.js?v=2.12"></script>
+    <script src="analyzer/stat-highlights.js?v=2.12"></script>
+    <script src="analyzer/casts-analyzer.js?v=2.12"></script>
+    <script src="analyzer/cast-stats-calculator.js?v=2.12"></script>
+    <script src="analyzer/spell-icons.js?v=2.12"></script>
+    <script src="analyzer/event-analyzer.js?v=2.12"></script>
+    <script src="script.js?v=2.12"></script>
 </body>
 </html>
