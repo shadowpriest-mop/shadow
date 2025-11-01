@@ -522,42 +522,45 @@ function extractTargetsFromEvents(events, reportData) {
         });
     }
 
-    // First pass: track damage per target
-    const targetDamage = new Map();
+    // First pass: track damage and instances per target ID (not instance)
+    const targetData = new Map();
     events.forEach(event => {
         if (event.type === 'damage' && event.targetID && event.targetID > 0) {
-            const key = `${event.targetID}-${event.targetInstance || 0}`;
-            const currentDamage = targetDamage.get(key) || 0;
-            targetDamage.set(key, currentDamage + (event.amount || 0));
+            if (!targetData.has(event.targetID)) {
+                targetData.set(event.targetID, {
+                    totalDamage: 0,
+                    instances: new Set()
+                });
+            }
+            const data = targetData.get(event.targetID);
+            data.totalDamage += (event.amount || 0);
+            data.instances.add(event.targetInstance || 0);
         }
     });
 
-    // Second pass: build target list (only targets we damaged)
-    events.forEach(event => {
-        // Look for damage and cast events that have target information
-        if (event.targetID && event.targetID > 0) {
-            const key = `${event.targetID}-${event.targetInstance || 0}`;
-
-            // Skip targets we dealt 0 damage to
-            if (!targetDamage.has(key) || targetDamage.get(key) === 0) {
-                return;
-            }
-
-            if (!targets.has(key)) {
-                const targetName = enemyNames.get(event.targetID) || `Unknown Target`;
-                const displayName = event.targetInstance > 0
-                    ? `${targetName} (${event.targetInstance})`
-                    : targetName;
-
-                targets.set(key, {
-                    id: event.targetID,
-                    instance: event.targetInstance || 0,
-                    name: targetName,
-                    displayName: displayName,
-                    totalDamage: targetDamage.get(key)
-                });
-            }
+    // Second pass: build grouped target list (group by ID, not instance)
+    targetData.forEach((data, targetID) => {
+        // Skip targets we dealt 0 damage to
+        if (data.totalDamage === 0) {
+            return;
         }
+
+        const targetName = enemyNames.get(targetID) || `Unknown Target`;
+        const instanceCount = data.instances.size;
+
+        // Show count if multiple instances
+        const displayName = instanceCount > 1
+            ? `${targetName} (${instanceCount})`
+            : targetName;
+
+        targets.set(targetID, {
+            id: targetID,
+            name: targetName,
+            displayName: displayName,
+            instanceCount: instanceCount,
+            instances: Array.from(data.instances),
+            totalDamage: data.totalDamage
+        });
     });
 
     return Array.from(targets.values());
@@ -636,7 +639,7 @@ window.analyzeLog = async function analyzeLog() {
         targetFilter.innerHTML = '<option value="all">All Targets</option>';
         targets.forEach(target => {
             const option = document.createElement('option');
-            option.value = `${target.id}-${target.instance}`;
+            option.value = target.id;
             option.textContent = target.displayName;
             targetFilter.appendChild(option);
         });
@@ -733,10 +736,9 @@ function renderCastTimeline(casts, fight) {
 
     let filteredCasts = casts;
     if (selectedTarget && selectedTarget !== 'all') {
-        const [targetId, targetInstance] = selectedTarget.split('-').map(Number);
+        const targetId = Number(selectedTarget);
         filteredCasts = casts.filter(cast => {
-            return cast.targetId === targetId &&
-                   (cast.targetInstance || 0) === (targetInstance || 0);
+            return cast.targetId === targetId;
         });
     }
 
