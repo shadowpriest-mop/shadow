@@ -564,7 +564,6 @@ window.analyzeLog = async function analyzeLog() {
         console.log('eventsData type:', typeof eventsData);
         console.log('eventsData.data exists?', !!eventsData?.data);
 
-        // Parse the events
         if (!eventsData || !eventsData.data) {
             console.error('NO EVENT DATA - eventsData:', eventsData);
             alert('No event data returned from WCL. Check console for details.');
@@ -572,9 +571,6 @@ window.analyzeLog = async function analyzeLog() {
         }
 
         const events = eventsData.data;
-        console.log('=== EVENTS ARRAY ===');
-        console.log(`Total events: ${events.length} (from ${eventsData.pageCount} pages)`);
-        console.log('First 3 events:', events.slice(0, 3));
 
         // Simple analysis - count casts and damage events by spell
         const castCounts = {};
@@ -582,71 +578,35 @@ window.analyzeLog = async function analyzeLog() {
         let castEventCount = 0;
         let damageEventCount = 0;
 
-        events.forEach((event, index) => {
-            if (index < 5) {
-                console.log(`Event ${index}:`, event);
-            }
-
-            // WCL v2 API: abilityGameID is directly on event, not in ability object
-            if (!event.abilityGameID) {
-                if (index < 5) console.log(`  No abilityGameID on event ${index}`);
-                return;
-            }
-
+        events.forEach((event) => {
+            if (!event.abilityGameID) return;
             const spellId = event.abilityGameID;
-            const spellName = event.abilityGameID; // We'll just use ID for now
 
             if (event.type === 'cast') {
                 castEventCount++;
-                if (!castCounts[spellId]) {
-                    castCounts[spellId] = { name: spellName, count: 0 };
-                }
+                if (!castCounts[spellId]) castCounts[spellId] = { name: spellId, count: 0 };
                 castCounts[spellId].count++;
-                if (castEventCount <= 10) {
-                    console.log(`Cast event: ${spellName} (ID: ${spellId})`);
-                }
             } else if (event.type === 'damage') {
                 damageEventCount++;
-                if (!damageCounts[spellId]) {
-                    damageCounts[spellId] = { name: spellName, count: 0 };
-                }
+                if (!damageCounts[spellId]) damageCounts[spellId] = { name: spellId, count: 0 };
                 damageCounts[spellId].count++;
             }
         });
 
-        console.log('=== EVENT COUNTS ===');
-        console.log('Total cast events found:', castEventCount);
-        console.log('Total damage events found:', damageEventCount);
-        console.log('Cast counts by spell:', castCounts);
-        console.log('Damage counts by spell:', damageCounts);
-
         // Calculate DoT uptimes
-        console.log('Fight object:', fight);
-        console.log('Fight startTime:', fight.startTime);
-        console.log('Fight endTime:', fight.endTime);
-
         const fightDuration = fight.endTime - fight.startTime;
-        console.log('Fight duration (ms):', fightDuration);
-
-        console.log('About to call calculateDotUptimes...');
         const dotUptimes = calculateDotUptimes(events, fight, fightDuration);
-        console.log('DoT uptimes:', dotUptimes);
+        window.dotUptimes = dotUptimes; // Store globally
 
         // Count Mind Flay ticks (damage events for Mind Flay and Mind Flay: Insanity)
         const mfTicks = (damageCounts[15407]?.count || 0) + (damageCounts[129197]?.count || 0);
-        document.getElementById('mf-ticks').textContent = mfTicks;
+        window.mfTicks = mfTicks; // Store globally
 
-        // Update DoT uptimes
-        document.getElementById('swp-uptime').textContent = dotUptimes[589] ? dotUptimes[589].percent + '%' : 'N/A';
-        document.getElementById('vt-uptime').textContent = dotUptimes[34914] ? dotUptimes[34914].percent + '%' : 'N/A';
-        document.getElementById('dp-uptime').textContent = dotUptimes[2944] ? dotUptimes[2944].percent + '%' : 'N/A';
+        // ❌ Removed all UI updates for mfTicks and DoT uptimes
 
         // Analyze casts with quality metrics
-        console.log('=== ANALYZING CASTS ===');
         const castsAnalyzer = new CastsAnalyzer(events, {});
         const casts = castsAnalyzer.analyze();
-        console.log('Analyzed casts:', casts.length);
-        console.log('First cast:', casts[0]);
 
         // Store globally for filtering
         window.allCasts = casts;
@@ -669,7 +629,7 @@ window.analyzeLog = async function analyzeLog() {
     } finally {
         loadingIndicator.style.display = 'none';
     }
-}
+};
 
 // ============ Cast Timeline Rendering ============
 
