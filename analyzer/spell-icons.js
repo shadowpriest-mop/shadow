@@ -16,6 +16,7 @@ const SPELL_ICONS = {
   15407: 'flay.jpg',       // Mind Flay
   129197: 'mfinsanity.jpg', // Mind Flay: Insanity
   48045: 'mindsear.jpg',   // Mind Sear
+  49821: 'mindsear.jpg',   // Mind Sear (damage tick)
 
   // AoE Spells
   120517: 'halo.jpg',      // Halo (Cast)
@@ -31,7 +32,8 @@ const SPELL_ICONS = {
   // Pet Abilities
   132603: 'fiend.jpg',     // Shadowfiend (MoP)
   34433: 'fiend.jpg',      // Shadowfiend (Legacy)
-  123040: 'mindbender.jpg', // Mindbender
+  132604: 'mindbender.jpg', // Mindbender
+  123040: 'mindbender.jpg', // Mindbender (alt ID)
 
   // Cooldowns & Buffs
   47585: 'dispersion.jpg', // Dispersion
@@ -48,12 +50,18 @@ const SPELL_ICONS = {
   55637: 'lightweave.jpg', // Lightweave Embroidery (Tailoring) - needs icon
   75170: 'lifeblood.jpg',  // Lifeblood (Herbalism) - needs icon
 
+  // Consumables
+  105702: 'potionofthejadeserpent.jpg', // Potion of the Jade Serpent
+  6262: 'healthstone.jpg', // Healthstone
+
   // Raid Buffs
   2825: 'bloodlust.jpg',   // Bloodlust
   32182: 'heroism.jpg',    // Heroism
 
   // Utility
   17: 'shield.jpg',        // Power Word: Shield
+  139: 'renew.jpg',        // Renew
+  588: 'innerfire.jpg',    // Inner Fire
   2061: 'hope.jpg',        // Flash Heal (using hope icon)
   2060: 'hope.jpg',        // Greater Heal
   2050: 'hope.jpg',        // Heal
@@ -61,13 +69,15 @@ const SPELL_ICONS = {
   33076: 'hope.jpg',       // Prayer of Mending
   596: 'hope.jpg',         // Prayer of Healing
   64044: 'mindsear.jpg',   // Psychic Horror
-  15487: 'dispel.jpg',     // Silence
+  15487: 'silence.jpg',    // Silence
   8122: 'dispel.jpg',      // Psychic Scream
   73325: 'feather.jpg',    // Leap of Faith
   527: 'dispel.jpg',       // Dispel Magic
   528: 'dispel.jpg',       // Cure Disease
   64843: 'divinehymn.jpg', // Divine Hymn
   132157: 'holynova.jpg',  // Holy Nova
+  126389: 'goblinglider.jpg', // Goblin Glider
+  124199: 'landshark.jpg'  // G91 Landshark
 
   // Shadowform
   15473: 'shadowform.jpg', // Shadowform

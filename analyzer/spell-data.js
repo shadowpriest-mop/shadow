@@ -37,6 +37,7 @@ const SpellId = {
   RENEW: 139,
   INNER_FIRE: 588,
   POWER_INFUSION: 10060,
+  ANGELIC_FEATHER: 121536,
 
   // Racials
   BERSERKING: 26297, // Troll
@@ -291,6 +292,13 @@ const SPELLS = {
     damageType: DamageType.NONE,
     cooldown: 120,
     gcd: false
+  }),
+
+  [SpellId.ANGELIC_FEATHER]: spell({
+    name: 'Angelic Feather',
+    damageType: DamageType.NONE,
+    cooldown: 0,
+    gcd: true
   }),
 
   [SpellId.GOBLIN_GLIDER]: spell({
