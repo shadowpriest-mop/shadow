@@ -36,6 +36,7 @@ const SpellId = {
   POWER_WORD_SHIELD: 17,
   RENEW: 139,
   INNER_FIRE: 588,
+  POWER_INFUSION: 10060,
 
   // Racials
   BERSERKING: 26297, // Troll
@@ -238,6 +239,12 @@ const SPELLS = {
     multiTarget: true
   }),
 
+  [SpellId.MIND_SEAR_TICK]: spell({
+    name: 'Mind Sear',
+    damageType: DamageType.CHANNEL,
+    multiTarget: true
+  }),
+
   [SpellId.BERSERKING]: spell({
     name: 'Berserking',
     damageType: DamageType.NONE,
@@ -276,6 +283,13 @@ const SPELLS = {
   [SpellId.INNER_FIRE]: spell({
     name: 'Inner Fire',
     damageType: DamageType.NONE,
+    gcd: false
+  }),
+
+  [SpellId.POWER_INFUSION]: spell({
+    name: 'Power Infusion',
+    damageType: DamageType.NONE,
+    cooldown: 120,
     gcd: false
   }),
 
