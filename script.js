@@ -522,10 +522,27 @@ function extractTargetsFromEvents(events, reportData) {
         });
     }
 
+    // First pass: track damage per target
+    const targetDamage = new Map();
+    events.forEach(event => {
+        if (event.type === 'damage' && event.targetID && event.targetID > 0) {
+            const key = `${event.targetID}-${event.targetInstance || 0}`;
+            const currentDamage = targetDamage.get(key) || 0;
+            targetDamage.set(key, currentDamage + (event.amount || 0));
+        }
+    });
+
+    // Second pass: build target list (only targets we damaged)
     events.forEach(event => {
         // Look for damage and cast events that have target information
         if (event.targetID && event.targetID > 0) {
             const key = `${event.targetID}-${event.targetInstance || 0}`;
+
+            // Skip targets we dealt 0 damage to
+            if (!targetDamage.has(key) || targetDamage.get(key) === 0) {
+                return;
+            }
+
             if (!targets.has(key)) {
                 const targetName = enemyNames.get(event.targetID) || `Unknown Target`;
                 const displayName = event.targetInstance > 0
@@ -536,7 +553,8 @@ function extractTargetsFromEvents(events, reportData) {
                     id: event.targetID,
                     instance: event.targetInstance || 0,
                     name: targetName,
-                    displayName: displayName
+                    displayName: displayName,
+                    totalDamage: targetDamage.get(key)
                 });
             }
         }
