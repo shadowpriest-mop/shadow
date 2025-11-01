@@ -109,6 +109,13 @@ function getSpellIcon(spellId) {
 }
 
 // Export for use in other modules
+// Browser globals
+if (typeof window !== 'undefined') {
+  window.SPELL_ICONS = SPELL_ICONS;
+  window.getSpellIcon = getSpellIcon;
+}
+
+// Node.js exports
 if (typeof module !== 'undefined' && module.exports) {
   module.exports = { SPELL_ICONS, getSpellIcon };
 }
