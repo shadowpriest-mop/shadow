@@ -17,11 +17,14 @@ const SpellId = {
   MIND_FLAY: 15407,
   MIND_FLAY_INSANITY: 129197,
   MIND_SEAR: 48045,
+  MIND_SPIKE: 73510,
   SHADOW_WORD_PAIN: 589,
   SHADOW_WORD_DEATH: 32379,
   VAMPIRIC_TOUCH: 34914,
   DEVOURING_PLAGUE: 2944,
   SHADOWFIEND: 34433,
+  SHADOWFIEND_ALT: 132603, // Alternative Shadowfiend ID
+  MINDBENDER: 132604, // Talent version of Shadowfiend
   DISPERSION: 47585,
   VAMPIRIC_EMBRACE: 15286,
   HALO: 120644,
@@ -32,6 +35,9 @@ const SpellId = {
 
   // Racials
   BERSERKING: 26297, // Troll
+
+  // Engineering/Professions
+  SYNAPSE_SPRINGS: 126734, // Engineering tinker (gloves)
 
   // Related damage IDs (DoT ticks, channeled ticks, etc.)
   MIND_FLAY_TICK: 15407, // MF uses same ID for cast and damage
@@ -109,6 +115,14 @@ const SPELLS = {
     generatesOrbs: 1 // MoP specific: generates 1 Shadow Orb
   }),
 
+  [SpellId.MIND_SPIKE]: spell({
+    name: 'Mind Spike',
+    damageType: DamageType.DIRECT,
+    baseCastTime: 1.5,
+    maxDamageInstances: 1,
+    cooldown: 0
+  }),
+
   [SpellId.MIND_FLAY]: spell({
     name: 'Mind Flay',
     damageIds: [SpellId.MIND_FLAY_TICK],
@@ -144,6 +158,20 @@ const SPELLS = {
     damageType: DamageType.DIRECT,
     maxDuration: 15,
     cooldown: 180
+  }),
+
+  [SpellId.SHADOWFIEND_ALT]: spell({
+    name: 'Shadowfiend',
+    damageType: DamageType.DIRECT,
+    maxDuration: 15,
+    cooldown: 180
+  }),
+
+  [SpellId.MINDBENDER]: spell({
+    name: 'Mindbender',
+    damageType: DamageType.DIRECT,
+    maxDuration: 15,
+    cooldown: 60 // Mindbender has shorter cooldown than Shadowfiend
   }),
 
   [SpellId.DISPERSION]: spell({
@@ -205,6 +233,14 @@ const SPELLS = {
     damageType: DamageType.NONE,
     cooldown: 180,
     gcd: false
+  }),
+
+  [SpellId.SYNAPSE_SPRINGS]: spell({
+    name: 'Synapse Springs',
+    damageType: DamageType.DIRECT,
+    cooldown: 60,
+    gcd: false,
+    maxDamageInstances: 1
   }),
 
   [SpellId.MELEE]: spell({
