@@ -510,20 +510,33 @@ window.loadReport = async function loadReport() {
     }
 }
 
-// Extract unique targets from events
-function extractTargetsFromEvents(events) {
+// Extract unique targets from events and enrich with names from report enemies
+function extractTargetsFromEvents(events, reportData) {
     const targets = new Map();
+
+    // Build enemy ID -> name mapping from report data
+    const enemyNames = new Map();
+    if (reportData && reportData.masterData && reportData.masterData.enemies) {
+        reportData.masterData.enemies.forEach(enemy => {
+            enemyNames.set(enemy.id, enemy.name);
+        });
+    }
 
     events.forEach(event => {
         // Look for damage and cast events that have target information
         if (event.targetID && event.targetID > 0) {
             const key = `${event.targetID}-${event.targetInstance || 0}`;
             if (!targets.has(key)) {
+                const targetName = enemyNames.get(event.targetID) || `Unknown Target`;
+                const displayName = event.targetInstance > 0
+                    ? `${targetName} (${event.targetInstance})`
+                    : targetName;
+
                 targets.set(key, {
                     id: event.targetID,
                     instance: event.targetInstance || 0,
-                    name: 'Unknown Target',
-                    displayName: `Target ${event.targetID}${event.targetInstance ? ` (${event.targetInstance})` : ''}`
+                    name: targetName,
+                    displayName: displayName
                 });
             }
         }
@@ -595,7 +608,7 @@ window.analyzeLog = async function analyzeLog() {
         const events = eventsData.data;
 
         // Extract targets and populate target filter
-        const targets = extractTargetsFromEvents(events);
+        const targets = extractTargetsFromEvents(events, currentReportData);
         window.allTargets = targets; // Store globally
 
         const targetFilter = document.getElementById('target-filter');

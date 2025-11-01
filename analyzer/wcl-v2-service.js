@@ -166,7 +166,14 @@ class WCLv2Service {
               encounterID
             }
             masterData {
-              actors(type: "Player") {
+              players: actors(type: "Player") {
+                id
+                name
+                gameID
+                type
+                subType
+              }
+              enemies: actors(type: "NPC") {
                 id
                 name
                 gameID
@@ -275,13 +282,13 @@ class WCLv2Service {
   getShadowPriests(report) {
     console.log('=== getShadowPriests v2.3+ CALLED ===');
 
-    if (!report || !report.masterData || !report.masterData.actors) {
-      console.error('Missing report data:', { report: !!report, masterData: !!report?.masterData, actors: !!report?.masterData?.actors });
+    if (!report || !report.masterData || !report.masterData.players) {
+      console.error('Missing report data:', { report: !!report, masterData: !!report?.masterData, players: !!report?.masterData?.players });
       return [];
     }
 
     const priests = [];
-    const actors = report.masterData.actors;
+    const actors = report.masterData.players;
 
     console.log('Total actors in report:', actors.length);
     console.log('First actor example:', actors[0]);
