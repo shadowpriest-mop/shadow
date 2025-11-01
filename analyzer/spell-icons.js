@@ -77,7 +77,7 @@ const SPELL_ICONS = {
   64843: 'divinehymn.jpg', // Divine Hymn
   132157: 'holynova.jpg',  // Holy Nova
   126389: 'goblinglider.jpg', // Goblin Glider
-  124199: 'landshark.jpg'  // G91 Landshark
+  124199: 'landshark.jpg',  // G91 Landshark
 
   // Shadowform
   15473: 'shadowform.jpg', // Shadowform
