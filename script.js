@@ -632,10 +632,6 @@ window.analyzeLog = async function analyzeLog() {
         const dotUptimes = calculateDotUptimes(events, fight, fightDuration);
         console.log('DoT uptimes:', dotUptimes);
 
-        // Update UI with results
-        document.getElementById('mb-casts').textContent = castCounts[8092]?.count || '0';
-        document.getElementById('dp-casts').textContent = castCounts[2944]?.count || '0';
-
         // Count Mind Flay ticks (damage events for Mind Flay and Mind Flay: Insanity)
         const mfTicks = (damageCounts[15407]?.count || 0) + (damageCounts[129197]?.count || 0);
         document.getElementById('mf-ticks').textContent = mfTicks;
