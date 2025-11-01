@@ -32,12 +32,22 @@ const SpellId = {
   DIVINE_STAR: 110744,
   PSYCHIC_HORROR: 64044,
   MIND_BOMB: 105421,
+  SILENCE: 15487,
+  POWER_WORD_SHIELD: 17,
+  RENEW: 139,
+  INNER_FIRE: 588,
 
   // Racials
   BERSERKING: 26297, // Troll
 
   // Engineering/Professions
   SYNAPSE_SPRINGS: 126734, // Engineering tinker (gloves)
+  GOBLIN_GLIDER: 126389, // Goblin Glider (engineering)
+  G91_LANDSHARK: 124199, // G91 Landshark (engineering mount)
+
+  // Consumables
+  POTION_OF_THE_JADE_SERPENT: 105702, // Intellect potion
+  HEALTHSTONE: 6262, // Warlock healthstone
 
   // Related damage IDs (DoT ticks, channeled ticks, etc.)
   MIND_FLAY_TICK: 15407, // MF uses same ID for cast and damage
@@ -241,6 +251,59 @@ const SPELLS = {
     cooldown: 60,
     gcd: false,
     maxDamageInstances: 1
+  }),
+
+  [SpellId.SILENCE]: spell({
+    name: 'Silence',
+    damageType: DamageType.NONE,
+    cooldown: 45,
+    gcd: true
+  }),
+
+  [SpellId.POWER_WORD_SHIELD]: spell({
+    name: 'Power Word: Shield',
+    damageType: DamageType.NONE,
+    gcd: true
+  }),
+
+  [SpellId.RENEW]: spell({
+    name: 'Renew',
+    damageType: DamageType.NONE,
+    maxDuration: 15,
+    gcd: true
+  }),
+
+  [SpellId.INNER_FIRE]: spell({
+    name: 'Inner Fire',
+    damageType: DamageType.NONE,
+    gcd: false
+  }),
+
+  [SpellId.GOBLIN_GLIDER]: spell({
+    name: 'Goblin Glider',
+    damageType: DamageType.NONE,
+    cooldown: 0,
+    gcd: false
+  }),
+
+  [SpellId.G91_LANDSHARK]: spell({
+    name: 'G91 Landshark',
+    damageType: DamageType.NONE,
+    cooldown: 0,
+    gcd: false
+  }),
+
+  [SpellId.POTION_OF_THE_JADE_SERPENT]: spell({
+    name: 'Potion of the Jade Serpent',
+    damageType: DamageType.NONE,
+    gcd: false
+  }),
+
+  [SpellId.HEALTHSTONE]: spell({
+    name: 'Healthstone',
+    damageType: DamageType.NONE,
+    cooldown: 120,
+    gcd: false
   }),
 
   [SpellId.MELEE]: spell({
