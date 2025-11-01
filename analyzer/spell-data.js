@@ -38,6 +38,7 @@ const SpellId = {
   INNER_FIRE: 588,
   POWER_INFUSION: 10060,
   ANGELIC_FEATHER: 121536,
+  DESPERATE_PRAYER: 19236,
 
   // Racials
   BERSERKING: 26297, // Troll
@@ -298,6 +299,13 @@ const SPELLS = {
     name: 'Angelic Feather',
     damageType: DamageType.NONE,
     cooldown: 0,
+    gcd: true
+  }),
+
+  [SpellId.DESPERATE_PRAYER]: spell({
+    name: 'Desperate Prayer',
+    damageType: DamageType.NONE,
+    cooldown: 120,
     gcd: true
   }),
 
