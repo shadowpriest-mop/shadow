@@ -9,7 +9,7 @@ const SPELL_ICONS = {
 
   // Direct Damage
   8092: 'mb.jpg',          // Mind Blast
-  73510: 'mb.jpg',         // Mind Spike (using MB icon for now)
+  73510: 'mindspike.jpg',  // Mind Spike
   32379: 'swd.jpg',        // Shadow Word: Death
 
   // Channels

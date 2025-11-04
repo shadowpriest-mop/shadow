@@ -687,6 +687,19 @@ window.analyzeLog = async function analyzeLog() {
         const castsAnalyzer = new CastsAnalyzer(events, {});
         const casts = castsAnalyzer.analyze();
 
+        // Add target names to casts
+        const enemyNames = new Map();
+        if (currentReportData && currentReportData.masterData && currentReportData.masterData.enemies) {
+            currentReportData.masterData.enemies.forEach(enemy => {
+                enemyNames.set(enemy.id, enemy.name);
+            });
+        }
+        casts.forEach(cast => {
+            if (cast.targetId && cast.targetId > 0) {
+                cast.targetName = enemyNames.get(cast.targetId) || 'Unknown Target';
+            }
+        });
+
         // Store globally for filtering
         window.allCasts = casts;
         window.currentFight = fight;
