@@ -423,6 +423,12 @@ footer a:hover {
     margin-bottom: 2px;
 }
 
+.cast-name-row {
+    display: flex;
+    align-items: baseline;
+    gap: 4px;
+}
+
 .cast-spell-name {
     color: #c4b5fd;
     font-weight: 500;
@@ -431,10 +437,10 @@ footer a:hover {
 }
 
 .cast-target {
-    color: #9ca3af;
-    font-size: 0.8em;
+    color: #999;
+    font-size: 0.85em;
     line-height: 1.2;
-    margin-top: 1px;
+    font-weight: 400;
 }
 
 .cast-stats {

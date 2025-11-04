@@ -816,8 +816,9 @@ function createCastElement(cast, index, fight) {
             <div class="cast-main-content">
                 <div class="cast-info">
                     <div class="cast-time">${timeText}</div>
-                    <div class="cast-spell-name">${cast.name}</div>
-                    ${targetText ? `<div class="cast-target">${targetText}</div>` : ''}
+                    <div class="cast-name-row">
+                        <span class="cast-spell-name">${cast.name}</span>${targetText ? `<span class="cast-target"> ${targetText}</span>` : ''}
+                    </div>
                 </div>
                 <div class="cast-stats">
                     <div class="cast-stat-line"><span class="cast-stat-label">Hits:</span> ${hitsText}</div>
