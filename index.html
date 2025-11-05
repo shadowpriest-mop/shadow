@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Shadow Priest - MoP Classic Helper</title>
     <link rel="icon" type="image/x-icon" href="analyzer/icons/favicon.ico">
-    <link rel="stylesheet" href="style.css?v=2.17">
+    <link rel="stylesheet" href="style.css?v=2.17.1">
 </head>
 <body>
     <!-- LANDING PAGE -->
@@ -57,7 +57,7 @@
                     <span class="separator">|</span>
                     <a href="https://github.com/shadowpriest-mop/shadow" target="_blank">Source</a>
                 </div>
-                <div class="version-label">v2.17</div>
+                <div class="version-label">v2.17.1</div>
             </div>
         </div>
     </div>
@@ -83,6 +83,15 @@
 
         <!-- Player/Encounter Selectors -->
         <div class="analysis-inputs">
+            <div class="form-group inline" id="target-filter-group" style="display: none;">
+                <label for="target-filter">Filter by Target</label>
+                <select id="target-filter">
+                    <option value="all">All Targets</option>
+                </select>
+            </div>
+
+            <div class="selector-gap"></div>
+
             <div class="form-group inline">
                 <label for="player-select-analysis">Select Player</label>
                 <select id="player-select-analysis">
@@ -94,13 +103,6 @@
                 <label for="encounter-select-analysis">Select Encounter</label>
                 <select id="encounter-select-analysis">
                     <!-- Will be populated by JS -->
-                </select>
-            </div>
-
-            <div class="form-group inline" id="target-filter-group" style="display: none;">
-                <label for="target-filter">Filter by Target</label>
-                <select id="target-filter">
-                    <option value="all">All Targets</option>
                 </select>
             </div>
         </div>

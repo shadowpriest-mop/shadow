@@ -878,6 +878,10 @@ footer a:hover {
     align-items: center;
 }
 
+.selector-gap {
+    width: 20px;
+}
+
 .form-group.inline {
     display: flex;
     flex-direction: column;
