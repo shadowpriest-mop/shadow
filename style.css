@@ -801,6 +801,13 @@ footer a:hover {
     margin: 0 8px;
 }
 
+.landing-footer .version-label {
+    font-size: 0.85em;
+    color: #666;
+    margin-top: 8px;
+    display: inline-block;
+}
+
 /* ============================================ */
 /* ANALYSIS PAGE STYLES */
 /* ============================================ */
