@@ -5,344 +5,193 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Shadow Priest - MoP Classic Helper</title>
     <link rel="icon" type="image/x-icon" href="analyzer/icons/favicon.ico">
-    <link rel="stylesheet" href="style.css?v=2.13.1">
+    <link rel="stylesheet" href="style.css?v=2.14">
 </head>
 <body>
-    <div class="container">
-        <header>
-            <h1>Shadow Priest - MoP Classic <span style="font-size: 0.5em; color: #999;">v2.13.1</span></h1>
-            <p class="subtitle">Log Analyzer & Rotation Helper</p>
-        </header>
+    <!-- LANDING PAGE -->
+    <div id="landing-page" class="landing-page">
+        <div class="landing-content">
+            <div class="landing-header">
+                <div class="logo"></div>
+                <h1 class="text-primary">MoP Shadow Priest Analyzer</h1>
+            </div>
 
-        <nav class="tabs">
-            <!-- <button class="tab-button active" onclick="switchTab('configuration')">Configuration</button> -->
-            <!-- <button class="tab-button" onclick="switchTab('results')">Results</button> -->
-            <button class="tab-button active" onclick="switchTab('analyzer')">Analyzer</button>
-            <button class="tab-button" onclick="switchTab('about')">About</button>
+            <div class="landing-card">
+                <form class="report-form">
+                    <div class="form-group">
+                        <label for="wcl-report">Enter WCL report ID or URL</label>
+                        <input type="text"
+                               id="wcl-report"
+                               placeholder="e.g. https://www.warcraftlogs.com/reports/DC2WjNJKnzYtMPLG">
+                        <div id="loading-indicator" class="loading-indicator" style="display: none;">
+                            <span class="spinner"></span> Loading report...
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="player-select">Select Player</label>
+                        <select id="player-select" disabled>
+                            <option value="">Load report first</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="encounter-select">Select Encounter</label>
+                        <select id="encounter-select" disabled>
+                            <option value="">Load report first</option>
+                        </select>
+                    </div>
+
+                    <div class="form-actions">
+                        <button type="button" class="btn-primary" id="analyze-btn" disabled onclick="startAnalysis()">Analyze</button>
+                    </div>
+                </form>
+            </div>
+
+            <div class="landing-footer">
+                Made by <a href="https://github.com/yourusername/shadow" target="_blank">@YourName</a>
+                <span class="separator">|</span>
+                <a href="#" onclick="showAbout(); return false;">About</a>
+                <span class="separator">|</span>
+                <a href="https://github.com/yourusername/shadow" target="_blank">Source</a>
+            </div>
+        </div>
+    </div>
+
+    <!-- ANALYSIS PAGE -->
+    <div id="analysis-page" class="analysis-page" style="display: none;">
+        <!-- Top Nav Bar -->
+        <nav class="app-bar">
+            <a href="#" onclick="goHome(); return false;" class="logo-link">
+                <span class="logo"></span>
+            </a>
+            <span class="report-title text-primary" id="report-title">
+                <!-- Will be populated by JS -->
+            </span>
+            <span class="report-link">
+                <a href="#" id="wcl-link" target="_blank" title="View on WCL">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M19 19H5V5h7V3H5c-1.11 0-2 .9-2 2v14c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2v-7h-2v7zM14 3v2h3.59l-9.83 9.83 1.41 1.41L19 6.41V10h2V3h-7z"/>
+                    </svg>
+                </a>
+            </span>
         </nav>
 
-        <main>
-            <!-- CONFIGURATION TAB - COMMENTED OUT FOR NOW
-            <div id="configuration-tab" class="tab-content active">
-            <section class="input-section">
-                <h2>Character Stats</h2>
-
-                <div class="form-group">
-                    <label for="haste-rating">Haste Rating:</label>
-                    <input type="number" id="haste-rating" min="0" step="1" value="0" placeholder="Enter haste rating">
-                </div>
-
-                <div class="form-group checkbox-group">
-                    <label>
-                        <input type="checkbox" id="shadowform" checked>
-                        Shadowform (5% haste - always active)
-                    </label>
-                </div>
-
-                <div class="form-group">
-                    <label for="racial">Racial:</label>
-                    <select id="racial">
-                        <option value="none">None</option>
-                        <option value="troll">Troll (Berserking - 20% when active)</option>
-                        <option value="goblin">Goblin (Time is Money - 1% passive)</option>
-                        <option value="worgen">Worgen (Darkflight - Sprint, no haste)</option>
-                        <option value="human">Human</option>
-                        <option value="dwarf">Dwarf</option>
-                        <option value="night-elf">Night Elf</option>
-                        <option value="gnome">Gnome</option>
-                        <option value="draenei">Draenei</option>
-                        <option value="undead">Undead</option>
-                        <option value="blood-elf">Blood Elf</option>
-                    </select>
-                </div>
-
-                <div class="form-group checkbox-group">
-                    <label>
-                        <input type="checkbox" id="troll-berserking">
-                        Troll Berserking Active (20% haste for 10 sec)
-                    </label>
-                </div>
-
-                <div class="form-group checkbox-group">
-                    <label>
-                        <input type="checkbox" id="bloodlust">
-                        Bloodlust/Heroism/Time Warp (30% haste)
-                    </label>
-                </div>
-
-                <h2 style="margin-top: 25px; margin-bottom: 15px;">Talents</h2>
-
-                <div class="form-group">
-                    <label for="talent-tier3">Level 45:</label>
-                    <select id="talent-tier3">
-                        <option value="from-darkness">From Darkness, Comes Light</option>
-                        <option value="mindbender">Mindbender</option>
-                        <option value="solace-insanity" selected>Solace and Insanity</option>
-                    </select>
-                </div>
-
-                <div class="form-group">
-                    <label for="talent-tier5">Level 75:</label>
-                    <select id="talent-tier5">
-                        <option value="twist-of-fate">Twist of Fate</option>
-                        <option value="power-infusion">Power Infusion</option>
-                        <option value="divine-insight">Divine Insight</option>
-                    </select>
-                </div>
-
-                <div class="form-group checkbox-group">
-                    <label>
-                        <input type="checkbox" id="power-infusion-active">
-                        Power Infusion Active (20% haste, 5% dmg for 20 sec)
-                    </label>
-                </div>
-
-                <div class="form-group">
-                    <label for="talent-tier6">Level 90:</label>
-                    <select id="talent-tier6">
-                        <option value="cascade">Cascade</option>
-                        <option value="divine-star">Divine Star</option>
-                        <option value="halo" selected>Halo</option>
-                    </select>
-                </div>
-
-                <h2 style="margin-top: 25px; margin-bottom: 15px;">Tier Set Bonuses</h2>
-
-                <div class="form-group checkbox-group">
-                    <label>
-                        <input type="checkbox" id="t14-4pc">
-                        T14 4-Piece (SWP & VT +1 tick)
-                    </label>
-                </div>
-            </section>
-            </div>
-            END CONFIGURATION TAB -->
-
-            <!-- RESULTS TAB - COMMENTED OUT FOR NOW
-            <div id="results-tab" class="tab-content">
-            <section class="results-section">
-                <h2>Results</h2>
-
-                <div class="stat-display">
-                    <h3>Haste Summary</h3>
-                    <div class="stat-row">
-                        <span class="stat-label">Total Haste %:</span>
-                        <span class="stat-value" id="total-haste">0.00%</span>
-                    </div>
-                    <div class="stat-row">
-                        <span class="stat-label">GCD:</span>
-                        <span class="stat-value" id="gcd">1.50s</span>
-                    </div>
-                </div>
-
-                <div class="stat-display">
-                    <h3>DoT Durations</h3>
-                    <div class="stat-row">
-                        <span class="stat-label">Shadow Word: Pain:</span>
-                        <span class="stat-value" id="swp-duration">18.00s (9 ticks)</span>
-                    </div>
-                    <div class="stat-row">
-                        <span class="stat-label">Vampiric Touch:</span>
-                        <span class="stat-value" id="vt-duration">15.00s (5 ticks)</span>
-                    </div>
-                    <div class="stat-row">
-                        <span class="stat-label">Devouring Plague (3 orbs):</span>
-                        <span class="stat-value" id="dp-duration">6.00s (6 ticks)</span>
-                    </div>
-                </div>
-
-                <div class="stat-display">
-                    <h3>Cast Times</h3>
-                    <div class="stat-row">
-                        <span class="stat-label">Vampiric Touch:</span>
-                        <span class="stat-value" id="vt-cast">1.50s</span>
-                    </div>
-                    <div class="stat-row">
-                        <span class="stat-label">Mind Blast:</span>
-                        <span class="stat-value" id="mb-cast">1.50s</span>
-                    </div>
-                    <div class="stat-row">
-                        <span class="stat-label">Mind Flay (channel):</span>
-                        <span class="stat-value" id="mf-cast">3.00s (3 ticks)</span>
-                    </div>
-                    <div class="stat-row">
-                        <span class="stat-label">Shadow Word: Death:</span>
-                        <span class="stat-value" id="swd-cast">Instant</span>
-                    </div>
-                </div>
-
-                <div class="stat-display">
-                    <h3>Insanity Window (DoT Refresh Timing)</h3>
-                    <div class="stat-row">
-                        <span class="stat-label">Refresh threshold (one DoT):</span>
-                        <span class="stat-value" id="insanity-window-single">0.00s</span>
-                    </div>
-                    <div class="stat-row">
-                        <span class="stat-label">Refresh threshold (both DoTs):</span>
-                        <span class="stat-value" id="insanity-window-both">0.00s</span>
-                    </div>
-                    <button class="details-toggle" onclick="toggleInsanityDetails()">Show Details</button>
-                    <div id="insanity-details" class="insanity-details" style="display: none;">
-                        <div class="stat-row">
-                            <span class="stat-label">Mind Blast cast:</span>
-                            <span class="stat-value" id="insanity-mb-cast">0.00s</span>
-                        </div>
-                        <div class="stat-row">
-                            <span class="stat-label">DP GCD:</span>
-                            <span class="stat-value" id="insanity-dp-gcd">0.00s</span>
-                        </div>
-                        <div class="stat-row">
-                            <span class="stat-label">DP Duration (ticks):</span>
-                            <span class="stat-value" id="insanity-dp-duration">0.00s (0 ticks)</span>
-                        </div>
-                        <div class="stat-row">
-                            <span class="stat-label">Mind Flay casts during DP:</span>
-                            <span class="stat-value" id="insanity-mf-count">0</span>
-                        </div>
-                        <div class="stat-row">
-                            <span class="stat-label">Total window duration:</span>
-                            <span class="stat-value" id="insanity-total">0.00s</span>
-                        </div>
-                    </div>
-                </div>
-            </section>
-            </div>
-            END RESULTS TAB -->
-
-            <div id="analyzer-tab" class="tab-content active">
-            <section class="analyzer-section">
-                <h2>Warcraft Logs Analyzer</h2>
-                <p class="subtitle">Authentication handled automatically - just paste your log URL!</p>
-
-                <div id="analyzer-form">
-                    <div class="form-group">
-                        <label for="wcl-report">WCL Report ID or URL:</label>
-                        <input type="text" id="wcl-report" placeholder="DC2WjNJKnzYtMPLG or full URL">
-                        <button class="analyze-button" onclick="loadReport()" style="margin-top: 10px;">Load Report</button>
-                    </div>
-
-                <div class="form-group">
-                    <label for="player-select">Select Player:</label>
-                    <select id="player-select" disabled>
-                        <option value="">Load report first</option>
-                    </select>
-                </div>
-
-                <div class="form-group">
-                    <label for="encounter-select">Select Encounter:</label>
-                    <select id="encounter-select" disabled>
-                        <option value="">Load report first</option>
-                    </select>
-                </div>
-
-                <div class="form-group" id="target-filter-group" style="display: none;">
-                    <label for="target-filter">Filter by Target:</label>
-                    <select id="target-filter">
-                        <option value="all">All Targets</option>
-                    </select>
-                    <small style="display: block; margin-top: 5px; color: #999;">Filter casts to only show actions on specific targets</small>
-                </div>
-
-                <button class="analyze-button" onclick="analyzeLog()" disabled id="analyze-btn">Analyze</button>
-
-                <div id="loading-indicator" style="display: none;">
-                    <p>Loading report data...</p>
-                </div>
-
-                <div id="analysis-results" style="display: none;">
-                    
-                    <div id="cast-timeline" style="display: none;">
-                        <h3>Cast Timeline</h3>
-
-                        <!-- Spell Filter Buttons -->
-                        <div class="spell-filters">
-                            <button class="spell-filter-btn active" data-spell="timeline" onclick="filterBySpell('timeline')">
-                                <span class="filter-label">Timeline</span>
-                            </button>
-                            <button class="spell-filter-btn" data-spell="2944" onclick="filterBySpell(2944)">
-                                <img src="analyzer/icons/plague.jpg" alt="DP" class="filter-icon">
-                                <span class="filter-label">DP</span>
-                            </button>
-                            <button class="spell-filter-btn" data-spell="34914" onclick="filterBySpell(34914)">
-                                <img src="analyzer/icons/vt.jpg" alt="VT" class="filter-icon">
-                                <span class="filter-label">VT</span>
-                            </button>
-                            <button class="spell-filter-btn" data-spell="589" onclick="filterBySpell(589)">
-                                <img src="analyzer/icons/swp.jpg" alt="SW:P" class="filter-icon">
-                                <span class="filter-label">SW:P</span>
-                            </button>
-                            <button class="spell-filter-btn" data-spell="8092" onclick="filterBySpell(8092)">
-                                <img src="analyzer/icons/mb.jpg" alt="MB" class="filter-icon">
-                                <span class="filter-label">MB</span>
-                            </button>
-                            <button class="spell-filter-btn" data-spell="32379" onclick="filterBySpell(32379)">
-                                <img src="analyzer/icons/swd.jpg" alt="SW:D" class="filter-icon">
-                                <span class="filter-label">SW:D</span>
-                            </button>
-                            <button class="spell-filter-btn" data-spell="15407" onclick="filterBySpell(15407)">
-                                <img src="analyzer/icons/flay.jpg" alt="MF" class="filter-icon">
-                                <span class="filter-label">MF</span>
-                            </button>
-                        </div>
-
-                        <!-- Stats Overview Panel -->
-                        <div id="stats-overview" class="stats-overview">
-                            <!-- Stats will be populated by JavaScript -->
-                        </div>
-
-                        <!-- Existing quality filters -->
-                        <div class="cast-filters">
-                            <label>
-                                <input type="checkbox" id="filter-warnings" checked> Show Warnings
-                            </label>
-                            <label>
-                                <input type="checkbox" id="filter-notices" checked> Show Notices
-                            </label>
-                            <label>
-                                <input type="checkbox" id="filter-normal" checked> Show Normal
-                            </label>
-                        </div>
-
-                        <div id="cast-list" class="cast-list">
-                            <!-- Casts will be rendered here -->
-                        </div>
-                    </div>
-                </div>
-                </div>
-            </section>
+        <!-- Player/Encounter Selectors -->
+        <div class="analysis-inputs">
+            <div class="form-group inline">
+                <label for="player-select-analysis">Select Player</label>
+                <select id="player-select-analysis">
+                    <!-- Will be populated by JS -->
+                </select>
             </div>
 
-            <div id="about-tab" class="tab-content">
-            <section class="info-section">
-                <h2>About Solace and Insanity (Mind Flay: Insanity)</h2>
-                <p>
-                    The Solace and Insanity talent causes your Mind Flay to deal increased damage while Devouring Plague
-                    is active on the target. This damage bonus is <strong>snapshotted</strong> when you start channeling Mind Flay.
-                </p>
-                <p class="tip">
-                    <strong>Tip:</strong> Just before Devouring Plague expires, clip your current Mind Flay channel and start
-                    a new one to snapshot the Insanity damage bonus one last time. This maximizes your damage by getting an
-                    extra empowered Mind Flay before DP falls off.
-                </p>
-            </section>
+            <div class="form-group inline">
+                <label for="encounter-select-analysis">Select Encounter</label>
+                <select id="encounter-select-analysis">
+                    <!-- Will be populated by JS -->
+                </select>
             </div>
-        </main>
+        </div>
 
-        <footer>
-            <p>MoP Classic - Shadow Priest Tool | <a href="https://github.com/yourusername/shadow" target="_blank">GitHub</a></p>
-        </footer>
+        <!-- Target Filter (shown when analyzing) -->
+        <div class="analysis-filters" id="target-filter-group" style="display: none;">
+            <div class="form-group inline">
+                <label for="target-filter">Filter by Target</label>
+                <select id="target-filter">
+                    <option value="all">All Targets</option>
+                </select>
+            </div>
+        </div>
+
+        <!-- Analysis Results -->
+        <div id="analysis-results" style="display: none;">
+            <div id="cast-timeline">
+                <h3>Cast Timeline</h3>
+
+                <!-- Spell Filter Buttons -->
+                <div class="spell-filters">
+                    <button class="spell-filter-btn active" data-spell="timeline" onclick="filterBySpell('timeline')">
+                        <span class="filter-label">Timeline</span>
+                    </button>
+                    <button class="spell-filter-btn" data-spell="2944" onclick="filterBySpell(2944)">
+                        <img src="analyzer/icons/plague.jpg" alt="DP" class="filter-icon">
+                        <span class="filter-label">DP</span>
+                    </button>
+                    <button class="spell-filter-btn" data-spell="34914" onclick="filterBySpell(34914)">
+                        <img src="analyzer/icons/vt.jpg" alt="VT" class="filter-icon">
+                        <span class="filter-label">VT</span>
+                    </button>
+                    <button class="spell-filter-btn" data-spell="589" onclick="filterBySpell(589)">
+                        <img src="analyzer/icons/swp.jpg" alt="SW:P" class="filter-icon">
+                        <span class="filter-label">SW:P</span>
+                    </button>
+                    <button class="spell-filter-btn" data-spell="8092" onclick="filterBySpell(8092)">
+                        <img src="analyzer/icons/mb.jpg" alt="MB" class="filter-icon">
+                        <span class="filter-label">MB</span>
+                    </button>
+                    <button class="spell-filter-btn" data-spell="32379" onclick="filterBySpell(32379)">
+                        <img src="analyzer/icons/swd.jpg" alt="SW:D" class="filter-icon">
+                        <span class="filter-label">SW:D</span>
+                    </button>
+                    <button class="spell-filter-btn" data-spell="15407" onclick="filterBySpell(15407)">
+                        <img src="analyzer/icons/flay.jpg" alt="MF" class="filter-icon">
+                        <span class="filter-label">MF</span>
+                    </button>
+                </div>
+
+                <!-- Stats Overview Panel -->
+                <div id="stats-overview" class="stats-overview">
+                    <!-- Stats will be populated by JavaScript -->
+                </div>
+
+                <!-- Quality filters -->
+                <div class="cast-filters">
+                    <label>
+                        <input type="checkbox" id="filter-warnings" checked> Show Warnings
+                    </label>
+                    <label>
+                        <input type="checkbox" id="filter-notices" checked> Show Notices
+                    </label>
+                    <label>
+                        <input type="checkbox" id="filter-normal" checked> Show Normal
+                    </label>
+                </div>
+
+                <div id="cast-list" class="cast-list">
+                    <!-- Casts will be rendered here -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ABOUT MODAL/OVERLAY -->
+    <div id="about-overlay" class="about-overlay" style="display: none;">
+        <div class="about-content">
+            <button class="about-close" onclick="hideAbout()">×</button>
+            <h2>About Solace and Insanity (Mind Flay: Insanity)</h2>
+            <p>
+                The Solace and Insanity talent causes your Mind Flay to deal increased damage while Devouring Plague
+                is active on the target. This damage bonus is <strong>snapshotted</strong> when you start channeling Mind Flay.
+            </p>
+            <p class="tip">
+                <strong>Tip:</strong> Just before Devouring Plague expires, clip your current Mind Flay channel and start
+                a new one to snapshot the Insanity damage bonus one last time. This maximizes your damage by getting an
+                extra empowered Mind Flay before DP falls off.
+            </p>
+        </div>
     </div>
 
     <!-- Analyzer modules -->
-    <script src="analyzer/spell-data.js?v=2.13"></script>
-    <script src="analyzer/haste.js?v=2.13"></script>
-    <script src="analyzer/wcl-v2-service.js?v=2.13"></script>
-    <script src="analyzer/cast-details.js?v=2.13"></script>
-    <script src="analyzer/stat-highlights.js?v=2.13"></script>
-    <script src="analyzer/casts-analyzer.js?v=2.13"></script>
-    <script src="analyzer/cast-stats-calculator.js?v=2.13"></script>
-    <script src="analyzer/spell-icons.js?v=2.13"></script>
-    <script src="analyzer/event-analyzer.js?v=2.13"></script>
-    <script src="script.js?v=2.13.1"></script>
+    <script src="analyzer/spell-data.js?v=2.14"></script>
+    <script src="analyzer/haste.js?v=2.14"></script>
+    <script src="analyzer/wcl-v2-service.js?v=2.14"></script>
+    <script src="analyzer/cast-details.js?v=2.14"></script>
+    <script src="analyzer/stat-highlights.js?v=2.14"></script>
+    <script src="analyzer/casts-analyzer.js?v=2.14"></script>
+    <script src="analyzer/cast-stats-calculator.js?v=2.14"></script>
+    <script src="analyzer/spell-icons.js?v=2.14"></script>
+    <script src="analyzer/event-analyzer.js?v=2.14"></script>
+    <script src="script.js?v=2.14"></script>
 </body>
 </html>

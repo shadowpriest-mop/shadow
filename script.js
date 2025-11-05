@@ -53,6 +53,76 @@ const CASTS = {
     }
 };
 
+// ====== PAGE NAVIGATION FUNCTIONS ======
+
+/**
+ * Switch from landing page to analysis page
+ */
+window.startAnalysis = function() {
+    document.getElementById('landing-page').style.display = 'none';
+    document.getElementById('analysis-page').style.display = 'block';
+
+    // Copy selections from landing page to analysis page
+    const playerSelect = document.getElementById('player-select');
+    const encounterSelect = document.getElementById('encounter-select');
+    const playerSelectAnalysis = document.getElementById('player-select-analysis');
+    const encounterSelectAnalysis = document.getElementById('encounter-select-analysis');
+
+    // Copy options
+    playerSelectAnalysis.innerHTML = playerSelect.innerHTML;
+    encounterSelectAnalysis.innerHTML = encounterSelect.innerHTML;
+
+    // Copy selected values
+    playerSelectAnalysis.value = playerSelect.value;
+    encounterSelectAnalysis.value = encounterSelect.value;
+
+    // Set up report title bar
+    if (currentReportData) {
+        const reportTitle = document.getElementById('report-title');
+        const wclLink = document.getElementById('wcl-link');
+
+        reportTitle.textContent = `${currentReportData.title || 'Report'} (${currentReportData.owner || 'Unknown'})`;
+        wclLink.href = `https://www.warcraftlogs.com/reports/${wclV2Service.extractReportId(document.getElementById('wcl-report').value)}`;
+    }
+
+    // Add change listeners to analysis page selectors
+    playerSelectAnalysis.addEventListener('change', () => {
+        window.analyzeLog();
+    });
+    encounterSelectAnalysis.addEventListener('change', () => {
+        window.analyzeLog();
+    });
+
+    // Trigger analysis
+    window.analyzeLog();
+};
+
+/**
+ * Go back to landing page (home)
+ */
+window.goHome = function() {
+    document.getElementById('analysis-page').style.display = 'none';
+    document.getElementById('landing-page').style.display = 'flex';
+
+    // Clear analysis results
+    document.getElementById('analysis-results').style.display = 'none';
+    document.getElementById('target-filter-group').style.display = 'none';
+};
+
+/**
+ * Show about overlay
+ */
+window.showAbout = function() {
+    document.getElementById('about-overlay').style.display = 'flex';
+};
+
+/**
+ * Hide about overlay
+ */
+window.hideAbout = function() {
+    document.getElementById('about-overlay').style.display = 'none';
+};
+
 // Initialize
 document.addEventListener('DOMContentLoaded', function() {
     // Get all input elements
@@ -568,8 +638,14 @@ function extractTargetsFromEvents(events, reportData) {
 
 // Make analyzeLog available globally
 window.analyzeLog = async function analyzeLog() {
-    const playerSelect = document.getElementById('player-select');
-    const encounterSelect = document.getElementById('encounter-select');
+    // Use analysis page selectors if on analysis page, otherwise use landing page
+    const onAnalysisPage = document.getElementById('analysis-page').style.display !== 'none';
+    const playerSelect = onAnalysisPage
+        ? document.getElementById('player-select-analysis')
+        : document.getElementById('player-select');
+    const encounterSelect = onAnalysisPage
+        ? document.getElementById('encounter-select-analysis')
+        : document.getElementById('encounter-select');
 
     if (!playerSelect.value || !encounterSelect.value) {
         alert('Please select both a player and an encounter');
