@@ -53,6 +53,102 @@ const CASTS = {
     }
 };
 
+// ====== HASH ROUTING SYSTEM ======
+
+/**
+ * Parse hash URL: #/report/DC2WjNJKnzYtMPLG/Kiwiandapple/1
+ * Returns { reportId, playerName, fightId } or null
+ */
+function parseHash() {
+    const hash = window.location.hash;
+    if (!hash || !hash.startsWith('#/report/')) {
+        return null;
+    }
+
+    const parts = hash.substring(9).split('/'); // Remove '#/report/'
+    if (parts.length < 3) {
+        return null;
+    }
+
+    return {
+        reportId: parts[0],
+        playerName: parts[1],
+        fightId: parseInt(parts[2])
+    };
+}
+
+/**
+ * Update URL hash without triggering navigation
+ */
+function updateHash(reportId, playerName, fightId) {
+    const newHash = `#/report/${reportId}/${playerName}/${fightId}`;
+    if (window.location.hash !== newHash) {
+        window.history.pushState(null, '', newHash);
+    }
+}
+
+/**
+ * Navigate to landing page (clear hash)
+ */
+function navigateHome() {
+    window.history.pushState(null, '', window.location.pathname);
+    window.goHome();
+}
+
+/**
+ * Load analysis from URL hash
+ */
+async function loadFromHash() {
+    const route = parseHash();
+    if (!route) {
+        console.log('No valid hash route found');
+        return;
+    }
+
+    console.log('Loading from hash:', route);
+
+    // Set the WCL input
+    const wclInput = document.getElementById('wcl-report');
+    if (wclInput) {
+        wclInput.value = route.reportId;
+    }
+
+    try {
+        // Load the report
+        await window.loadReport();
+
+        // Wait a bit for report to load
+        await new Promise(resolve => setTimeout(resolve, 500));
+
+        // Select player and encounter
+        const playerSelect = document.getElementById('player-select');
+        const encounterSelect = document.getElementById('encounter-select');
+
+        if (playerSelect && encounterSelect) {
+            // Find and select the player
+            for (let option of playerSelect.options) {
+                if (option.value === route.playerName) {
+                    playerSelect.value = route.playerName;
+                    break;
+                }
+            }
+
+            // Find and select the encounter
+            encounterSelect.value = route.fightId.toString();
+
+            // Check if selections are valid
+            if (playerSelect.value && encounterSelect.value) {
+                // Start analysis (which will switch to analysis page)
+                await window.startAnalysis();
+            } else {
+                console.warn('Could not find player or encounter from URL');
+            }
+        }
+    } catch (error) {
+        console.error('Error loading from hash:', error);
+    }
+}
+
 // ====== PAGE NAVIGATION FUNCTIONS ======
 
 /**
@@ -85,13 +181,35 @@ window.startAnalysis = function() {
         wclLink.href = `https://www.warcraftlogs.com/reports/${wclV2Service.extractReportId(document.getElementById('wcl-report').value)}`;
     }
 
-    // Add change listeners to analysis page selectors
-    playerSelectAnalysis.addEventListener('change', () => {
-        window.analyzeLog();
-    });
-    encounterSelectAnalysis.addEventListener('change', () => {
-        window.analyzeLog();
-    });
+    // Add change listeners to analysis page selectors (only once)
+    if (!playerSelectAnalysis.hasAttribute('data-listener-attached')) {
+        playerSelectAnalysis.setAttribute('data-listener-attached', 'true');
+        playerSelectAnalysis.addEventListener('change', () => {
+            // Update hash when player changes
+            const reportId = wclV2Service.extractReportId(document.getElementById('wcl-report').value);
+            const playerName = playerSelectAnalysis.value;
+            const fightId = encounterSelectAnalysis.value;
+            updateHash(reportId, playerName, fightId);
+            window.analyzeLog();
+        });
+    }
+    if (!encounterSelectAnalysis.hasAttribute('data-listener-attached')) {
+        encounterSelectAnalysis.setAttribute('data-listener-attached', 'true');
+        encounterSelectAnalysis.addEventListener('change', () => {
+            // Update hash when encounter changes
+            const reportId = wclV2Service.extractReportId(document.getElementById('wcl-report').value);
+            const playerName = playerSelectAnalysis.value;
+            const fightId = encounterSelectAnalysis.value;
+            updateHash(reportId, playerName, fightId);
+            window.analyzeLog();
+        });
+    }
+
+    // Update URL hash
+    const reportId = wclV2Service.extractReportId(document.getElementById('wcl-report').value);
+    const playerName = playerSelect.value;
+    const fightId = encounterSelect.value;
+    updateHash(reportId, playerName, fightId);
 
     // Trigger analysis
     window.analyzeLog();
@@ -101,6 +219,9 @@ window.startAnalysis = function() {
  * Go back to landing page (home)
  */
 window.goHome = function() {
+    // Clear hash
+    window.history.pushState(null, '', window.location.pathname);
+
     document.getElementById('analysis-page').style.display = 'none';
     document.getElementById('landing-page').style.display = 'flex';
 
@@ -144,6 +265,24 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     } else {
         console.error('Could not find wcl-report input element!');
+    }
+
+    // Add hashchange listener for browser back/forward
+    window.addEventListener('hashchange', function() {
+        console.log('Hash changed:', window.location.hash);
+        const route = parseHash();
+        if (route) {
+            loadFromHash();
+        } else {
+            // No valid route, go home
+            window.goHome();
+        }
+    });
+
+    // Check if we have a hash route on page load
+    if (window.location.hash) {
+        console.log('Found hash on load, attempting to load from URL');
+        loadFromHash();
     }
 
     console.log('DOMContentLoaded complete - all event listeners added');
