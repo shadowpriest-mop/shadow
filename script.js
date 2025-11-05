@@ -125,34 +125,7 @@ window.hideAbout = function() {
 
 // Initialize
 document.addEventListener('DOMContentLoaded', function() {
-    // Get all input elements
-    const hasteRatingInput = document.getElementById('haste-rating');
-    const shadowformCheckbox = document.getElementById('shadowform');
-    const racialSelect = document.getElementById('racial');
-    const trollBerserkingCheckbox = document.getElementById('troll-berserking');
-    const bloodlustCheckbox = document.getElementById('bloodlust');
-    const talentTier3Select = document.getElementById('talent-tier3');
-    const talentTier5Select = document.getElementById('talent-tier5');
-    const talentTier6Select = document.getElementById('talent-tier6');
-    const powerInfusionCheckbox = document.getElementById('power-infusion-active');
-    const t14_4pcCheckbox = document.getElementById('t14-4pc');
-
-    // Add event listeners for calculator
-    hasteRatingInput.addEventListener('input', calculate);
-    shadowformCheckbox.addEventListener('change', calculate);
-    racialSelect.addEventListener('change', updateRacialOptions);
-    trollBerserkingCheckbox.addEventListener('change', calculate);
-    bloodlustCheckbox.addEventListener('change', calculate);
-    talentTier3Select.addEventListener('change', calculate);
-    talentTier5Select.addEventListener('change', updateTalentOptions);
-    talentTier6Select.addEventListener('change', calculate);
-    powerInfusionCheckbox.addEventListener('change', calculate);
-    t14_4pcCheckbox.addEventListener('change', calculate);
-
-    // Initial calculation
-    updateRacialOptions();
-    updateTalentOptions();
-    calculate();
+    console.log('DOMContentLoaded - Initializing WCL analyzer');
 
     // Add event listeners for WCL analyzer
     const wclInput = document.getElementById('wcl-report');
@@ -165,6 +138,7 @@ document.addEventListener('DOMContentLoaded', function() {
         wclInput.addEventListener('keypress', function(e) {
             console.log('Keypress event:', e.key);
             if (e.key === 'Enter') {
+                e.preventDefault(); // Prevent form submission
                 window.loadReport();
             }
         });
