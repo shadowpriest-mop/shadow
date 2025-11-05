@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Shadow Priest - MoP Classic Helper</title>
     <link rel="icon" type="image/x-icon" href="analyzer/icons/favicon.ico">
-    <link rel="stylesheet" href="style.css?v=2.16.2">
+    <link rel="stylesheet" href="style.css?v=2.17">
 </head>
 <body>
     <!-- LANDING PAGE -->
@@ -57,7 +57,7 @@
                     <span class="separator">|</span>
                     <a href="https://github.com/shadowpriest-mop/shadow" target="_blank">Source</a>
                 </div>
-                <div class="version-label">v2.16.2</div>
+                <div class="version-label">v2.17</div>
             </div>
         </div>
     </div>
@@ -96,11 +96,8 @@
                     <!-- Will be populated by JS -->
                 </select>
             </div>
-        </div>
 
-        <!-- Target Filter (shown when analyzing) -->
-        <div class="analysis-filters" id="target-filter-group" style="display: none;">
-            <div class="form-group inline">
+            <div class="form-group inline" id="target-filter-group" style="display: none;">
                 <label for="target-filter">Filter by Target</label>
                 <select id="target-filter">
                     <option value="all">All Targets</option>
@@ -118,8 +115,6 @@
         <!-- Analysis Results -->
         <div id="analysis-results" style="display: none;">
             <div id="cast-timeline">
-                <h3>Cast Timeline</h3>
-
                 <!-- Spell Filter Buttons -->
                 <div class="spell-filters">
                     <button class="spell-filter-btn active" data-spell="timeline" onclick="filterBySpell('timeline')">
