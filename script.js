@@ -1313,7 +1313,7 @@ function renderStatsOverview(filter) {
 function createStatField(label, value) {
     return `
         <div class="stat-field">
-            <div class="stat-field-label">${label}</div>
+            <div class="stat-field-label">${label}:</div>
             <div class="stat-field-value">${value}</div>
         </div>
     `;

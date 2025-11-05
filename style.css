@@ -604,10 +604,10 @@ footer a:hover {
 /* Stats Overview Panel */
 .stats-overview {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-    gap: 8px;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 6px;
     margin-bottom: 15px;
-    padding: 15px;
+    padding: 12px 15px;
     background: rgba(30, 30, 46, 0.6);
     border-radius: 6px;
     border: 1px solid #424242;
@@ -615,21 +615,21 @@ footer a:hover {
 
 .stat-field {
     display: flex;
-    flex-direction: column;
-    gap: 3px;
+    flex-direction: row;
+    align-items: baseline;
+    gap: 6px;
 }
 
 .stat-field-label {
     color: #9ca3af;
-    font-size: 0.75em;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
+    font-size: 0.8em;
+    font-weight: 400;
 }
 
 .stat-field-value {
     color: #e0e0e0;
-    font-size: 1.1em;
-    font-weight: 600;
+    font-size: 0.8em;
+    font-weight: 500;
     font-family: 'Courier New', monospace;
 }
 
@@ -637,7 +637,7 @@ footer a:hover {
     grid-column: 1 / -1;
     height: 0;
     border-bottom: 1px solid #424242;
-    margin: 4px 0;
+    margin: 2px 0;
 }
 
 /* Text color classes for quality indicators */
