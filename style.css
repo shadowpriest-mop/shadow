@@ -890,6 +890,35 @@ footer a:hover {
     font-size: 1em;
 }
 
+.analysis-loading {
+    max-width: 1400px;
+    margin: 80px auto;
+    padding: 60px 20px;
+    text-align: center;
+}
+
+.loading-spinner-large {
+    width: 64px;
+    height: 64px;
+    border: 6px solid rgba(159, 168, 218, 0.2);
+    border-top-color: #9FA8DA;
+    border-radius: 50%;
+    margin: 0 auto 30px;
+    animation: spin 1s linear infinite;
+}
+
+.loading-text {
+    color: #9FA8DA;
+    font-size: 1.4em;
+    font-weight: 500;
+    margin-bottom: 10px;
+}
+
+.loading-subtext {
+    color: #999;
+    font-size: 0.95em;
+}
+
 #analysis-results {
     max-width: 1400px;
     margin: 0 auto;

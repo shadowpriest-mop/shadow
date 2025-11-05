@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Shadow Priest - MoP Classic Helper</title>
     <link rel="icon" type="image/x-icon" href="analyzer/icons/favicon.ico">
-    <link rel="stylesheet" href="style.css?v=2.14.1">
+    <link rel="stylesheet" href="style.css?v=2.14.4">
 </head>
 <body>
     <!-- LANDING PAGE -->
@@ -106,6 +106,13 @@
             </div>
         </div>
 
+        <!-- Analysis Loading Indicator -->
+        <div id="analysis-loading" class="analysis-loading" style="display: none;">
+            <div class="loading-spinner-large"></div>
+            <p class="loading-text">Analyzing log data...</p>
+            <p class="loading-subtext">Fetching events from WarcraftLogs</p>
+        </div>
+
         <!-- Analysis Results -->
         <div id="analysis-results" style="display: none;">
             <div id="cast-timeline">
@@ -194,6 +201,6 @@
     <script src="analyzer/cast-stats-calculator.js?v=2.14"></script>
     <script src="analyzer/spell-icons.js?v=2.14"></script>
     <script src="analyzer/event-analyzer.js?v=2.14"></script>
-    <script src="script.js?v=2.14.3"></script>
+    <script src="script.js?v=2.14.4"></script>
 </body>
 </html>

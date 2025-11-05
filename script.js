@@ -774,9 +774,15 @@ window.analyzeLog = async function analyzeLog() {
     const fightId = parseInt(encounterSelect.value);
 
     const loadingIndicator = document.getElementById('loading-indicator');
+    const analysisLoading = document.getElementById('analysis-loading');
     const resultsSection = document.getElementById('analysis-results');
 
-    loadingIndicator.style.display = 'block';
+    // Show loading state (only on analysis page)
+    if (onAnalysisPage) {
+        analysisLoading.style.display = 'block';
+    } else {
+        loadingIndicator.style.display = 'block';
+    }
     resultsSection.style.display = 'none';
 
     try {
@@ -906,7 +912,8 @@ window.analyzeLog = async function analyzeLog() {
             renderStatsOverview('timeline');
         });
 
-        // Show results
+        // Hide loading, show results
+        analysisLoading.style.display = 'none';
         resultsSection.style.display = 'block';
         document.getElementById('cast-timeline').style.display = 'block';
 
@@ -915,6 +922,7 @@ window.analyzeLog = async function analyzeLog() {
         alert('Error analyzing log: ' + error.message);
     } finally {
         loadingIndicator.style.display = 'none';
+        analysisLoading.style.display = 'none';
     }
 };
 
