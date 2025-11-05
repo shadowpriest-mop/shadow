@@ -347,8 +347,8 @@ footer a:hover {
 
 .cast-header {
     display: flex;
-    align-items: flex-start;
-    padding: 8px 12px 8px 16px;
+    align-items: center;
+    padding: 4px 8px 4px 16px;
     cursor: pointer;
     position: relative;
 }
@@ -373,8 +373,16 @@ footer a:hover {
     background: #ef4444;
 }
 
+.cast-time {
+    font-family: 'Courier New', monospace;
+    color: #7986CB;
+    font-size: 0.7em;
+    margin-right: 8px;
+    flex-shrink: 0;
+    min-width: 50px;
+}
+
 .cast-icon-wrapper {
-    margin-left: 6px;
     margin-right: 10px;
     flex-shrink: 0;
 }
@@ -404,18 +412,12 @@ footer a:hover {
     display: flex;
     gap: 10px;
     min-width: 0;
+    align-items: center;
 }
 
 .cast-info {
     flex: 1;
     min-width: 0;
-}
-
-.cast-time {
-    font-family: 'Courier New', monospace;
-    color: #7986CB;
-    font-size: 0.75em;
-    margin-bottom: 2px;
 }
 
 .cast-name-row {
@@ -440,11 +442,11 @@ footer a:hover {
 
 .cast-stats {
     display: flex;
-    flex-direction: column;
-    align-items: flex-end;
-    justify-content: center;
-    gap: 2px;
-    min-width: 100px;
+    flex-direction: row;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 12px;
+    min-width: 150px;
 }
 
 .cast-stat-line {
@@ -459,7 +461,6 @@ footer a:hover {
 
 .cast-expand-icon {
     margin-left: 4px;
-    margin-top: 8px;
     color: #666;
     font-size: 0.7em;
     transition: transform 0.2s ease;

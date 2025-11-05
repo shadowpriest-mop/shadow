@@ -1007,12 +1007,12 @@ function createCastElement(cast, index, fight) {
     div.innerHTML = `
         <div class="cast-header" onclick="toggleCastDetails(${index})">
             <span class="cast-status ${statusClass}"></span>
+            <div class="cast-time">${timeText}</div>
             <div class="cast-icon-wrapper">
                 <div class="cast-icon">${iconHTML}</div>
             </div>
             <div class="cast-main-content">
                 <div class="cast-info">
-                    <div class="cast-time">${timeText}</div>
                     <div class="cast-name-row">
                         <span class="cast-spell-name">${cast.name}</span>${targetText ? `<span class="cast-target"> ${targetText}</span>` : ''}
                     </div>
