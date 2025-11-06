@@ -44,6 +44,19 @@ const AuraId = {
   // From Darkness, Comes Light proc
   SURGE_OF_DARKNESS: 87160, // Free instant SW:D
   SURGE_OF_LIGHT: 114255, // Free instant Mind Spike (if talented)
+  TWIST_OF_FATE: 123254, // 15% increased damage/healing after killing blow
+
+  // Profession Enchants/Procs
+  JADE_SPIRIT: 104993, // Weapon enchant: 2000 int proc
+  LIGHTWEAVE: 125487, // Tailoring cloak enchant: 2000 int proc
+  NITRO_BOOSTS: 54861, // Engineering belt tinker
+
+  // Raid Cooldowns
+  SKULL_BANNER: 114206, // Warrior banner: 20% crit chance
+
+  // Additional Trinket Procs
+  QUICKENED_TONGUES: 126659, // Trinket proc
+  INNER_BRILLIANCE: 126577, // Trinket proc
 
   // Vampiric Touch refresh mechanic
   VT_REFRESH: 34914 // Not a real buff, but tracks VT refresh timing
@@ -192,6 +205,56 @@ const BUFFS = {
 
   [AuraId.SURGE_OF_LIGHT]: buff({
     name: 'Surge of Light',
+    trigger: BuffTrigger.EXTERNAL,
+    summaryIcon: true
+  }),
+
+  [AuraId.TWIST_OF_FATE]: buff({
+    name: 'Twist of Fate',
+    damage: 0.15,
+    trigger: BuffTrigger.EXTERNAL,
+    summaryIcon: true
+  }),
+
+  // Profession Enchants
+  [AuraId.JADE_SPIRIT]: buff({
+    name: 'Jade Spirit',
+    hasteRating: 2000, // Int buff, but shows as important proc
+    trigger: BuffTrigger.EXTERNAL,
+    summaryIcon: true
+  }),
+
+  [AuraId.LIGHTWEAVE]: buff({
+    name: 'Lightweave',
+    hasteRating: 2000,
+    trigger: BuffTrigger.EXTERNAL,
+    summaryIcon: true
+  }),
+
+  [AuraId.NITRO_BOOSTS]: buff({
+    name: 'Nitro Boosts',
+    trigger: BuffTrigger.ON_USE,
+    summaryIcon: true
+  }),
+
+  // Raid Cooldowns
+  [AuraId.SKULL_BANNER]: buff({
+    name: 'Skull Banner',
+    trigger: BuffTrigger.EXTERNAL,
+    summaryIcon: true
+  }),
+
+  // Trinket Procs
+  [AuraId.QUICKENED_TONGUES]: buff({
+    name: 'Quickened Tongues',
+    hasteRating: 1000, // Example value
+    trigger: BuffTrigger.EXTERNAL,
+    summaryIcon: true
+  }),
+
+  [AuraId.INNER_BRILLIANCE]: buff({
+    name: 'Inner Brilliance',
+    hasteRating: 1000, // Example value
     trigger: BuffTrigger.EXTERNAL,
     summaryIcon: true
   })
