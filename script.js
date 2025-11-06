@@ -570,7 +570,25 @@ window.analyzeLog = async function analyzeLog() {
             return;
         }
 
+        // Fetch buff events (applybuff, removebuff, etc.)
+        console.log('=== FETCHING BUFF EVENTS ===');
+        const buffEventsData = await wclV2Service.fetchBuffEvents(
+            reportId,
+            fightId,
+            playerName,
+            fight.startTime,
+            fight.endTime
+        );
+
+        console.log('=== BUFF EVENTS RECEIVED ===');
+        console.log('Buff pages fetched:', buffEventsData.pageCount);
+        console.log('Buff events count:', buffEventsData.data?.length || 0);
+
         const events = eventsData.data;
+        const buffEvents = buffEventsData.data || [];
+
+        console.log('Total events:', events.length);
+        console.log('Total buff events:', buffEvents.length);
 
         // Simple analysis - count casts and damage events by spell
         const castCounts = {};
