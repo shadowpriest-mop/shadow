@@ -4,6 +4,9 @@
 
 console.log('wcl-v2-service.js loading...');
 
+// Import buff data (assumes buff-data.js is loaded first in HTML)
+const BUFF_DATA = typeof window !== 'undefined' && window.BUFF_DATA ? window.BUFF_DATA : {};
+
 const WCL_CLIENT_ID = 'a036e79f-2e07-4588-bc67-d46cd2f907f8';
 const WCL_CLIENT_SECRET = '2j26APf8DGSppFDstkqJ8H2hCaC74YWc4GWpapEg';
 const WCL_TOKEN_URL = 'https://classic.warcraftlogs.com/oauth/token';
@@ -260,6 +263,80 @@ class WCLv2Service {
     }
 
     console.log(`Total events fetched: ${allEvents.length} across ${pageCount} pages`);
+
+    return {
+      data: allEvents,
+      pageCount: pageCount
+    };
+  }
+
+  /**
+   * Fetch buff/debuff events (applybuff, removebuff, etc.)
+   * Separate from main events to allow different filtering
+   */
+  async fetchBuffEvents(reportCode, fightID, playerName, startTime, endTime) {
+    const query = `
+      query($code: String!, $fightIDs: [Int]!, $startTime: Float!, $endTime: Float!, $filterExpression: String) {
+        reportData {
+          report(code: $code) {
+            events(
+              fightIDs: $fightIDs
+              startTime: $startTime
+              endTime: $endTime
+              filterExpression: $filterExpression
+              dataType: Buffs
+            ) {
+              data
+              nextPageTimestamp
+            }
+          }
+        }
+      }
+    `;
+
+    // Get tracked buff IDs from buff-data.js
+    const trackedBuffIds = Object.keys(BUFF_DATA).map(id => parseInt(id)).join(',');
+
+    // Filter for buffs applied TO the player (target) with tracked IDs
+    const filterExpression = `target.name = "${playerName}" AND ability.id IN (${trackedBuffIds})`;
+
+    let allEvents = [];
+    let currentStartTime = startTime;
+    let pageCount = 0;
+    const maxPages = 100;
+
+    while (pageCount < maxPages) {
+      pageCount++;
+      console.log(`Fetching buff events page ${pageCount}, startTime: ${currentStartTime}`);
+
+      const variables = {
+        code: reportCode,
+        fightIDs: [fightID],
+        startTime: currentStartTime,
+        endTime: endTime,
+        filterExpression: filterExpression
+      };
+
+      const data = await this.query(query, variables);
+      const eventsPage = data.reportData.report.events;
+
+      if (!eventsPage || !eventsPage.data) {
+        console.log('No more buff events');
+        break;
+      }
+
+      console.log(`Buff page ${pageCount}: ${eventsPage.data.length} events`);
+      allEvents = allEvents.concat(eventsPage.data);
+
+      if (!eventsPage.nextPageTimestamp) {
+        console.log('No more buff pages');
+        break;
+      }
+
+      currentStartTime = eventsPage.nextPageTimestamp;
+    }
+
+    console.log(`Total buff events fetched: ${allEvents.length} across ${pageCount} pages`);
 
     return {
       data: allEvents,
