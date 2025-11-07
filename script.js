@@ -623,7 +623,7 @@ window.analyzeLog = async function analyzeLog() {
         // ❌ Removed all UI updates for mfTicks and DoT uptimes
 
         // Analyze casts with quality metrics
-        const castsAnalyzer = new CastsAnalyzer(events, {});
+        const castsAnalyzer = new CastsAnalyzer(events, buffEvents, {});
         const casts = castsAnalyzer.analyze();
 
         // Store globally for filtering
