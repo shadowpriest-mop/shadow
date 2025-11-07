@@ -330,3 +330,13 @@ if (typeof module !== 'undefined' && module.exports) {
     includeBuff
   };
 }
+
+// Also export to window for browser use
+if (typeof window !== 'undefined') {
+  window.BUFF_DATA = BUFF_DATA;
+  window.getBuffData = getBuffData;
+  window.isDebuff = isDebuff;
+  window.includeBuff = includeBuff;
+  window.BuffTrigger = BuffTrigger;
+  window.AuraId = AuraId;
+}

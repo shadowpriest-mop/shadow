@@ -821,7 +821,25 @@ window.analyzeLog = async function analyzeLog() {
             return;
         }
 
+        // Fetch buff events (applybuff, removebuff, etc.)
+        console.log('=== FETCHING BUFF EVENTS ===');
+        const buffEventsData = await wclV2Service.fetchBuffEvents(
+            reportId,
+            fightId,
+            playerName,
+            fight.startTime,
+            fight.endTime
+        );
+
+        console.log('=== BUFF EVENTS RECEIVED ===');
+        console.log('Buff pages fetched:', buffEventsData.pageCount);
+        console.log('Buff events count:', buffEventsData.data?.length || 0);
+
         const events = eventsData.data;
+        const buffEvents = buffEventsData.data || [];
+
+        console.log('Total events:', events.length);
+        console.log('Total buff events:', buffEvents.length);
 
         // Extract targets and populate target filter
         const targets = extractTargetsFromEvents(events, currentReportData);
@@ -879,7 +897,7 @@ window.analyzeLog = async function analyzeLog() {
         // ❌ Removed all UI updates for mfTicks and DoT uptimes
 
         // Analyze casts with quality metrics
-        const castsAnalyzer = new CastsAnalyzer(events, {});
+        const castsAnalyzer = new CastsAnalyzer(events, buffEvents, {});
         const casts = castsAnalyzer.analyze();
 
         // Add target names to casts
@@ -1003,6 +1021,26 @@ function createCastElement(cast, index, fight) {
         ? `<img src="${iconPath}" alt="${cast.name}">`
         : '?';
 
+    // Build buff icons HTML (summary buffs in collapsed view)
+    let buffIconsHTML = '';
+    if (cast.summaryBuffs && cast.summaryBuffs.length > 0) {
+        console.log(`Cast ${cast.name} at ${timeText} has ${cast.summaryBuffs.length} summary buffs:`, cast.summaryBuffs);
+        buffIconsHTML = '<div class="cast-buff-icons">';
+        cast.summaryBuffs.forEach(buff => {
+            const buffIconPath = getSpellIcon(buff.id);
+            console.log(`  Buff ${buff.name} (${buff.id}): icon path = ${buffIconPath}`);
+            if (buffIconPath) {
+                buffIconsHTML += `<div class="buff-icon" title="${buff.name}"><img src="${buffIconPath}" alt="${buff.name}"></div>`;
+            }
+        });
+        buffIconsHTML += '</div>';
+    } else {
+        // Debug: log when there are no buffs
+        if (index < 3) { // Only log first 3 casts to avoid spam
+            console.log(`Cast ${cast.name} at ${timeText} has NO summary buffs. cast.buffs:`, cast.buffs);
+        }
+    }
+
     // Build compact HTML (Wrath-style)
     div.innerHTML = `
         <div class="cast-header" onclick="toggleCastDetails(${index})">
@@ -1022,6 +1060,7 @@ function createCastElement(cast, index, fight) {
                     <div class="cast-stat-line"><span class="cast-stat-label">Damage:</span> ${damageText}</div>
                 </div>
             </div>
+            ${buffIconsHTML}
             <span class="cast-expand-icon">▶</span>
         </div>
         <div class="cast-details">
@@ -1139,10 +1178,28 @@ function createCastDetailsHTML(cast, fight) {
 
     html += '</div></div>';
 
-    // Buffs section (placeholder for now)
-    html += '<div class="cast-details-section">';
-    html += '<h4>Buffs:</h4>';
-    html += '</div>';
+    // Buffs section (detailed buffs in expanded view)
+    if (cast.detailBuffs && cast.detailBuffs.length > 0) {
+        html += '<div class="cast-details-section">';
+        html += '<h4>Buffs:</h4>';
+        html += '<div class="cast-detail-buffs">';
+
+        cast.detailBuffs.forEach(buff => {
+            const buffIconPath = getSpellIcon(buff.id);
+            if (buffIconPath) {
+                html += `
+                    <div class="detail-buff-item">
+                        <div class="buff-icon" title="${buff.name}">
+                            <img src="${buffIconPath}" alt="${buff.name}">
+                        </div>
+                        <span class="buff-name">${buff.name}</span>
+                    </div>
+                `;
+            }
+        });
+
+        html += '</div></div>';
+    }
 
     // Hits section (like Wrath)
     if (cast.instances && cast.instances.length > 0) {

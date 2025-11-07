@@ -72,6 +72,33 @@ class CastDetails {
     return other.targetId === this.targetId &&
            other.targetInstance === this.targetInstance;
   }
+
+  /**
+   * Get buffs that should show in cast summary (collapsed view)
+   */
+  get summaryBuffs() {
+    if (!this._summaryBuffs) {
+      this._summaryBuffs = this.buffs.filter(buff => buff.summaryIcon);
+    }
+    return this._summaryBuffs;
+  }
+
+  /**
+   * Get buffs that should show in cast details (expanded view)
+   */
+  get detailBuffs() {
+    if (!this._detailBuffs) {
+      this._detailBuffs = this.buffs.filter(buff => buff.detailsIcon);
+    }
+    return this._detailBuffs;
+  }
+
+  /**
+   * Check if cast has a specific buff active
+   */
+  hasBuff(auraId) {
+    return this.buffs.some(b => b.id === auraId);
+  }
 }
 
 class DamageInstance {
