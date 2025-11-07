@@ -20,6 +20,10 @@ class CastsAnalyzer {
    * Main analysis function - parse events into CastDetails with quality metrics
    */
   analyze() {
+    console.log('=== CastsAnalyzer.analyze() ===');
+    console.log('Buff events count:', this.buffEvents.length);
+    console.log('Sample buff events:', this.buffEvents.slice(0, 3));
+
     // Step 1: Parse events into CastDetails objects
     this.parseCasts();
 

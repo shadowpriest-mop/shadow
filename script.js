@@ -712,14 +712,21 @@ function createCastElement(cast, index, fight) {
     // Build buff icons HTML (summary buffs in collapsed view)
     let buffIconsHTML = '';
     if (cast.summaryBuffs && cast.summaryBuffs.length > 0) {
+        console.log(`Cast ${cast.name} at ${timeText} has ${cast.summaryBuffs.length} summary buffs:`, cast.summaryBuffs);
         buffIconsHTML = '<div class="cast-buff-icons">';
         cast.summaryBuffs.forEach(buff => {
             const buffIconPath = getSpellIcon(buff.id);
+            console.log(`  Buff ${buff.name} (${buff.id}): icon path = ${buffIconPath}`);
             if (buffIconPath) {
                 buffIconsHTML += `<div class="buff-icon" title="${buff.name}"><img src="${buffIconPath}" alt="${buff.name}"></div>`;
             }
         });
         buffIconsHTML += '</div>';
+    } else {
+        // Debug: log when there are no buffs
+        if (index < 3) { // Only log first 3 casts to avoid spam
+            console.log(`Cast ${cast.name} at ${timeText} has NO summary buffs. cast.buffs:`, cast.buffs);
+        }
     }
 
     // Build compact HTML (Wrath-style)
