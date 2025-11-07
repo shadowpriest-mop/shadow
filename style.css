@@ -444,7 +444,10 @@ footer a:hover {
     display: flex;
     flex-direction: row;
     align-items: center;
-    gap: 8px;
+    justify-content: space-between;
+    gap: 16px;
+    flex: 1;
+    min-width: 0;
 }
 
 .cast-stats {
@@ -482,11 +485,9 @@ footer a:hover {
 /* Buff Icons (collapsed view) */
 .cast-buff-icons {
     display: flex;
-    flex-wrap: wrap;
     gap: 3px;
     align-items: center;
-    max-width: 140px;
-    min-height: 24px;
+    flex-shrink: 0;
 }
 
 .buff-icon {
