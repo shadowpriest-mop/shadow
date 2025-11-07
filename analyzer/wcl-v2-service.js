@@ -4,8 +4,7 @@
 
 console.log('===  WCL-V2-SERVICE.JS LOADING (v2.19.1) ===');
 
-// Import buff data (assumes buff-data.js is loaded first in HTML)
-const BUFF_DATA = typeof window !== 'undefined' && window.BUFF_DATA ? window.BUFF_DATA : {};
+// Note: BUFF_DATA is loaded from buff-data.js and available as window.BUFF_DATA
 
 const WCL_CLIENT_ID = 'a036e79f-2e07-4588-bc67-d46cd2f907f8';
 const WCL_CLIENT_SECRET = '2j26APf8DGSppFDstkqJ8H2hCaC74YWc4GWpapEg';
@@ -301,8 +300,9 @@ class WCLv2Service {
       }
     `;
 
-    // Get tracked buff IDs from buff-data.js
-    const trackedBuffIds = Object.keys(BUFF_DATA).map(id => parseInt(id)).join(',');
+    // Get tracked buff IDs from buff-data.js (window.BUFF_DATA)
+    const buffData = window.BUFF_DATA || {};
+    const trackedBuffIds = Object.keys(buffData).map(id => parseInt(id)).join(',');
 
     // Filter for buffs applied TO the player (target) with tracked IDs
     const filterExpression = `target.name = "${playerName}" AND ability.id IN (${trackedBuffIds})`;
