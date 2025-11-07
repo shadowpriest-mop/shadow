@@ -413,3 +413,9 @@ console.log('wclV2Service initialized:', wclV2Service);
 if (typeof module !== 'undefined' && module.exports) {
   module.exports = { WCLv2Service, wclV2Service };
 }
+
+// Export to window for browser use
+if (typeof window !== 'undefined') {
+  window.wclV2Service = wclV2Service;
+  window.WCLv2Service = WCLv2Service;
+}
