@@ -6,12 +6,14 @@
 // Uses global: getSpellData, DamageType, HasteUtils
 
 class CastsAnalyzer {
-  constructor(events, settings) {
+  constructor(events, buffEvents, settings) {
     this.events = events;
+    this.buffEvents = buffEvents || []; // Buff apply/remove events
     this.settings = settings;
     this.casts = [];
     this.activeDots = new Map(); // Track active DoTs by target
     this.baseStats = { hasteRating: 0 }; // Will be updated from events
+    this.activeBuffs = []; // Track currently active buffs
   }
 
   /**
@@ -34,47 +36,133 @@ class CastsAnalyzer {
   }
 
   /**
+   * Apply a buff to active buffs list
+   * Similar to Wrath's event-analyzer applyBuff method
+   */
+  applyBuff(buffEvent) {
+    const auraId = buffEvent.abilityGameID;
+    const buffData = window.getBuffData ? window.getBuffData(auraId, buffEvent.stack || 1) : null;
+
+    if (!buffData) {
+      return; // Unknown buff, skip
+    }
+
+    // Check if buff already exists (update stack)
+    const existingIndex = this.activeBuffs.findIndex(b => b.id === auraId);
+
+    if (existingIndex >= 0) {
+      // Update existing buff with new stack count
+      this.activeBuffs[existingIndex] = buffData;
+    } else {
+      // Add new buff
+      this.activeBuffs.push(buffData);
+    }
+  }
+
+  /**
+   * Remove a buff from active buffs list
+   */
+  removeBuff(buffEvent) {
+    const auraId = buffEvent.abilityGameID;
+
+    // For removebuffstack, update the stack count instead of removing
+    if (buffEvent.type === 'removebuffstack') {
+      const buffData = window.getBuffData ? window.getBuffData(auraId, buffEvent.stack || 0) : null;
+      const existingIndex = this.activeBuffs.findIndex(b => b.id === auraId);
+
+      if (existingIndex >= 0 && buffData) {
+        this.activeBuffs[existingIndex] = buffData;
+      }
+    } else {
+      // Complete removal
+      const index = this.activeBuffs.findIndex(b => b.id === auraId);
+      if (index >= 0) {
+        this.activeBuffs.splice(index, 1);
+      }
+    }
+  }
+
+  /**
+   * Get a snapshot of currently active buffs
+   * Returns a copy so modifications don't affect the original
+   */
+  getActiveBuffs() {
+    return [...this.activeBuffs];
+  }
+
+  /**
    * Parse cast and damage events into CastDetails objects
+   * Now includes buff tracking - merges buff events with cast events
    */
   parseCasts() {
     const castEvents = this.events.filter(e => e.type === 'cast');
     const damageEvents = this.events.filter(e => e.type === 'damage');
 
-    for (const castEvent of castEvents) {
-      const spellId = castEvent.abilityGameID;
+    // Merge buff events and cast events into timeline
+    const timeline = this.mergeTimeline(castEvents, this.buffEvents);
 
-      // Create CastDetails object
-      const spellData = getSpellData(spellId);
-      const cast = new CastDetails({
-        spellId: spellId,
-        name: spellData ? spellData.name : `Unknown (${spellId})`,
-        rank: 0, // MoP has no spell ranks
-        castStart: castEvent.timestamp,
-        castEnd: castEvent.timestamp, // Will update with last damage
-        sourceId: castEvent.sourceID,
-        targetId: castEvent.targetID,
-        targetInstance: castEvent.targetInstance || 0,
-        buffs: [], // TODO: Extract buffs from events
-        spellPower: 0, // TODO: Calculate from events
-        haste: 0, // TODO: Calculate from events
-        gcd: 1.0 // TODO: Calculate based on haste
-      });
-
-      // Match damage events to this cast
-      const instances = this.matchDamageInstances(castEvent, damageEvents);
-      cast.setInstances(instances);
-
-      // Update castEnd to last damage timestamp
-      if (cast.lastDamageTimestamp) {
-        cast.castEnd = cast.lastDamageTimestamp;
-        cast.castTimeMs = cast.castEnd - cast.castStart;
+    // Process timeline in order
+    for (const event of timeline) {
+      // Handle buff events
+      if (event.type === 'applybuff' || event.type === 'applybuffstack') {
+        this.applyBuff(event);
+        continue;
       }
 
-      this.casts.push(cast);
+      if (event.type === 'removebuff' || event.type === 'removebuffstack') {
+        this.removeBuff(event);
+        continue;
+      }
+
+      // Handle cast events
+      if (event.type === 'cast') {
+        const spellId = event.abilityGameID;
+        const spellData = getSpellData(spellId);
+
+        // Snapshot current active buffs
+        const activeBuffs = this.getActiveBuffs();
+
+        // Create CastDetails object with active buffs
+        const cast = new CastDetails({
+          spellId: spellId,
+          name: spellData ? spellData.name : `Unknown (${spellId})`,
+          rank: 0, // MoP has no spell ranks
+          castStart: event.timestamp,
+          castEnd: event.timestamp, // Will update with last damage
+          sourceId: event.sourceID,
+          targetId: event.targetID,
+          targetInstance: event.targetInstance || 0,
+          buffs: activeBuffs, // Snapshot of active buffs!
+          spellPower: 0, // TODO: Calculate from events
+          haste: 0, // TODO: Calculate from events
+          gcd: 1.0 // TODO: Calculate based on haste
+        });
+
+        // Match damage events to this cast
+        const instances = this.matchDamageInstances(event, damageEvents);
+        cast.setInstances(instances);
+
+        // Update castEnd to last damage timestamp
+        if (cast.lastDamageTimestamp) {
+          cast.castEnd = cast.lastDamageTimestamp;
+          cast.castTimeMs = cast.castEnd - cast.castStart;
+        }
+
+        this.casts.push(cast);
+      }
     }
 
     // Sort by timestamp
     this.casts.sort((a, b) => a.castStart - b.castStart);
+  }
+
+  /**
+   * Merge buff events and cast events into a single timeline sorted by timestamp
+   */
+  mergeTimeline(castEvents, buffEvents) {
+    const combined = [...castEvents, ...buffEvents];
+    combined.sort((a, b) => a.timestamp - b.timestamp);
+    return combined;
   }
 
   /**
