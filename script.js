@@ -178,7 +178,7 @@ window.startAnalysis = function() {
         const wclLink = document.getElementById('wcl-link');
 
         reportTitle.textContent = `${currentReportData.title || 'Report'} (${currentReportData.owner || 'Unknown'})`;
-        wclLink.href = `https://www.warcraftlogs.com/reports/${wclV2Service.extractReportId(document.getElementById('wcl-report').value)}`;
+        wclLink.href = `https://www.warcraftlogs.com/reports/${window.wclV2Service.extractReportId(document.getElementById('wcl-report').value)}`;
     }
 
     // Add change listeners to analysis page selectors (only once)
@@ -186,7 +186,7 @@ window.startAnalysis = function() {
         playerSelectAnalysis.setAttribute('data-listener-attached', 'true');
         playerSelectAnalysis.addEventListener('change', () => {
             // Update hash when player changes
-            const reportId = wclV2Service.extractReportId(document.getElementById('wcl-report').value);
+            const reportId = window.wclV2Service.extractReportId(document.getElementById('wcl-report').value);
             const playerName = playerSelectAnalysis.value;
             const fightId = encounterSelectAnalysis.value;
             updateHash(reportId, playerName, fightId);
@@ -197,7 +197,7 @@ window.startAnalysis = function() {
         encounterSelectAnalysis.setAttribute('data-listener-attached', 'true');
         encounterSelectAnalysis.addEventListener('change', () => {
             // Update hash when encounter changes
-            const reportId = wclV2Service.extractReportId(document.getElementById('wcl-report').value);
+            const reportId = window.wclV2Service.extractReportId(document.getElementById('wcl-report').value);
             const playerName = playerSelectAnalysis.value;
             const fightId = encounterSelectAnalysis.value;
             updateHash(reportId, playerName, fightId);
@@ -206,7 +206,7 @@ window.startAnalysis = function() {
     }
 
     // Update URL hash
-    const reportId = wclV2Service.extractReportId(document.getElementById('wcl-report').value);
+    const reportId = window.wclV2Service.extractReportId(document.getElementById('wcl-report').value);
     const playerName = playerSelect.value;
     const fightId = encounterSelect.value;
     updateHash(reportId, playerName, fightId);
@@ -627,8 +627,16 @@ function calculateDotUptimes(events, fight, fightDuration) {
 // Make loadReport available globally
 window.loadReport = async function loadReport() {
     console.log('loadReport() called');
+    console.log('wclV2Service available?', typeof window.wclV2Service);
+
+    if (typeof window.wclV2Service === 'undefined') {
+        console.error('wclV2Service is not defined! Check if wcl-v2-service.js loaded correctly.');
+        alert('Error: WCL service not loaded. Please refresh the page.');
+        return;
+    }
+
     const input = document.getElementById('wcl-report').value.trim();
-    const reportId = wclV2Service.extractReportId(input);
+    const reportId = window.wclV2Service.extractReportId(input);
 
     if (!reportId) {
         alert('Please enter a valid WCL report ID or URL');
@@ -648,13 +656,13 @@ window.loadReport = async function loadReport() {
     try {
         // Fetch report data from WCL v2 API (authentication happens automatically)
         console.log('Fetching report:', reportId);
-        const reportData = await wclV2Service.fetchReport(reportId);
+        const reportData = await window.wclV2Service.fetchReport(reportId);
         currentReportData = reportData;
 
         console.log('Report data:', reportData);
 
         // Find Priests (spec will be validated when analyzing casts)
-        const priests = wclV2Service.getShadowPriests(reportData);
+        const priests = window.wclV2Service.getShadowPriests(reportData);
 
         if (priests.length === 0) {
             alert('No Priests found in this report!');
@@ -669,7 +677,7 @@ window.loadReport = async function loadReport() {
         playerSelect.disabled = false;
 
         // Find boss encounters
-        const encounters = wclV2Service.getBossEncounters(reportData);
+        const encounters = window.wclV2Service.getBossEncounters(reportData);
 
         if (encounters.length === 0) {
             alert('No boss encounters found in this report!');
@@ -795,13 +803,13 @@ window.analyzeLog = async function analyzeLog() {
         }
 
         // Extract report ID from current data
-        const reportId = wclV2Service.extractReportId(document.getElementById('wcl-report').value);
+        const reportId = window.wclV2Service.extractReportId(document.getElementById('wcl-report').value);
 
         console.log('=== ANALYZE STARTING ===');
         console.log('Fetching events for:', { reportId, playerName, fightId, startTime: fight.startTime, endTime: fight.endTime });
 
         // Fetch events from WCL v2 API
-        const eventsData = await wclV2Service.fetchEvents(
+        const eventsData = await window.wclV2Service.fetchEvents(
             reportId,
             fightId,
             playerName,
@@ -823,7 +831,7 @@ window.analyzeLog = async function analyzeLog() {
 
         // Fetch buff events (applybuff, removebuff, etc.)
         console.log('=== FETCHING BUFF EVENTS ===');
-        const buffEventsData = await wclV2Service.fetchBuffEvents(
+        const buffEventsData = await window.wclV2Service.fetchBuffEvents(
             reportId,
             fightId,
             playerName,
