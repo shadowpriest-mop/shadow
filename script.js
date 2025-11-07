@@ -1063,10 +1063,12 @@ function createCastElement(cast, index, fight) {
                         <span class="cast-spell-name">${cast.name}</span>${targetText ? `<span class="cast-target"> ${targetText}</span>` : ''}
                     </div>
                 </div>
-                ${buffIconsHTML}
-                <div class="cast-stats">
-                    <div class="cast-stat-line"><span class="cast-stat-label">Hits:</span> ${hitsText}</div>
-                    <div class="cast-stat-line"><span class="cast-stat-label">Damage:</span> ${damageText}</div>
+                <div class="cast-metrics">
+                    ${buffIconsHTML}
+                    <div class="cast-stats">
+                        <div class="cast-stat-line"><span class="cast-stat-label">Hits:</span> ${hitsText}</div>
+                        <div class="cast-stat-line"><span class="cast-stat-label">Damage:</span> ${damageText}</div>
+                    </div>
                 </div>
             </div>
             <span class="cast-expand-icon">▶</span>
