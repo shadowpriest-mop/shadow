@@ -709,6 +709,19 @@ function createCastElement(cast, index, fight) {
         ? `<img src="${iconPath}" alt="${cast.name}">`
         : '?';
 
+    // Build buff icons HTML (summary buffs in collapsed view)
+    let buffIconsHTML = '';
+    if (cast.summaryBuffs && cast.summaryBuffs.length > 0) {
+        buffIconsHTML = '<div class="cast-buff-icons">';
+        cast.summaryBuffs.forEach(buff => {
+            const buffIconPath = getSpellIcon(buff.id);
+            if (buffIconPath) {
+                buffIconsHTML += `<div class="buff-icon" title="${buff.name}"><img src="${buffIconPath}" alt="${buff.name}"></div>`;
+            }
+        });
+        buffIconsHTML += '</div>';
+    }
+
     // Build compact HTML (Wrath-style)
     div.innerHTML = `
         <div class="cast-header" onclick="toggleCastDetails(${index})">
@@ -727,6 +740,7 @@ function createCastElement(cast, index, fight) {
                     <div class="cast-stat-line"><span class="cast-stat-label">Damage:</span> ${damageText}</div>
                 </div>
             </div>
+            ${buffIconsHTML}
             <span class="cast-expand-icon">▶</span>
         </div>
         <div class="cast-details">
@@ -844,10 +858,28 @@ function createCastDetailsHTML(cast, fight) {
 
     html += '</div></div>';
 
-    // Buffs section (placeholder for now)
-    html += '<div class="cast-details-section">';
-    html += '<h4>Buffs:</h4>';
-    html += '</div>';
+    // Buffs section (detailed buffs in expanded view)
+    if (cast.detailBuffs && cast.detailBuffs.length > 0) {
+        html += '<div class="cast-details-section">';
+        html += '<h4>Buffs:</h4>';
+        html += '<div class="cast-detail-buffs">';
+
+        cast.detailBuffs.forEach(buff => {
+            const buffIconPath = getSpellIcon(buff.id);
+            if (buffIconPath) {
+                html += `
+                    <div class="detail-buff-item">
+                        <div class="buff-icon" title="${buff.name}">
+                            <img src="${buffIconPath}" alt="${buff.name}">
+                        </div>
+                        <span class="buff-name">${buff.name}</span>
+                    </div>
+                `;
+            }
+        });
+
+        html += '</div></div>';
+    }
 
     // Hits section (like Wrath)
     if (cast.instances && cast.instances.length > 0) {

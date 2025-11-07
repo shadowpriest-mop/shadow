@@ -48,9 +48,19 @@ const SPELL_ICONS = {
   55637: 'lightweave.jpg', // Lightweave Embroidery (Tailoring) - needs icon
   75170: 'lifeblood.jpg',  // Lifeblood (Herbalism) - needs icon
 
-  // Raid Buffs
+  // Raid Buffs & Major Cooldowns
   2825: 'bloodlust.jpg',   // Bloodlust
   32182: 'heroism.jpg',    // Heroism
+  96228: 'synapsesprings.jpg', // Synapse Springs (correct ID)
+
+  // Buff-specific IDs (for buff tracking)
+  123254: 'twistoffate.jpg', // Twist of Fate - needs icon
+  104993: 'jadespirit.jpg',  // Jade Spirit - needs icon
+  125487: 'lightweave.jpg',  // Lightweave - needs icon
+  54861: 'nitroboosts.jpg',  // Nitro Boosts - needs icon
+  114206: 'skullbanner.jpg', // Skull Banner - needs icon
+  126659: 'quickenedtongues.jpg', // Quickened Tongues - needs icon
+  126577: 'innerbrilliance.jpg'   // Inner Brilliance - needs icon
 
   // Utility
   17: 'shield.jpg',        // Power Word: Shield
