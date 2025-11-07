@@ -2,7 +2,7 @@
 // For MoP Classic Shadow Priest Analyzer
 // Uses client credentials flow - no user login required (like v1 API)
 
-console.log('wcl-v2-service.js loading...');
+console.log('===  WCL-V2-SERVICE.JS LOADING (v2.19.1) ===');
 
 // Import buff data (assumes buff-data.js is loaded first in HTML)
 const BUFF_DATA = typeof window !== 'undefined' && window.BUFF_DATA ? window.BUFF_DATA : {};
@@ -416,6 +416,8 @@ if (typeof module !== 'undefined' && module.exports) {
 
 // Export to window for browser use
 if (typeof window !== 'undefined') {
+  console.log('=== EXPORTING wclV2Service to window ===');
   window.wclV2Service = wclV2Service;
   window.WCLv2Service = WCLv2Service;
+  console.log('=== window.wclV2Service =', window.wclV2Service);
 }
