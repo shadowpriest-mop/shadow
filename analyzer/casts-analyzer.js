@@ -283,7 +283,6 @@ class CastsAnalyzer {
    */
   calculateDotMetrics() {
     const MAX_ACTIVE_DOWNTIME = 10000; // Ignore gaps > 10s
-    const PANDEMIC_PERCENT = 0.30; // Can refresh in last 30% without penalty
 
     const dotSpells = [589, 34914, 2944]; // SWP, VT, DP
 
@@ -309,7 +308,10 @@ class CastsAnalyzer {
       const expectedTicks = Math.floor(duration / hastedTickInterval);
 
       const previousExpiry = previous.castStart + duration;
-      const pandemicWindow = duration * PANDEMIC_PERCENT; // Last 30% of duration
+
+      // PANDEMIC WINDOW = 1 tick interval (not 30%!)
+      // Refreshing within last tick interval is optimal - carries over the remaining time
+      const pandemicWindow = hastedTickInterval;
 
       // Time between refresh and when previous would expire
       const timeToExpiry = previousExpiry - cast.castStart;
@@ -347,16 +349,32 @@ class CastsAnalyzer {
         const ticksLost = Math.floor(timeWasted / hastedTickInterval);
         cast.clippedTicks = ticksLost;
 
-        cast.dotQuality.status = 'early';
-        cast.dotQuality.message = `Clipped ${ticksLost} tick${ticksLost !== 1 ? 's' : ''} early`;
+        // Determine severity based on ticks wasted
+        if (ticksLost >= 2) {
+          // Major waste: 2+ ticks
+          cast.dotQuality.status = 'major-early';
+          cast.dotQuality.message = `Wasted ${ticksLost} ticks (refreshed too early)`;
+        } else if (ticksLost === 1) {
+          // Minor waste: 1 tick
+          cast.dotQuality.status = 'minor-early';
+          cast.dotQuality.message = `Wasted 1 tick (slightly early)`;
+        } else {
+          // Edge case: very slight early (less than 1 full tick)
+          cast.dotQuality.status = 'optimal';
+          cast.dotQuality.message = `Pandemic (${(timeToExpiry / 1000).toFixed(1)}s remaining)`;
+        }
 
-        // Calculate DPS lost from wasted ticks
-        const avgTickDamage = this.getAvgTickDamage(cast, previous);
-        const totalDamageWasted = ticksLost * avgTickDamage;
+        // Calculate DPS lost from wasted ticks (only if ticks were actually lost)
+        if (ticksLost > 0) {
+          const avgTickDamage = this.getAvgTickDamage(cast, previous);
+          const totalDamageWasted = ticksLost * avgTickDamage;
 
-        // Estimate active time (use fight duration as fallback)
-        const activeTime = cast.castEnd - previous.castStart;
-        cast.dotQuality.dpsLost = activeTime > 0 ? (totalDamageWasted * 1000) / activeTime : 0;
+          // Estimate active time (use fight duration as fallback)
+          const activeTime = cast.castEnd - previous.castStart;
+          cast.dotQuality.dpsLost = activeTime > 0 ? (totalDamageWasted * 1000) / activeTime : 0;
+        } else {
+          cast.dotQuality.dpsLost = 0;
+        }
       }
 
       // Store haste info for debugging

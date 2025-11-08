@@ -100,9 +100,14 @@ class StatHighlights {
       case 'optimal':
         return Status.NORMAL;
       case 'late':
+        // Downtime: Warning if >3s, Notice if smaller
         return cast.dotDowntime > 3000 ? Status.WARNING : Status.NOTICE;
-      case 'early':
-        return cast.clippedTicks >= 2 ? Status.WARNING : Status.NOTICE;
+      case 'major-early':
+        // Wasted 2+ ticks
+        return Status.WARNING;
+      case 'minor-early':
+        // Wasted 1 tick
+        return Status.NOTICE;
       default:
         return Status.NORMAL;
     }
