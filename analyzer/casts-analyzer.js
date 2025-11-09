@@ -533,7 +533,9 @@ class CastsAnalyzer {
       }
 
       // Store haste info for debugging
-      cast.hastedTickInterval = hastedTickInterval;
+      // Store CURRENT cast's hasted tick interval (for display)
+      const currentHastedTickInterval = HasteUtils.calculateTickInterval(spellData, cast.haste) * 1000;
+      cast.hastedTickInterval = currentHastedTickInterval;
       cast.expectedTicks = expectedTicks;
     }
   }

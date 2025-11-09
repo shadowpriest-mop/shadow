@@ -1088,10 +1088,14 @@ function createCastDetailsHTML(cast, fight) {
     let html = '<div class="cast-details-section">';
     html += '<div class="cast-details-grid">';
 
-    // Cast Time
+    // Cast Time / Duration
+    // For DoTs, this is the duration of the DoT effect (including pandemic)
+    // For other spells, this is the cast time
+    const isDoT = cast.hastedTickInterval !== undefined;
+    const timeLabel = isDoT ? 'Duration:' : 'Cast Time:';
     html += `
         <div class="cast-details-item">
-            <span class="cast-details-label">Cast Time:</span>
+            <span class="cast-details-label">${timeLabel}</span>
             <span class="cast-details-value">${(cast.castTimeMs / 1000).toFixed(2)}s</span>
         </div>
     `;
