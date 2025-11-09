@@ -14,6 +14,7 @@ class CastsAnalyzer {
     this.activeDots = new Map(); // Track active DoTs by target
     this.baseStats = { hasteRating: 0 }; // Will be updated from events
     this.activeBuffs = []; // Track currently active buffs
+    this.dpPeriods = []; // Track when Devouring Plague is active (Insanity window)
   }
 
   /**
@@ -27,10 +28,13 @@ class CastsAnalyzer {
     // Step 1: Parse events into CastDetails objects
     this.parseCasts();
 
-    // Step 2: Infer haste for each cast
+    // Step 2: Track Devouring Plague periods (Insanity windows)
+    this.trackDevouringPlaguePeriods();
+
+    // Step 3: Infer haste for each cast
     this.calculateHaste();
 
-    // Step 3: Calculate quality metrics
+    // Step 4: Calculate quality metrics
     this.calculateCastLatencies();
     this.calculateDotMetrics();
     this.calculateChannelMetrics();
@@ -167,6 +171,60 @@ class CastsAnalyzer {
     const combined = [...castEvents, ...buffEvents];
     combined.sort((a, b) => a.timestamp - b.timestamp);
     return combined;
+  }
+
+  /**
+   * Track when Devouring Plague is active on targets (Insanity windows)
+   * This is used to detect when DoT downtime is intentional (during Insanity priority)
+   */
+  trackDevouringPlaguePeriods() {
+    const DP_SPELL_ID = 2944;
+
+    this.dpPeriods = [];
+
+    for (const cast of this.casts) {
+      if (cast.spellId !== DP_SPELL_ID) continue;
+
+      const spellData = getSpellData(DP_SPELL_ID);
+      if (!spellData) continue;
+
+      // DP duration in ms (fixed 6 seconds in MoP, doesn't scale with haste)
+      const duration = spellData.maxDuration * 1000;
+
+      // DP creates an Insanity window from cast time to expiry
+      const period = {
+        targetId: cast.targetId,
+        targetInstance: cast.targetInstance || 0,
+        startTime: cast.castStart,
+        endTime: cast.castStart + duration
+      };
+
+      this.dpPeriods.push(period);
+    }
+
+    console.log('Tracked DP periods (Insanity windows):', this.dpPeriods.length);
+  }
+
+  /**
+   * Check if Devouring Plague (Insanity) was active during a time period
+   * @param {number} targetId - Target ID to check
+   * @param {number} targetInstance - Target instance
+   * @param {number} startTime - Start of period to check
+   * @param {number} endTime - End of period to check
+   * @returns {boolean} True if DP was active for any part of this period
+   */
+  wasInsanityActive(targetId, targetInstance, startTime, endTime) {
+    targetInstance = targetInstance || 0;
+
+    return this.dpPeriods.some(period => {
+      // Must be same target
+      if (period.targetId !== targetId || period.targetInstance !== targetInstance) {
+        return false;
+      }
+
+      // Check if periods overlap
+      return period.startTime < endTime && period.endTime > startTime;
+    });
   }
 
   /**
@@ -325,13 +383,29 @@ class CastsAnalyzer {
 
         if (downtime <= MAX_ACTIVE_DOWNTIME) {
           cast.dotDowntime = downtime;
-          cast.dotQuality.status = 'late';
-          cast.dotQuality.message = `${(downtime / 1000).toFixed(1)}s downtime`;
 
-          // Calculate DPS lost from downtime (use hasted tick interval)
-          const ticksLost = downtime / hastedTickInterval;
-          const avgTickDamage = this.getAvgTickDamage(cast, previous);
-          cast.dotQuality.dpsLost = (ticksLost * avgTickDamage * 1000) / downtime;
+          // Check if Insanity (DP) was active during the downtime period
+          // For SW:P and VT, downtime during Insanity is intentional and correct
+          const downtimeStart = previousExpiry;
+          const downtimeEnd = cast.castStart;
+          const insanityActive = (cast.spellId === 589 || cast.spellId === 34914) &&
+                                 this.wasInsanityActive(cast.targetId, cast.targetInstance, downtimeStart, downtimeEnd);
+
+          if (insanityActive) {
+            // Downtime during Insanity is intentional (Mind Flay: Insanity priority)
+            cast.dotQuality.status = 'optimal';
+            cast.dotQuality.message = `Expected downtime (Insanity priority)`;
+            cast.dotQuality.dpsLost = 0;
+          } else {
+            // Actual bad downtime
+            cast.dotQuality.status = 'late';
+            cast.dotQuality.message = `${(downtime / 1000).toFixed(1)}s downtime`;
+
+            // Calculate DPS lost from downtime (use hasted tick interval)
+            const ticksLost = downtime / hastedTickInterval;
+            const avgTickDamage = this.getAvgTickDamage(cast, previous);
+            cast.dotQuality.dpsLost = (ticksLost * avgTickDamage * 1000) / downtime;
+          }
         }
 
       } else if (timeToExpiry <= pandemicWindow) {
