@@ -228,6 +228,45 @@ class CastsAnalyzer {
   }
 
   /**
+   * Check if Insanity recently ended before a given time
+   * @param {number} targetId - Target ID to check
+   * @param {number} targetInstance - Target instance
+   * @param {number} checkTime - Time to check
+   * @param {number} maxGapMs - Maximum gap after Insanity ends (default 5000ms)
+   * @returns {boolean} True if Insanity ended within maxGapMs before checkTime
+   */
+  wasInsanityRecentlyActive(targetId, targetInstance, checkTime, maxGapMs = 5000) {
+    targetInstance = targetInstance || 0;
+
+    return this.dpPeriods.some(period => {
+      // Must be same target
+      if (period.targetId !== targetId || period.targetInstance !== targetInstance) {
+        return false;
+      }
+
+      // Check if Insanity ended recently before checkTime
+      const timeSinceEnd = checkTime - period.endTime;
+      return timeSinceEnd >= 0 && timeSinceEnd <= maxGapMs;
+    });
+  }
+
+  /**
+   * Find Mind Blast casts during a time period
+   * @param {number} startTime - Start of period
+   * @param {number} endTime - End of period
+   * @returns {Array} Array of MB casts during this period
+   */
+  findMindBlastCasts(startTime, endTime) {
+    const MIND_BLAST_ID = 8092;
+
+    return this.casts.filter(cast => {
+      return cast.spellId === MIND_BLAST_ID &&
+             cast.castStart >= startTime &&
+             cast.castStart <= endTime;
+    });
+  }
+
+  /**
    * Match damage events to a cast event
    */
   matchDamageInstances(castEvent, damageEvents) {
@@ -384,20 +423,62 @@ class CastsAnalyzer {
         if (downtime <= MAX_ACTIVE_DOWNTIME) {
           cast.dotDowntime = downtime;
 
-          // Check if Insanity (DP) was active during the downtime period
-          // For SW:P and VT, downtime during Insanity is intentional and correct
           const downtimeStart = previousExpiry;
           const downtimeEnd = cast.castStart;
-          const insanityActive = (cast.spellId === 589 || cast.spellId === 34914) &&
+
+          // Check if downtime is intentional (SW:P and VT only, not DP)
+          const isDotThatCanWait = (cast.spellId === 589 || cast.spellId === 34914);
+
+          // Check if Insanity (DP) was active during the downtime period
+          const insanityActive = isDotThatCanWait &&
                                  this.wasInsanityActive(cast.targetId, cast.targetInstance, downtimeStart, downtimeEnd);
+
+          // Check if Mind Blast was cast during downtime after Insanity ended
+          // Priority: Insanity > Mind Blast > DoTs
+          // So MB right after Insanity is correct and causes intentional downtime
+          const mbCastsDuringDowntime = this.findMindBlastCasts(downtimeStart, downtimeEnd);
+          const insanityRecentlyEnded = isDotThatCanWait &&
+                                        this.wasInsanityRecentlyActive(cast.targetId, cast.targetInstance, downtimeEnd);
 
           if (insanityActive) {
             // Downtime during Insanity is intentional (Mind Flay: Insanity priority)
             cast.dotQuality.status = 'optimal';
             cast.dotQuality.message = `Expected downtime (Insanity priority)`;
             cast.dotQuality.dpsLost = 0;
+          } else if (mbCastsDuringDowntime.length > 0 && insanityRecentlyEnded) {
+            // Downtime from MB cast after Insanity is intentional
+            // MB generates orbs needed for next DP, so it takes priority
+            cast.dotQuality.status = 'optimal';
+            cast.dotQuality.message = `Expected downtime (Mind Blast priority)`;
+            cast.dotQuality.dpsLost = 0;
+          } else if (mbCastsDuringDowntime.length > 0) {
+            // MB was cast during downtime, but not right after Insanity
+            // Calculate actual downtime excluding MB cast time
+            let mbTime = 0;
+            mbCastsDuringDowntime.forEach(mb => {
+              // MB cast time + GCD (roughly 1.5s baseline, adjusted by haste)
+              const mbDuration = mb.castEnd - mb.castStart;
+              mbTime += mbDuration;
+            });
+
+            const actualDowntime = downtime - mbTime;
+
+            if (actualDowntime <= 500) {
+              // Less than 0.5s of real downtime after accounting for MB - acceptable
+              cast.dotQuality.status = 'optimal';
+              cast.dotQuality.message = `Acceptable (${(actualDowntime / 1000).toFixed(1)}s after MB)`;
+              cast.dotQuality.dpsLost = 0;
+            } else {
+              // Still significant downtime after MB cast
+              cast.dotQuality.status = 'late';
+              cast.dotQuality.message = `${(actualDowntime / 1000).toFixed(1)}s downtime (after MB)`;
+
+              const ticksLost = actualDowntime / hastedTickInterval;
+              const avgTickDamage = this.getAvgTickDamage(cast, previous);
+              cast.dotQuality.dpsLost = (ticksLost * avgTickDamage * 1000) / actualDowntime;
+            }
           } else {
-            // Actual bad downtime
+            // Actual bad downtime - no Insanity, no MB cast
             cast.dotQuality.status = 'late';
             cast.dotQuality.message = `${(downtime / 1000).toFixed(1)}s downtime`;
 
