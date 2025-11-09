@@ -176,9 +176,15 @@ class CastsAnalyzer {
   /**
    * Track when Devouring Plague is active on targets (Insanity windows)
    * This is used to detect when DoT downtime is intentional (during Insanity priority)
+   *
+   * IMPORTANT: Includes Mind Flay pandemic optimization
+   * When MF is clipped near the end of DP, the new MF gets 4 ticks (pandemic).
+   * Even though DP expires during the MF, those ticks are still Insanity-buffed.
+   * This effectively extends the Insanity window beyond DP's 6s duration.
    */
   trackDevouringPlaguePeriods() {
     const DP_SPELL_ID = 2944;
+    const MF_INSANITY_ID = 129197;
 
     this.dpPeriods = [];
 
@@ -196,13 +202,65 @@ class CastsAnalyzer {
         targetId: cast.targetId,
         targetInstance: cast.targetInstance || 0,
         startTime: cast.castStart,
-        endTime: cast.castStart + duration
+        endTime: cast.castStart + duration,
+        dpCast: cast // Reference to DP cast for debugging
       };
 
       this.dpPeriods.push(period);
     }
 
+    // Extend Insanity windows based on Mind Flay pandemic optimization
+    // When MF is clipped near end of DP, the new MF gets 4 ticks that extend Insanity
+    this.extendInsanityWindowsForMindFlayPandemic();
+
     console.log('Tracked DP periods (Insanity windows):', this.dpPeriods.length);
+  }
+
+  /**
+   * Extend Insanity windows when Mind Flay is clipped near the end of DP
+   *
+   * Optimization: Clip MF right before DP expires to get 4 pandemic ticks,
+   * effectively extending Insanity window by ~3 seconds (those extra MF ticks)
+   */
+  extendInsanityWindowsForMindFlayPandemic() {
+    const MF_INSANITY_ID = 129197;
+    const MF_REGULAR_ID = 15407;
+    const CLIP_WINDOW = 2000; // Look for MF clips in last 2s of DP
+
+    for (const period of this.dpPeriods) {
+      // Find MF: Insanity casts during this DP period
+      const mfCasts = this.casts.filter(cast =>
+        (cast.spellId === MF_INSANITY_ID || cast.spellId === MF_REGULAR_ID) &&
+        cast.targetId === period.targetId &&
+        (cast.targetInstance || 0) === period.targetInstance &&
+        cast.castStart >= period.startTime &&
+        cast.castStart <= period.endTime
+      );
+
+      // Look for MF casts that start near the end of DP (optimization window)
+      const lateMFCasts = mfCasts.filter(mf => {
+        const timeBeforeDPExpiry = period.endTime - mf.castStart;
+        return timeBeforeDPExpiry > 0 && timeBeforeDPExpiry <= CLIP_WINDOW;
+      });
+
+      if (lateMFCasts.length > 0) {
+        // Find the last MF cast before DP expires
+        const lastMF = lateMFCasts[lateMFCasts.length - 1];
+
+        // Calculate how long MF continues after DP expires
+        const mfEndTime = lastMF.castEnd;
+
+        if (mfEndTime > period.endTime) {
+          // MF extends beyond DP expiry - this is the pandemic optimization
+          // Mark this as an extended Insanity window
+          period.extendedEndTime = mfEndTime;
+          period.extendedByMF = true;
+          period.extensionCast = lastMF;
+
+          console.log(`Extended Insanity window by ${((mfEndTime - period.endTime) / 1000).toFixed(1)}s (MF pandemic optimization)`);
+        }
+      }
+    }
   }
 
   /**
@@ -222,8 +280,11 @@ class CastsAnalyzer {
         return false;
       }
 
+      // Use extended end time if MF pandemic optimization was used
+      const effectiveEndTime = period.extendedEndTime || period.endTime;
+
       // Check if periods overlap
-      return period.startTime < endTime && period.endTime > startTime;
+      return period.startTime < endTime && effectiveEndTime > startTime;
     });
   }
 
@@ -244,8 +305,11 @@ class CastsAnalyzer {
         return false;
       }
 
+      // Use extended end time if MF pandemic optimization was used
+      const effectiveEndTime = period.extendedEndTime || period.endTime;
+
       // Check if Insanity ended recently before checkTime
-      const timeSinceEnd = checkTime - period.endTime;
+      const timeSinceEnd = checkTime - effectiveEndTime;
       return timeSinceEnd >= 0 && timeSinceEnd <= maxGapMs;
     });
   }
@@ -574,6 +638,8 @@ class CastsAnalyzer {
    */
   calculateChannelMetrics() {
     const EARLY_CLIP_THRESHOLD = 0.67; // 67% to next tick
+    const MF_INSANITY_ID = 129197;
+    const MF_REGULAR_ID = 15407;
 
     for (const cast of this.casts) {
       const spellData = getSpellData(cast.spellId);
@@ -592,10 +658,36 @@ class CastsAnalyzer {
 
         // If we were close to the next tick, flag as early clip
         if (timeToNextTick < hastedTickInterval * EARLY_CLIP_THRESHOLD) {
-          cast.clippedEarly = true;
+          // Check if this is an optimal MF clip for Insanity pandemic optimization
+          const isMindFlay = (cast.spellId === MF_INSANITY_ID || cast.spellId === MF_REGULAR_ID);
+          const isInsanityOptimization = isMindFlay && this.isMindFlayInsanityOptimization(cast);
+
+          if (isInsanityOptimization) {
+            // This is an optimal clip for Insanity pandemic - mark it differently
+            cast.optimalClip = true;
+            cast.clipReason = 'Insanity pandemic optimization';
+          } else {
+            // Regular early clip (potentially bad)
+            cast.clippedEarly = true;
+          }
         }
       }
     }
+  }
+
+  /**
+   * Check if a Mind Flay cast is part of the Insanity pandemic optimization
+   * @param {CastDetails} mfCast - The Mind Flay cast to check
+   * @returns {boolean} True if this MF is extending an Insanity window
+   */
+  isMindFlayInsanityOptimization(mfCast) {
+    // Check if this MF is marked as extending any DP period
+    return this.dpPeriods.some(period => {
+      return period.extendedByMF &&
+             period.extensionCast === mfCast &&
+             period.targetId === mfCast.targetId &&
+             (period.targetInstance || 0) === (mfCast.targetInstance || 0);
+    });
   }
 
   /**
