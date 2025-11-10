@@ -153,9 +153,20 @@ class CastsAnalyzer {
         const instances = this.matchDamageInstances(event, damageEvents);
         cast.setInstances(instances);
 
-        // Update castEnd to last damage timestamp
-        if (cast.lastDamageTimestamp) {
-          cast.castEnd = cast.lastDamageTimestamp;
+        // Update castEnd based on spell type
+        if (cast.lastDamageTimestamp && spellData) {
+          // For DoTs and Channels, castEnd is the last damage timestamp
+          if (spellData.damageType === DamageType.DOT || spellData.damageType === DamageType.CHANNEL) {
+            cast.castEnd = cast.lastDamageTimestamp;
+          }
+          // For spells with cast time (direct damage casts), castEnd is castStart + cast time
+          else if (spellData.baseCastTime > 0) {
+            // Use base cast time for now (haste adjustment happens later)
+            cast.castEnd = cast.castStart + (spellData.baseCastTime * 1000);
+          }
+          // For instant direct damage (baseCastTime === 0), castEnd remains = castStart
+          // This prevents damage event latency from affecting cast latency calculations
+
           cast.castTimeMs = cast.castEnd - cast.castStart;
         }
 
