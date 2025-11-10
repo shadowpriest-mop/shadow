@@ -743,8 +743,9 @@ class CastsAnalyzer {
    * When a DoT is refreshed with pandemic, the damage instances include ticks
    * from BOTH the old cast (still ticking) and the new cast. This is confusing.
    *
-   * This method filters instances to only show ticks that occur AFTER the
-   * previous cast would have expired (without pandemic).
+   * This method filters instances:
+   * - Previous cast: Only show ticks UP TO when it would expire (without pandemic)
+   * - Current cast: Only show ticks AFTER the previous would have expired
    */
   cleanupDotDamageInstances() {
     const dotSpells = [589, 34914, 2944]; // SWP, VT, DP
@@ -766,20 +767,35 @@ class CastsAnalyzer {
       const carryoverTime = previousExpiry - cast.castStart;
 
       if (carryoverTime > 0) {
-        // This is a pandemic refresh - filter out pre-refresh ticks
-        const originalInstanceCount = cast.instances.length;
+        // This is a pandemic refresh
 
-        // Only keep damage instances that occur AFTER the previous expiry
+        // Clean up PREVIOUS cast: remove ticks after it would have expired
+        const prevOriginalCount = previous.instances.length;
+        previous.instances = previous.instances.filter(inst => inst.timestamp <= previousExpiry);
+        const prevRemovedCount = prevOriginalCount - previous.instances.length;
+
+        if (prevRemovedCount > 0) {
+          console.log(`Cleaned up ${prevRemovedCount} post-expiry ticks from previous ${previous.name} at ${(previous.castStart / 1000).toFixed(1)}s`);
+
+          // Recalculate previous cast's castEnd
+          if (previous.instances.length > 0) {
+            const lastInstance = previous.instances[previous.instances.length - 1];
+            previous.castEnd = lastInstance.timestamp;
+            previous.castTimeMs = previous.castEnd - previous.castStart;
+          }
+        }
+
+        // Clean up CURRENT cast: remove ticks before previous expiry
+        const currentOriginalCount = cast.instances.length;
         cast.instances = cast.instances.filter(inst => inst.timestamp > previousExpiry);
-
-        const removedCount = originalInstanceCount - cast.instances.length;
+        const currentRemovedCount = currentOriginalCount - cast.instances.length;
 
         // Store pandemic info for display
         cast.pandemicRefresh = true;
         cast.pandemicCarryover = carryoverTime;
 
-        if (removedCount > 0) {
-          console.log(`Cleaned up ${removedCount} pre-refresh ticks from ${cast.name} at ${(cast.castStart / 1000).toFixed(1)}s`);
+        if (currentRemovedCount > 0) {
+          console.log(`Cleaned up ${currentRemovedCount} pre-refresh ticks from current ${cast.name} at ${(cast.castStart / 1000).toFixed(1)}s`);
         }
 
         // Recalculate castEnd based on filtered instances
