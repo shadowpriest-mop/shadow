@@ -763,27 +763,28 @@ class CastsAnalyzer {
       const previousDuration = spellData.maxDuration * 1000;
       const previousExpiry = previous.castStart + previousDuration;
 
+      // ALWAYS clean up previous cast: remove ticks after it expired
+      // (This applies regardless of pandemic or downtime)
+      const prevOriginalCount = previous.instances.length;
+      previous.instances = previous.instances.filter(inst => inst.timestamp <= previousExpiry);
+      const prevRemovedCount = prevOriginalCount - previous.instances.length;
+
+      if (prevRemovedCount > 0) {
+        console.log(`Cleaned up ${prevRemovedCount} post-expiry ticks from previous ${previous.name} at ${(previous.castStart / 1000).toFixed(1)}s`);
+
+        // Recalculate previous cast's castEnd
+        if (previous.instances.length > 0) {
+          const lastInstance = previous.instances[previous.instances.length - 1];
+          previous.castEnd = lastInstance.timestamp;
+          previous.castTimeMs = previous.castEnd - previous.castStart;
+        }
+      }
+
       // Calculate pandemic carryover time
       const carryoverTime = previousExpiry - cast.castStart;
 
       if (carryoverTime > 0) {
-        // This is a pandemic refresh
-
-        // Clean up PREVIOUS cast: remove ticks after it would have expired
-        const prevOriginalCount = previous.instances.length;
-        previous.instances = previous.instances.filter(inst => inst.timestamp <= previousExpiry);
-        const prevRemovedCount = prevOriginalCount - previous.instances.length;
-
-        if (prevRemovedCount > 0) {
-          console.log(`Cleaned up ${prevRemovedCount} post-expiry ticks from previous ${previous.name} at ${(previous.castStart / 1000).toFixed(1)}s`);
-
-          // Recalculate previous cast's castEnd
-          if (previous.instances.length > 0) {
-            const lastInstance = previous.instances[previous.instances.length - 1];
-            previous.castEnd = lastInstance.timestamp;
-            previous.castTimeMs = previous.castEnd - previous.castStart;
-          }
-        }
+        // This is a pandemic refresh - also clean up current cast
 
         // Clean up CURRENT cast: remove ticks before previous expiry
         const currentOriginalCount = cast.instances.length;
