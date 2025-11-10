@@ -258,6 +258,23 @@ class CastsAnalyzer {
           period.extensionCast = lastMF;
 
           console.log(`Extended Insanity window by ${((mfEndTime - period.endTime) / 1000).toFixed(1)}s (MF pandemic optimization)`);
+        } else {
+          // MF ended before/at DP expiry - MISSED OPTIMIZATION!
+          // Should have clipped MF to get 3 extra Insanity-buffed ticks
+          const spellData = getSpellData(lastMF.spellId);
+          const expectedDuration = spellData ? (spellData.maxDuration * 1000 / lastMF.haste) : 3000;
+          const actualDuration = mfEndTime - lastMF.castStart;
+
+          // Check if MF ran to completion (not clipped for another reason)
+          const ranToCompletion = actualDuration >= expectedDuration * 0.95; // 95% threshold
+
+          if (ranToCompletion) {
+            // Mark this MF as having missed the optimization
+            lastMF.missedInsanityOptimization = true;
+            lastMF.insanityOptimizationError = 'Should have clipped for 3 extra Insanity ticks';
+
+            console.log(`Missed Insanity optimization at ${(lastMF.castStart / 1000).toFixed(1)}s - MF not clipped before DP expired`);
+          }
         }
       }
     }

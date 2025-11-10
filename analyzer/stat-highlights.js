@@ -17,6 +17,9 @@ class StatHighlights {
     // Check for major issues (WARNING)
     if (cast.failed) return Status.WARNING;
 
+    // Missed Insanity optimization (should have clipped MF for 3 extra ticks)
+    if (cast.missedInsanityOptimization) return Status.WARNING;
+
     // DoT quality check (Pandemic-aware)
     if (cast.dotQuality) {
       if (cast.dotQuality.status === 'early' && cast.clippedTicks >= 2) return Status.WARNING;
@@ -117,8 +120,16 @@ class StatHighlights {
    * Get channel clipping quality status
    */
   channelClipping(cast) {
-    if (!cast.clippedEarly) return Status.NORMAL;
-    return Status.NOTICE;
+    // Missed Insanity optimization is a major error
+    if (cast.missedInsanityOptimization) return Status.WARNING;
+
+    // Optimal clip (Insanity pandemic) is not flagged
+    if (cast.optimalClip) return Status.NORMAL;
+
+    // Regular early clip is a notice
+    if (cast.clippedEarly) return Status.NOTICE;
+
+    return Status.NORMAL;
   }
 
   /**

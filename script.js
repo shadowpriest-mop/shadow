@@ -1190,6 +1190,26 @@ function createCastDetailsHTML(cast, fight) {
         `;
     }
 
+    // Optimal clip (Insanity pandemic optimization)
+    if (cast.optimalClip) {
+        html += `
+            <div class="cast-details-item">
+                <span class="cast-details-label">Optimization:</span>
+                <span class="cast-details-value table-accent">${cast.clipReason}</span>
+            </div>
+        `;
+    }
+
+    // Missed Insanity optimization error
+    if (cast.missedInsanityOptimization) {
+        html += `
+            <div class="cast-details-item">
+                <span class="cast-details-label">Error:</span>
+                <span class="cast-details-value text-warning">${cast.insanityOptimizationError}</span>
+            </div>
+        `;
+    }
+
     html += '</div></div>';
 
     // Buffs section (detailed buffs in expanded view)
