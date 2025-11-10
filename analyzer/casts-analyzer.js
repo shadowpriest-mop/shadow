@@ -40,6 +40,9 @@ class CastsAnalyzer {
     this.calculateChannelMetrics();
     this.calculateCooldownMetrics();
 
+    // Step 5: Clean up DoT damage instances to exclude pre-refresh ticks
+    this.cleanupDotDamageInstances();
+
     return this.casts;
   }
 
@@ -729,6 +732,61 @@ class CastsAnalyzer {
 
         if (timeOffCooldown > 0) {
           cast.timeOffCooldown = timeOffCooldown;
+        }
+      }
+    }
+  }
+
+  /**
+   * Clean up DoT damage instances to exclude ticks from previous cast
+   *
+   * When a DoT is refreshed with pandemic, the damage instances include ticks
+   * from BOTH the old cast (still ticking) and the new cast. This is confusing.
+   *
+   * This method filters instances to only show ticks that occur AFTER the
+   * previous cast would have expired (without pandemic).
+   */
+  cleanupDotDamageInstances() {
+    const dotSpells = [589, 34914, 2944]; // SWP, VT, DP
+
+    for (const cast of this.casts) {
+      if (!dotSpells.includes(cast.spellId)) continue;
+
+      const previous = this.findPreviousDotCast(cast);
+      if (!previous) continue; // Initial cast, no cleanup needed
+
+      const spellData = getSpellData(cast.spellId);
+      if (!spellData) continue;
+
+      // Calculate when previous cast would have expired (without pandemic carryover)
+      const previousDuration = spellData.maxDuration * 1000;
+      const previousExpiry = previous.castStart + previousDuration;
+
+      // Calculate pandemic carryover time
+      const carryoverTime = previousExpiry - cast.castStart;
+
+      if (carryoverTime > 0) {
+        // This is a pandemic refresh - filter out pre-refresh ticks
+        const originalInstanceCount = cast.instances.length;
+
+        // Only keep damage instances that occur AFTER the previous expiry
+        cast.instances = cast.instances.filter(inst => inst.timestamp > previousExpiry);
+
+        const removedCount = originalInstanceCount - cast.instances.length;
+
+        // Store pandemic info for display
+        cast.pandemicRefresh = true;
+        cast.pandemicCarryover = carryoverTime;
+
+        if (removedCount > 0) {
+          console.log(`Cleaned up ${removedCount} pre-refresh ticks from ${cast.name} at ${(cast.castStart / 1000).toFixed(1)}s`);
+        }
+
+        // Recalculate castEnd based on filtered instances
+        if (cast.instances.length > 0) {
+          const lastInstance = cast.instances[cast.instances.length - 1];
+          cast.castEnd = lastInstance.timestamp;
+          cast.castTimeMs = cast.castEnd - cast.castStart;
         }
       }
     }

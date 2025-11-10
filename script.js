@@ -1173,6 +1173,16 @@ function createCastDetailsHTML(cast, fight) {
         `;
     }
 
+    // Pandemic indicator (show carryover time)
+    if (cast.pandemicRefresh && cast.pandemicCarryover) {
+        html += `
+            <div class="cast-details-item">
+                <span class="cast-details-label">Pandemic:</span>
+                <span class="cast-details-value table-accent">+${(cast.pandemicCarryover / 1000).toFixed(1)}s carried over</span>
+            </div>
+        `;
+    }
+
     // Clipped early (for channels)
     if (cast.clippedEarly !== undefined) {
         html += `
