@@ -442,17 +442,47 @@ class CastsAnalyzer {
 
   /**
    * Calculate delay between consecutive casts (nextCastLatency)
+   * For instant casts, accounts for GCD before calculating latency
    */
   calculateCastLatencies() {
     const MAX_LATENCY = 1000; // Ignore gaps > 1s (likely movement)
+    const BASE_GCD = 1500; // 1.5s base GCD in ms
+    const MIN_GCD = 1000; // 1.0s minimum GCD in ms
 
+    // First pass: Calculate GCD for each cast
+    for (const cast of this.casts) {
+      const spellData = getSpellData(cast.spellId);
+
+      // Calculate hasted GCD (1.5s base, reduced by haste, floor 1.0s)
+      const hastedGCD = Math.max(MIN_GCD, BASE_GCD / cast.haste);
+      cast.gcd = hastedGCD;
+
+      // Determine if this is an instant cast
+      // Instant casts have castEnd = castStart (no cast bar)
+      const isInstantCast = (cast.castEnd === cast.castStart) ||
+                           (spellData && spellData.baseCastTime === 0);
+      cast.isInstantCast = isInstantCast;
+    }
+
+    // Second pass: Calculate latency between casts
     for (let i = 0; i < this.casts.length - 1; i++) {
       const current = this.casts[i];
       const next = this.casts[i + 1];
 
-      const latency = next.castStart - current.castEnd;
+      // Raw time between casts
+      const rawGap = next.castStart - current.castEnd;
+
+      // For instant casts, subtract the GCD (expected delay)
+      // Only the time BEYOND the GCD is considered latency
+      let latency = rawGap;
+      if (current.isInstantCast) {
+        latency = rawGap - current.gcd;
+      }
 
       // Only track latency if it's a reasonable value
+      // For instant casts, latency can be negative if cast faster than GCD (impossible, but handle it)
+      if (latency < 0) latency = 0;
+
       if (latency >= 0 && latency <= MAX_LATENCY) {
         current.nextCastLatency = latency;
       }
