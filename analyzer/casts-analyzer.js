@@ -459,9 +459,14 @@ class CastsAnalyzer {
 
       // Determine if this is an instant cast
       // Instant casts have castEnd = castStart (no cast bar)
-      const isInstantCast = (cast.castEnd === cast.castStart) ||
+      const castDuration = cast.castEnd - cast.castStart;
+      const isInstantCast = (castDuration === 0) ||
                            (spellData && spellData.baseCastTime === 0);
       cast.isInstantCast = isInstantCast;
+
+      if (isInstantCast) {
+        console.log(`Instant cast detected: ${cast.name} (${cast.spellId}), GCD: ${hastedGCD}ms, castDuration: ${castDuration}ms`);
+      }
     }
 
     // Second pass: Calculate latency between casts
@@ -477,6 +482,7 @@ class CastsAnalyzer {
       let latency = rawGap;
       if (current.isInstantCast) {
         latency = rawGap - current.gcd;
+        console.log(`Adjusted instant cast latency: ${current.name}, rawGap: ${rawGap}ms, GCD: ${current.gcd}ms, latency: ${latency}ms`);
       }
 
       // Only track latency if it's a reasonable value
