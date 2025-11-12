@@ -464,9 +464,17 @@ class CastsAnalyzer {
     for (const cast of this.casts) {
       const spellData = getSpellData(cast.spellId);
 
-      // Calculate hasted GCD (1.5s base, reduced by haste, floor 1.0s)
-      const hastedGCD = Math.max(MIN_GCD, BASE_GCD / cast.haste);
-      cast.gcd = hastedGCD;
+      // Check if spell triggers GCD (some spells like Berserking, Power Infusion have gcd: false)
+      const triggersGCD = !spellData || spellData.gcd !== false;
+
+      if (triggersGCD) {
+        // Calculate hasted GCD (1.5s base, reduced by haste, floor 1.0s)
+        const hastedGCD = Math.max(MIN_GCD, BASE_GCD / cast.haste);
+        cast.gcd = hastedGCD;
+      } else {
+        // No GCD for this spell (e.g., Berserking, Power Infusion, Potion)
+        cast.gcd = 0;
+      }
 
       // Determine if this is an instant cast
       // Instant casts have castEnd = castStart (no cast bar)
@@ -476,7 +484,7 @@ class CastsAnalyzer {
       cast.isInstantCast = isInstantCast;
 
       if (isInstantCast) {
-        console.log(`Instant cast detected: ${cast.name} (${cast.spellId}), GCD: ${hastedGCD}ms, castDuration: ${castDuration}ms`);
+        console.log(`Instant cast detected: ${cast.name} (${cast.spellId}), GCD: ${cast.gcd}ms, triggersGCD: ${triggersGCD}, castDuration: ${castDuration}ms`);
       }
     }
 
