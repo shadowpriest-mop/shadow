@@ -170,21 +170,24 @@ const SPELLS = {
     name: 'Shadowfiend',
     damageType: DamageType.DIRECT,
     maxDuration: 15,
-    cooldown: 180
+    cooldown: 180,
+    gcd: false
   }),
 
   [SpellId.SHADOWFIEND_ALT]: spell({
     name: 'Shadowfiend',
     damageType: DamageType.DIRECT,
     maxDuration: 15,
-    cooldown: 180
+    cooldown: 180,
+    gcd: false
   }),
 
   [SpellId.MINDBENDER]: spell({
     name: 'Mindbender',
     damageType: DamageType.DIRECT,
     maxDuration: 15,
-    cooldown: 60 // Mindbender has shorter cooldown than Shadowfiend
+    cooldown: 60, // Mindbender has shorter cooldown than Shadowfiend
+    gcd: false
   }),
 
   [SpellId.DISPERSION]: spell({
