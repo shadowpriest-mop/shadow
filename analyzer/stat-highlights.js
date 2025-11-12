@@ -69,6 +69,18 @@ class StatHighlights {
   castLatency(cast) {
     if (!cast.nextCastLatency) return Status.NORMAL;
 
+    // Non-GCD instant casts (Shadowfiend, Berserking, Potion, etc.) use higher thresholds
+    // These can be stacked quickly at pull, but 200-1000ms gaps are normal
+    if (cast.gcd === 0) {
+      // For non-GCD instant casts:
+      // - > 2000ms gap is unusually high (WARNING)
+      // - > 1000ms gap is noticeable but acceptable (NOTICE)
+      if (cast.nextCastLatency > 2000) return Status.WARNING;
+      if (cast.nextCastLatency > 1000) return Status.NOTICE;
+      return Status.NORMAL;
+    }
+
+    // Regular casts (with GCD) use stricter thresholds
     if (cast.nextCastLatency > 500) return Status.WARNING;
     if (cast.nextCastLatency > 300) return Status.NOTICE;
     return Status.NORMAL;
