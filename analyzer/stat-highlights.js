@@ -15,15 +15,10 @@ class StatHighlights {
    */
   overall(cast) {
     // Check for major issues (WARNING)
-    // Spells that don't deal damage (buffs, pets) shouldn't be flagged as failed
-    const isNonDamageSpell = cast.spellId === 26297 || //  Berserking
-                              cast.spellId === 126734 || // Synapse Springs
-                              cast.spellId === 132603 || // Shadowfiend
-                              cast.spellId === 34433 ||  // Shadowfiend (alt ID)
-                              cast.spellId === 132604 || // Mindbender
-                              cast.spellId === 10060;    // Power Infusion
+    // Check if this spell should be expected to deal damage
+    const shouldCheckDamage = this._shouldCheckDamage(cast);
 
-    if (cast.failed && !isNonDamageSpell) return Status.WARNING;
+    if (cast.failed && shouldCheckDamage) return Status.WARNING;
 
     // Missed Insanity optimization (should have clipped MF for 3 extra ticks)
     if (cast.missedInsanityOptimization) return Status.WARNING;
@@ -161,6 +156,30 @@ class StatHighlights {
     if (cast.timeOffCooldown > 5000) return Status.WARNING;
     if (cast.timeOffCooldown > 2000) return Status.NOTICE;
     return Status.NORMAL;
+  }
+
+  /**
+   * Check if a spell should be expected to deal damage
+   * Spells that don't deal damage (buffs, pets) shouldn't be flagged as failed
+   */
+  _shouldCheckDamage(cast) {
+    const spellData = getSpellData(cast.spellId);
+
+    // If we don't have spell data, assume it should deal damage
+    if (!spellData) return true;
+
+    // Spells with damageType NONE never deal damage (buffs like Berserking, Power Infusion)
+    if (spellData.damageType === DamageType.NONE) return false;
+
+    // Pet summons (Shadowfiend, Mindbender) don't deal damage themselves - the pet does
+    // These are marked as DIRECT damage but don't have immediate damage events
+    const isPetSummon = cast.spellId === SpellId.SHADOWFIEND ||
+                        cast.spellId === SpellId.SHADOWFIEND_ALT ||
+                        cast.spellId === SpellId.MINDBENDER;
+    if (isPetSummon) return false;
+
+    // All other spells should deal damage
+    return true;
   }
 
   /**
