@@ -853,6 +853,8 @@ class CastsAnalyzer {
       // Calculate pandemic carryover time
       const carryoverTime = previousExpiry - cast.castStart;
 
+      console.log(`DoT ${cast.name} at ${(cast.castStart / 1000).toFixed(1)}s: previous expiry=${(previousExpiry / 1000).toFixed(1)}s, carryoverTime=${(carryoverTime / 1000).toFixed(2)}s`);
+
       if (carryoverTime > 0) {
         // This is a pandemic refresh - also clean up current cast
 
@@ -864,6 +866,8 @@ class CastsAnalyzer {
         // Store pandemic info for display
         cast.pandemicRefresh = true;
         cast.pandemicCarryover = carryoverTime;
+
+        console.log(`  -> Marked as pandemic refresh with ${(carryoverTime / 1000).toFixed(2)}s carryover`);
 
         if (currentRemovedCount > 0) {
           console.log(`Cleaned up ${currentRemovedCount} pre-refresh ticks from current ${cast.name} at ${(cast.castStart / 1000).toFixed(1)}s`);
