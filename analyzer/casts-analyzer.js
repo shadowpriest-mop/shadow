@@ -462,20 +462,33 @@ class CastsAnalyzer {
       for (const cast of this.casts) {
         // Start with base haste
         let hasteMultiplier = baseHasteMultiplier;
+        let hasteBuffs = [];
 
-        // Add haste from buffs active at cast time
+        // Multiply haste from buffs active at cast time (haste is multiplicative!)
         if (cast.buffs && cast.buffs.length > 0) {
           for (const buff of cast.buffs) {
             if (buff.haste && buff.haste > 0) {
-              // Buff haste is additive with base haste %
-              hasteMultiplier += (buff.haste / 100);
+              // Buff haste is multiplicative: 5% buff = multiply by 1.05
+              const oldMultiplier = hasteMultiplier;
+              hasteMultiplier *= (1 + buff.haste / 100);
+              hasteBuffs.push(`${buff.name || 'Unknown'}: ${buff.haste}% (${oldMultiplier.toFixed(4)} → ${hasteMultiplier.toFixed(4)})`);
             }
             if (buff.hasteRating && buff.hasteRating > 0) {
-              // Convert rating to % and add
+              // Convert rating to % and multiply
               const buffHastePercent = buff.hasteRating / HASTE_RATING_PER_PERCENT;
-              hasteMultiplier += (buffHastePercent / 100);
+              const oldMultiplier = hasteMultiplier;
+              hasteMultiplier *= (1 + buffHastePercent / 100);
+              hasteBuffs.push(`${buff.name || 'Unknown'}: ${buff.hasteRating} rating (${oldMultiplier.toFixed(4)} → ${hasteMultiplier.toFixed(4)})`);
             }
           }
+        }
+
+        // Log first cast with buffs for debugging
+        if (hasteBuffs.length > 0 && cast === this.casts.find(c => c.buffs && c.buffs.length > 0)) {
+          console.log(`First cast with haste buffs: ${cast.name} at ${(cast.castStart / 1000).toFixed(1)}s`);
+          console.log(`  Base: ${baseHasteMultiplier.toFixed(4)}`);
+          hasteBuffs.forEach(b => console.log(`  ${b}`));
+          console.log(`  Final: ${hasteMultiplier.toFixed(4)} (${((hasteMultiplier - 1) * 100).toFixed(2)}%)`);
         }
 
         cast.haste = hasteMultiplier;
