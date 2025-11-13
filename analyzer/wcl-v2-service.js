@@ -206,6 +206,7 @@ class WCLv2Service {
 
   /**
    * Fetch events for a fight (with pagination support)
+   * Now also fetches playerDetails for combatantInfo
    */
   async fetchEvents(reportCode, fightID, playerName, startTime, endTime) {
     const query = `
@@ -221,6 +222,7 @@ class WCLv2Service {
               data
               nextPageTimestamp
             }
+            playerDetails(fightIDs: $fightIDs)
           }
         }
       }
@@ -230,6 +232,7 @@ class WCLv2Service {
     const filterExpression = `source.name = "${playerName}"`;
 
     let allEvents = [];
+    let playerDetails = null;
     let currentStartTime = startTime;
     let pageCount = 0;
     const maxPages = 100; // Safety limit to prevent infinite loops
@@ -249,6 +252,12 @@ class WCLv2Service {
 
       const data = await this.query(query, variables);
       const eventsPage = data.reportData.report.events;
+
+      // Capture playerDetails from first page only
+      if (pageCount === 1 && data.reportData.report.playerDetails) {
+        playerDetails = data.reportData.report.playerDetails;
+        console.log('PlayerDetails captured:', playerDetails);
+      }
 
       if (!eventsPage || !eventsPage.data) {
         console.log('No more events data');
@@ -272,6 +281,7 @@ class WCLv2Service {
 
     return {
       data: allEvents,
+      playerDetails: playerDetails,
       pageCount: pageCount
     };
   }
