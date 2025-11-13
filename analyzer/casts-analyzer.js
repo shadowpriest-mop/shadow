@@ -64,33 +64,33 @@ class CastsAnalyzer {
     console.log('=== PLAYER DETAILS ===');
     console.log(JSON.stringify(playerDetails, null, 2));
 
-    // PlayerDetails is an object with combatantInfo for each player
-    // Find our player's combatantInfo
-    if (playerDetails && playerDetails.data && playerDetails.data.playerDetails) {
-      const combatants = playerDetails.data.playerDetails.combatantInfo;
-      if (combatants && combatants.length > 0) {
-        // Take the first combatant (should be our player)
-        const combatant = combatants[0];
+    // combatantInfo is now directly in playerDetails.combatantInfo (array of all combatants)
+    if (playerDetails && playerDetails.combatantInfo && playerDetails.combatantInfo.length > 0) {
+      console.log(`Found ${playerDetails.combatantInfo.length} combatants`);
 
-        console.log('=== COMBATANT INFO ===');
-        console.log(JSON.stringify(combatant, null, 2));
+      // Find our player's combatantInfo (first one should be the source player)
+      const combatant = playerDetails.combatantInfo[0];
 
-        // Extract base stats
-        if (combatant.stats) {
-          this.baseStats = {
-            hasteRating: combatant.stats.Haste || 0,
-            intellect: combatant.stats.Intellect || 0,
-            spellPower: combatant.stats.SpellPower || 0,
-            critRating: combatant.stats.Crit || 0,
-            mastery: combatant.stats.Mastery || 0
-          };
+      console.log('=== COMBATANT INFO ===');
+      console.log(JSON.stringify(combatant, null, 2));
 
-          console.log('Base stats extracted:', this.baseStats);
-        }
+      // Extract base stats - stats may be objects with min/max or simple numbers
+      if (combatant.stats) {
+        this.baseStats = {
+          hasteRating: combatant.stats.Haste?.max || combatant.stats.Haste?.min || combatant.stats.Haste || 0,
+          intellect: combatant.stats.Intellect?.max || combatant.stats.Intellect?.min || combatant.stats.Intellect || 0,
+          spellPower: combatant.stats.SpellPower?.max || combatant.stats.SpellPower?.min || combatant.stats.SpellPower || 0,
+          critRating: combatant.stats.Crit?.max || combatant.stats.Crit?.min || combatant.stats.Crit || 0,
+          mastery: combatant.stats.Mastery?.max || combatant.stats.Mastery?.min || combatant.stats.Mastery || 0
+        };
 
-        // Store gear/talents for reference
-        this.combatantInfo = combatant;
+        console.log('Base stats extracted:', this.baseStats);
       }
+
+      // Store gear/talents for reference
+      this.combatantInfo = combatant;
+    } else {
+      console.log('No combatantInfo found in playerDetails');
     }
   }
 

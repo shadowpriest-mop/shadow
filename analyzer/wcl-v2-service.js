@@ -223,6 +223,9 @@ class WCLv2Service {
               nextPageTimestamp
             }
             playerDetails(fightIDs: $fightIDs)
+            fights(fightIDs: $fightIDs) {
+              combatantInfo
+            }
           }
         }
       }
@@ -253,10 +256,19 @@ class WCLv2Service {
       const data = await this.query(query, variables);
       const eventsPage = data.reportData.report.events;
 
-      // Capture playerDetails from first page only
-      if (pageCount === 1 && data.reportData.report.playerDetails) {
-        playerDetails = data.reportData.report.playerDetails;
-        console.log('PlayerDetails captured:', playerDetails);
+      // Capture playerDetails and combatantInfo from first page only
+      if (pageCount === 1) {
+        if (data.reportData.report.playerDetails) {
+          playerDetails = data.reportData.report.playerDetails;
+          console.log('PlayerDetails captured:', playerDetails);
+        }
+        if (data.reportData.report.fights && data.reportData.report.fights.length > 0) {
+          const combatantInfo = data.reportData.report.fights[0].combatantInfo;
+          console.log('CombatantInfo captured:', combatantInfo);
+          // Store combatantInfo separately for easier access
+          if (!playerDetails) playerDetails = {};
+          playerDetails.combatantInfo = combatantInfo;
+        }
       }
 
       if (!eventsPage || !eventsPage.data) {
