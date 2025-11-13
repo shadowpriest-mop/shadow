@@ -738,24 +738,27 @@ class CastsAnalyzer {
           const isMindFlay = (cast.spellId === MF_INSANITY_ID || cast.spellId === MF_REGULAR_ID);
           const isInsanityOptimization = isMindFlay && this.isMindFlayInsanityOptimization(cast);
 
-          // Check if we clipped to cast a pandemic DoT refresh
+          // Check if we clipped to cast an optimal DoT refresh
+          // (pandemic refresh OR Insanity preparation)
           const nextCast = this.getNextCast(cast);
-          const isPandemicDotClip = nextCast && nextCast.pandemicRefresh === true;
+          const isOptimalDotRefresh = nextCast &&
+                                      nextCast.dotQuality &&
+                                      nextCast.dotQuality.status === 'optimal';
 
           console.log(`Early clip detected for ${cast.name} at ${(cast.castStart / 1000).toFixed(2)}s`);
           console.log(`  Next cast: ${nextCast ? nextCast.name : 'none'}`);
-          console.log(`  Next cast pandemicRefresh: ${nextCast ? nextCast.pandemicRefresh : 'N/A'}`);
+          console.log(`  Next cast dotQuality: ${nextCast && nextCast.dotQuality ? nextCast.dotQuality.status : 'N/A'}`);
           console.log(`  isInsanityOptimization: ${isInsanityOptimization}`);
-          console.log(`  isPandemicDotClip: ${isPandemicDotClip}`);
+          console.log(`  isOptimalDotRefresh: ${isOptimalDotRefresh}`);
 
           if (isInsanityOptimization) {
             // This is an optimal clip for Insanity pandemic - mark it differently
             cast.optimalClip = true;
             cast.clipReason = 'Insanity pandemic optimization';
-          } else if (isPandemicDotClip) {
-            // Clipped to refresh DoT with pandemic - this is good gameplay
+          } else if (isOptimalDotRefresh) {
+            // Clipped to refresh DoT optimally (pandemic OR Insanity prep)
             cast.optimalClip = true;
-            cast.clipReason = 'Clipped for pandemic DoT refresh';
+            cast.clipReason = 'Clipped for optimal DoT refresh';
           } else {
             // Regular early clip (potentially bad)
             cast.clippedEarly = true;
