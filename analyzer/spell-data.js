@@ -256,10 +256,9 @@ const SPELLS = {
 
   [SpellId.SYNAPSE_SPRINGS]: spell({
     name: 'Synapse Springs',
-    damageType: DamageType.DIRECT,
+    damageType: DamageType.NONE,
     cooldown: 60,
-    gcd: false,
-    maxDamageInstances: 1
+    gcd: false
   }),
 
   [SpellId.SILENCE]: spell({
