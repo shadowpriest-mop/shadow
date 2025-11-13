@@ -15,7 +15,15 @@ class StatHighlights {
    */
   overall(cast) {
     // Check for major issues (WARNING)
-    if (cast.failed) return Status.WARNING;
+    // Spells that don't deal damage (buffs, pets) shouldn't be flagged as failed
+    const isNonDamageSpell = cast.spellId === 26297 || //  Berserking
+                              cast.spellId === 126734 || // Synapse Springs
+                              cast.spellId === 132603 || // Shadowfiend
+                              cast.spellId === 34433 ||  // Shadowfiend (alt ID)
+                              cast.spellId === 132604 || // Mindbender
+                              cast.spellId === 10060;    // Power Infusion
+
+    if (cast.failed && !isNonDamageSpell) return Status.WARNING;
 
     // Missed Insanity optimization (should have clipped MF for 3 extra ticks)
     if (cast.missedInsanityOptimization) return Status.WARNING;
