@@ -222,10 +222,7 @@ class WCLv2Service {
               data
               nextPageTimestamp
             }
-            playerDetails(fightIDs: $fightIDs)
-            fights(fightIDs: $fightIDs) {
-              combatantInfo
-            }
+            table(fightIDs: $fightIDs, dataType: Summary, startTime: $startTime, endTime: $endTime)
           }
         }
       }
@@ -256,18 +253,30 @@ class WCLv2Service {
       const data = await this.query(query, variables);
       const eventsPage = data.reportData.report.events;
 
-      // Capture playerDetails and combatantInfo from first page only
+      // Capture table data with combatantInfo from first page only
       if (pageCount === 1) {
-        if (data.reportData.report.playerDetails) {
-          playerDetails = data.reportData.report.playerDetails;
-          console.log('PlayerDetails captured:', playerDetails);
-        }
-        if (data.reportData.report.fights && data.reportData.report.fights.length > 0) {
-          const combatantInfo = data.reportData.report.fights[0].combatantInfo;
-          console.log('CombatantInfo captured:', combatantInfo);
-          // Store combatantInfo separately for easier access
-          if (!playerDetails) playerDetails = {};
-          playerDetails.combatantInfo = combatantInfo;
+        if (data.reportData.report.table) {
+          console.log('Table data captured:', data.reportData.report.table);
+          // Parse the table JSON data
+          try {
+            const tableData = typeof data.reportData.report.table === 'string'
+              ? JSON.parse(data.reportData.report.table)
+              : data.reportData.report.table;
+
+            console.log('Parsed table data:', tableData);
+
+            // Extract combatantInfo from table data
+            if (tableData && tableData.combatantInfo) {
+              playerDetails = { combatantInfo: tableData.combatantInfo };
+              console.log(`Found ${tableData.combatantInfo.length} combatants in table data`);
+            } else if (tableData && tableData.composition) {
+              // Alternative: combatantInfo might be in composition
+              playerDetails = { combatantInfo: tableData.composition };
+              console.log(`Found ${tableData.composition.length} combatants in composition`);
+            }
+          } catch (e) {
+            console.error('Error parsing table data:', e);
+          }
         }
       }
 
