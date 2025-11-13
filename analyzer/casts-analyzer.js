@@ -737,10 +737,18 @@ class CastsAnalyzer {
           const isMindFlay = (cast.spellId === MF_INSANITY_ID || cast.spellId === MF_REGULAR_ID);
           const isInsanityOptimization = isMindFlay && this.isMindFlayInsanityOptimization(cast);
 
+          // Check if we clipped to cast a pandemic DoT refresh
+          const nextCast = this.getNextCast(cast);
+          const isPandemicDotClip = nextCast && nextCast.pandemicRefresh === true;
+
           if (isInsanityOptimization) {
             // This is an optimal clip for Insanity pandemic - mark it differently
             cast.optimalClip = true;
             cast.clipReason = 'Insanity pandemic optimization';
+          } else if (isPandemicDotClip) {
+            // Clipped to refresh DoT with pandemic - this is good gameplay
+            cast.optimalClip = true;
+            cast.clipReason = 'Clipped for pandemic DoT refresh';
           } else {
             // Regular early clip (potentially bad)
             cast.clippedEarly = true;
@@ -876,6 +884,17 @@ class CastsAnalyzer {
       }
     }
     return null;
+  }
+
+  /**
+   * Get the next cast after the given cast
+   */
+  getNextCast(cast) {
+    const index = this.casts.indexOf(cast);
+    if (index === -1 || index === this.casts.length - 1) {
+      return null;
+    }
+    return this.casts[index + 1];
   }
 
   /**
