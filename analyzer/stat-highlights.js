@@ -178,6 +178,10 @@ class StatHighlights {
                         cast.spellId === SpellId.MINDBENDER;
     if (isPetSummon) return false;
 
+    // Spells with travel time (Halo, Cascade, Divine Star) have delayed damage events
+    // Don't flag as failed if no immediate damage is found
+    if (spellData.hasTravelTime) return false;
+
     // All other spells should deal damage
     return true;
   }
