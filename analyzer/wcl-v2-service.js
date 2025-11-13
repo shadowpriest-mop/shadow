@@ -265,14 +265,28 @@ class WCLv2Service {
 
             console.log('Parsed table data:', tableData);
 
-            // Extract combatantInfo from table data
-            if (tableData && tableData.combatantInfo) {
+            // Check playerDetails.dps/healers/tanks for our player's stats
+            if (tableData && tableData.data && tableData.data.playerDetails) {
+              console.log('PlayerDetails from table:', tableData.data.playerDetails);
+
+              // Find our player in dps/healers/tanks arrays
+              const allPlayers = [
+                ...(tableData.data.playerDetails.dps || []),
+                ...(tableData.data.playerDetails.healers || []),
+                ...(tableData.data.playerDetails.tanks || [])
+              ];
+
+              console.log(`Found ${allPlayers.length} players in playerDetails`);
+              console.log('First player sample:', allPlayers[0]);
+
+              playerDetails = { playerList: allPlayers };
+            } else if (tableData && tableData.combatantInfo) {
               playerDetails = { combatantInfo: tableData.combatantInfo };
               console.log(`Found ${tableData.combatantInfo.length} combatants in table data`);
-            } else if (tableData && tableData.composition) {
+            } else if (tableData && tableData.data && tableData.data.composition) {
               // Alternative: combatantInfo might be in composition
-              playerDetails = { combatantInfo: tableData.composition };
-              console.log(`Found ${tableData.composition.length} combatants in composition`);
+              playerDetails = { combatantInfo: tableData.data.composition };
+              console.log(`Found ${tableData.data.composition.length} combatants in composition`);
             }
           } catch (e) {
             console.error('Error parsing table data:', e);
