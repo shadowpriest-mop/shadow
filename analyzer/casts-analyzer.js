@@ -64,17 +64,67 @@ class CastsAnalyzer {
     console.log('=== PLAYER DETAILS ===');
     console.log(JSON.stringify(playerDetails, null, 2));
 
-    // combatantInfo is now directly in playerDetails.combatantInfo (array of all combatants)
-    if (playerDetails && playerDetails.combatantInfo && playerDetails.combatantInfo.length > 0) {
-      console.log(`Found ${playerDetails.combatantInfo.length} combatants`);
+    // New structure: playerList array with each player having combatantInfo inside
+    if (playerDetails && playerDetails.playerList && playerDetails.playerList.length > 0) {
+      console.log(`Found ${playerDetails.playerList.length} players in playerList`);
 
-      // Find our player's combatantInfo (first one should be the source player)
+      // Find our player - use first cast's source name to identify
+      let ourPlayer = null;
+      if (this.casts && this.casts.length > 0) {
+        // parseCasts hasn't run yet, so check events instead
+        if (this.events && this.events.length > 0) {
+          const sourceNames = [...new Set(this.events.map(e => e.source?.name).filter(Boolean))];
+          console.log('Source names in events:', sourceNames);
+
+          // Should only be one source name since we filtered by player
+          const playerName = sourceNames[0];
+          ourPlayer = playerDetails.playerList.find(p => p.name === playerName);
+
+          if (ourPlayer) {
+            console.log(`Found player: ${ourPlayer.name}`);
+          }
+        }
+      }
+
+      // Fallback: use first player if we can't identify
+      if (!ourPlayer) {
+        ourPlayer = playerDetails.playerList[0];
+        console.log('Using first player as fallback:', ourPlayer.name);
+      }
+
+      // Extract combatantInfo from the player object
+      if (ourPlayer && ourPlayer.combatantInfo) {
+        const combatant = ourPlayer.combatantInfo;
+
+        console.log('=== COMBATANT INFO ===');
+        console.log(JSON.stringify(combatant, null, 2));
+
+        // Extract base stats - stats may be objects with min/max or simple numbers
+        if (combatant.stats) {
+          this.baseStats = {
+            hasteRating: combatant.stats.Haste?.max || combatant.stats.Haste?.min || combatant.stats.Haste || 0,
+            intellect: combatant.stats.Intellect?.max || combatant.stats.Intellect?.min || combatant.stats.Intellect || 0,
+            spellPower: combatant.stats.SpellPower?.max || combatant.stats.SpellPower?.min || combatant.stats.SpellPower || 0,
+            critRating: combatant.stats.Crit?.max || combatant.stats.Crit?.min || combatant.stats.Crit || 0,
+            mastery: combatant.stats.Mastery?.max || combatant.stats.Mastery?.min || combatant.stats.Mastery || 0
+          };
+
+          console.log('Base stats extracted:', this.baseStats);
+        }
+
+        // Store gear/talents for reference
+        this.combatantInfo = combatant;
+      }
+    }
+    // Old structure fallback
+    else if (playerDetails && playerDetails.combatantInfo && playerDetails.combatantInfo.length > 0) {
+      console.log(`Found ${playerDetails.combatantInfo.length} combatants (old structure)`);
+
       const combatant = playerDetails.combatantInfo[0];
 
       console.log('=== COMBATANT INFO ===');
       console.log(JSON.stringify(combatant, null, 2));
 
-      // Extract base stats - stats may be objects with min/max or simple numbers
       if (combatant.stats) {
         this.baseStats = {
           hasteRating: combatant.stats.Haste?.max || combatant.stats.Haste?.min || combatant.stats.Haste || 0,
@@ -87,7 +137,6 @@ class CastsAnalyzer {
         console.log('Base stats extracted:', this.baseStats);
       }
 
-      // Store gear/talents for reference
       this.combatantInfo = combatant;
     } else {
       console.log('No combatantInfo found in playerDetails');
