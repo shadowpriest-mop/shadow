@@ -34,14 +34,15 @@ class CastsAnalyzer {
     // Step 3: Infer haste for each cast
     this.calculateHaste();
 
-    // Step 4: Calculate quality metrics
+    // Step 4: Clean up DoT damage instances to exclude pre-refresh ticks
+    // (Must run before channel metrics to detect pandemic-based optimal clips)
+    this.cleanupDotDamageInstances();
+
+    // Step 5: Calculate quality metrics
     this.calculateCastLatencies();
     this.calculateDotMetrics();
     this.calculateChannelMetrics();
     this.calculateCooldownMetrics();
-
-    // Step 5: Clean up DoT damage instances to exclude pre-refresh ticks
-    this.cleanupDotDamageInstances();
 
     return this.casts;
   }
