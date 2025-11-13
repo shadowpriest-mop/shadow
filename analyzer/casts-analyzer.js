@@ -742,6 +742,12 @@ class CastsAnalyzer {
           const nextCast = this.getNextCast(cast);
           const isPandemicDotClip = nextCast && nextCast.pandemicRefresh === true;
 
+          console.log(`Early clip detected for ${cast.name} at ${(cast.castStart / 1000).toFixed(2)}s`);
+          console.log(`  Next cast: ${nextCast ? nextCast.name : 'none'}`);
+          console.log(`  Next cast pandemicRefresh: ${nextCast ? nextCast.pandemicRefresh : 'N/A'}`);
+          console.log(`  isInsanityOptimization: ${isInsanityOptimization}`);
+          console.log(`  isPandemicDotClip: ${isPandemicDotClip}`);
+
           if (isInsanityOptimization) {
             // This is an optimal clip for Insanity pandemic - mark it differently
             cast.optimalClip = true;
