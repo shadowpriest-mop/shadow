@@ -517,10 +517,10 @@ class CastsAnalyzer {
         if (cast.buffs && cast.buffs.length > 0) {
           for (const buff of cast.buffs) {
             if (buff.haste && buff.haste > 0) {
-              // Buff haste is multiplicative: 5% buff = multiply by 1.05
+              // Buff haste is stored as decimal: 0.05 = 5%, 0.30 = 30%
               const oldMultiplier = hasteMultiplier;
-              hasteMultiplier *= (1 + buff.haste / 100);
-              hasteBuffs.push(`${buff.name || 'Unknown'}: ${buff.haste}% (${oldMultiplier.toFixed(4)} → ${hasteMultiplier.toFixed(4)})`);
+              hasteMultiplier *= (1 + buff.haste);
+              hasteBuffs.push(`${buff.name || 'Unknown'}: ${(buff.haste * 100).toFixed(1)}% (${oldMultiplier.toFixed(4)} → ${hasteMultiplier.toFixed(4)})`);
             }
             if (buff.hasteRating && buff.hasteRating > 0) {
               // Convert rating to % and multiply
