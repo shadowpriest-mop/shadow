@@ -1430,6 +1430,14 @@ function createStatField(label, value) {
 }
 
 /**
+ * Normalize talent name to icon filename
+ * E.g., "Void Tendrils" -> "voidtendrils"
+ */
+function normalizeIconName(name) {
+    return name.toLowerCase().replace(/[^a-z0-9]/g, '');
+}
+
+/**
  * Render talents display
  */
 function renderTalents(talents) {
@@ -1447,11 +1455,16 @@ function renderTalents(talents) {
     html += '<div class="talents-list">';
 
     sortedTalents.forEach(talent => {
+        const iconName = normalizeIconName(talent.name);
+        const iconPath = `analyzer/icons/talents/${iconName}.jpg`;
         const tierLabel = `T${talent.type * 15}`;
+
         html += `
-            <div class="talent-item">
-                <span class="talent-tier">${tierLabel}</span>
-                <span class="talent-name">${talent.name}</span>
+            <div class="talent-icon-wrapper" title="${talent.name} (${tierLabel})">
+                <img src="${iconPath}"
+                     alt="${talent.name}"
+                     class="talent-icon"
+                     onerror="this.src='analyzer/icons/talents/placeholder.jpg'">
             </div>
         `;
     });
