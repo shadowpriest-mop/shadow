@@ -47,7 +47,30 @@ class CastsAnalyzer {
     this.calculateChannelMetrics();
     this.calculateCooldownMetrics();
 
-    return this.casts;
+    // Extract talents from combatantInfo
+    const talents = this.extractTalents();
+
+    return {
+      casts: this.casts,
+      talents: talents
+    };
+  }
+
+  /**
+   * Extract talents from combatantInfo
+   * Returns array of talent objects or null if no talents available
+   */
+  extractTalents() {
+    if (!this.combatantInfo || !this.combatantInfo.talents) {
+      console.log('No talents available in combatantInfo');
+      return null;
+    }
+
+    const talents = this.combatantInfo.talents;
+    console.log('=== TALENTS EXTRACTED ===');
+    console.log(JSON.stringify(talents, null, 2));
+
+    return talents;
   }
 
   /**

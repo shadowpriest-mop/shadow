@@ -909,7 +909,9 @@ window.analyzeLog = async function analyzeLog() {
             playerDetails: eventsData.playerDetails,
             playerName: playerName
         });
-        const casts = castsAnalyzer.analyze();
+        const analysisResult = castsAnalyzer.analyze();
+        const casts = analysisResult.casts;
+        const talents = analysisResult.talents;
 
         // Add target names to casts
         const enemyNames = new Map();
@@ -926,11 +928,15 @@ window.analyzeLog = async function analyzeLog() {
 
         // Store globally for filtering
         window.allCasts = casts;
+        window.currentTalents = talents;
         window.currentFight = fight;
         window.statsCalculator = new CastStatsCalculator(casts, fight);
 
         // Render stats overview (Timeline view by default)
         renderStatsOverview('timeline');
+
+        // Render talents display
+        renderTalents(talents);
 
         // Render cast timeline
         renderCastTimeline(casts, fight);
@@ -1421,6 +1427,39 @@ function createStatField(label, value) {
             <div class="stat-field-value">${value}</div>
         </div>
     `;
+}
+
+/**
+ * Render talents display
+ */
+function renderTalents(talents) {
+    const talentsDisplay = document.getElementById('talents-display');
+
+    if (!talents || !Array.isArray(talents) || talents.length === 0) {
+        talentsDisplay.style.display = 'none';
+        return;
+    }
+
+    // Sort talents by type (tier)
+    const sortedTalents = [...talents].sort((a, b) => a.type - b.type);
+
+    let html = '<div class="talents-header">Talents</div>';
+    html += '<div class="talents-list">';
+
+    sortedTalents.forEach(talent => {
+        const tierLabel = `T${talent.type * 15}`;
+        html += `
+            <div class="talent-item">
+                <span class="talent-tier">${tierLabel}</span>
+                <span class="talent-name">${talent.name}</span>
+            </div>
+        `;
+    });
+
+    html += '</div>';
+
+    talentsDisplay.innerHTML = html;
+    talentsDisplay.style.display = 'block';
 }
 
 /**
