@@ -906,7 +906,8 @@ window.analyzeLog = async function analyzeLog() {
 
         // Analyze casts with quality metrics
         const castsAnalyzer = new CastsAnalyzer(events, buffEvents, {
-            playerDetails: eventsData.playerDetails
+            playerDetails: eventsData.playerDetails,
+            playerName: playerName
         });
         const casts = castsAnalyzer.analyze();
 

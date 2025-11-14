@@ -68,22 +68,22 @@ class CastsAnalyzer {
     if (playerDetails && playerDetails.playerList && playerDetails.playerList.length > 0) {
       console.log(`Found ${playerDetails.playerList.length} players in playerList`);
 
-      // Find our player - use first cast's source name to identify
+      // Find our player using the playerName from settings
       let ourPlayer = null;
-      if (this.casts && this.casts.length > 0) {
-        // parseCasts hasn't run yet, so check events instead
-        if (this.events && this.events.length > 0) {
-          const sourceNames = [...new Set(this.events.map(e => e.source?.name).filter(Boolean))];
-          console.log('Source names in events:', sourceNames);
+      const playerName = this.settings.playerName;
 
-          // Should only be one source name since we filtered by player
-          const playerName = sourceNames[0];
-          ourPlayer = playerDetails.playerList.find(p => p.name === playerName);
+      if (playerName) {
+        console.log(`Looking for player: ${playerName}`);
+        ourPlayer = playerDetails.playerList.find(p => p.name === playerName);
 
-          if (ourPlayer) {
-            console.log(`Found player: ${ourPlayer.name}`);
-          }
+        if (ourPlayer) {
+          console.log(`Found player: ${ourPlayer.name}`);
+        } else {
+          console.log(`Player "${playerName}" not found in playerList`);
+          console.log('Available players:', playerDetails.playerList.map(p => p.name));
         }
+      } else {
+        console.log('No playerName in settings, cannot identify correct player');
       }
 
       // Fallback: use first player if we can't identify
