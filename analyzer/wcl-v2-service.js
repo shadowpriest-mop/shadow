@@ -2,7 +2,9 @@
 // For MoP Classic Shadow Priest Analyzer
 // Uses client credentials flow - no user login required (like v1 API)
 
-console.log('wcl-v2-service.js loading...');
+console.log('===  WCL-V2-SERVICE.JS LOADING (v2.19.1) ===');
+
+// Note: BUFF_DATA is loaded from buff-data.js and available as window.BUFF_DATA
 
 const WCL_CLIENT_ID = 'a036e79f-2e07-4588-bc67-d46cd2f907f8';
 const WCL_CLIENT_SECRET = '2j26APf8DGSppFDstkqJ8H2hCaC74YWc4GWpapEg';
@@ -166,7 +168,14 @@ class WCLv2Service {
               encounterID
             }
             masterData {
-              actors(type: "Player") {
+              players: actors(type: "Player") {
+                id
+                name
+                gameID
+                type
+                subType
+              }
+              enemies: actors(type: "NPC") {
                 id
                 name
                 gameID
@@ -197,6 +206,7 @@ class WCLv2Service {
 
   /**
    * Fetch events for a fight (with pagination support)
+   * Now also fetches playerDetails for combatantInfo
    */
   async fetchEvents(reportCode, fightID, playerName, startTime, endTime) {
     const query = `
@@ -212,6 +222,7 @@ class WCLv2Service {
               data
               nextPageTimestamp
             }
+            table(fightIDs: $fightIDs, dataType: Summary, startTime: $startTime, endTime: $endTime)
           }
         }
       }
@@ -221,6 +232,7 @@ class WCLv2Service {
     const filterExpression = `source.name = "${playerName}"`;
 
     let allEvents = [];
+    let playerDetails = null;
     let currentStartTime = startTime;
     let pageCount = 0;
     const maxPages = 100; // Safety limit to prevent infinite loops
@@ -240,6 +252,47 @@ class WCLv2Service {
 
       const data = await this.query(query, variables);
       const eventsPage = data.reportData.report.events;
+
+      // Capture table data with combatantInfo from first page only
+      if (pageCount === 1) {
+        if (data.reportData.report.table) {
+          console.log('Table data captured:', data.reportData.report.table);
+          // Parse the table JSON data
+          try {
+            const tableData = typeof data.reportData.report.table === 'string'
+              ? JSON.parse(data.reportData.report.table)
+              : data.reportData.report.table;
+
+            console.log('Parsed table data:', tableData);
+
+            // Check playerDetails.dps/healers/tanks for our player's stats
+            if (tableData && tableData.data && tableData.data.playerDetails) {
+              console.log('PlayerDetails from table:', tableData.data.playerDetails);
+
+              // Find our player in dps/healers/tanks arrays
+              const allPlayers = [
+                ...(tableData.data.playerDetails.dps || []),
+                ...(tableData.data.playerDetails.healers || []),
+                ...(tableData.data.playerDetails.tanks || [])
+              ];
+
+              console.log(`Found ${allPlayers.length} players in playerDetails`);
+              console.log('First player sample:', allPlayers[0]);
+
+              playerDetails = { playerList: allPlayers };
+            } else if (tableData && tableData.combatantInfo) {
+              playerDetails = { combatantInfo: tableData.combatantInfo };
+              console.log(`Found ${tableData.combatantInfo.length} combatants in table data`);
+            } else if (tableData && tableData.data && tableData.data.composition) {
+              // Alternative: combatantInfo might be in composition
+              playerDetails = { combatantInfo: tableData.data.composition };
+              console.log(`Found ${tableData.data.composition.length} combatants in composition`);
+            }
+          } catch (e) {
+            console.error('Error parsing table data:', e);
+          }
+        }
+      }
 
       if (!eventsPage || !eventsPage.data) {
         console.log('No more events data');
@@ -263,6 +316,82 @@ class WCLv2Service {
 
     return {
       data: allEvents,
+      playerDetails: playerDetails,
+      pageCount: pageCount
+    };
+  }
+
+  /**
+   * Fetch buff/debuff events (applybuff, removebuff, etc.)
+   * Separate from main events to allow different filtering
+   */
+  async fetchBuffEvents(reportCode, fightID, playerName, startTime, endTime) {
+    const query = `
+      query($code: String!, $fightIDs: [Int]!, $startTime: Float!, $endTime: Float!, $filterExpression: String) {
+        reportData {
+          report(code: $code) {
+            events(
+              fightIDs: $fightIDs
+              startTime: $startTime
+              endTime: $endTime
+              filterExpression: $filterExpression
+              dataType: Buffs
+            ) {
+              data
+              nextPageTimestamp
+            }
+          }
+        }
+      }
+    `;
+
+    // Get tracked buff IDs from buff-data.js (window.BUFF_DATA)
+    const buffData = window.BUFF_DATA || {};
+    const trackedBuffIds = Object.keys(buffData).map(id => parseInt(id)).join(',');
+
+    // Filter for buffs applied TO the player (target) with tracked IDs
+    const filterExpression = `target.name = "${playerName}" AND ability.id IN (${trackedBuffIds})`;
+
+    let allEvents = [];
+    let currentStartTime = startTime;
+    let pageCount = 0;
+    const maxPages = 100;
+
+    while (pageCount < maxPages) {
+      pageCount++;
+      console.log(`Fetching buff events page ${pageCount}, startTime: ${currentStartTime}`);
+
+      const variables = {
+        code: reportCode,
+        fightIDs: [fightID],
+        startTime: currentStartTime,
+        endTime: endTime,
+        filterExpression: filterExpression
+      };
+
+      const data = await this.query(query, variables);
+      const eventsPage = data.reportData.report.events;
+
+      if (!eventsPage || !eventsPage.data) {
+        console.log('No more buff events');
+        break;
+      }
+
+      console.log(`Buff page ${pageCount}: ${eventsPage.data.length} events`);
+      allEvents = allEvents.concat(eventsPage.data);
+
+      if (!eventsPage.nextPageTimestamp) {
+        console.log('No more buff pages');
+        break;
+      }
+
+      currentStartTime = eventsPage.nextPageTimestamp;
+    }
+
+    console.log(`Total buff events fetched: ${allEvents.length} across ${pageCount} pages`);
+
+    return {
+      data: allEvents,
       pageCount: pageCount
     };
   }
@@ -275,13 +404,13 @@ class WCLv2Service {
   getShadowPriests(report) {
     console.log('=== getShadowPriests v2.3+ CALLED ===');
 
-    if (!report || !report.masterData || !report.masterData.actors) {
-      console.error('Missing report data:', { report: !!report, masterData: !!report?.masterData, actors: !!report?.masterData?.actors });
+    if (!report || !report.masterData || !report.masterData.players) {
+      console.error('Missing report data:', { report: !!report, masterData: !!report?.masterData, players: !!report?.masterData?.players });
       return [];
     }
 
     const priests = [];
-    const actors = report.masterData.actors;
+    const actors = report.masterData.players;
 
     console.log('Total actors in report:', actors.length);
     console.log('First actor example:', actors[0]);
@@ -328,4 +457,12 @@ console.log('wclV2Service initialized:', wclV2Service);
 // Export for use in other modules
 if (typeof module !== 'undefined' && module.exports) {
   module.exports = { WCLv2Service, wclV2Service };
+}
+
+// Export to window for browser use
+if (typeof window !== 'undefined') {
+  console.log('=== EXPORTING wclV2Service to window ===');
+  window.wclV2Service = wclV2Service;
+  window.WCLv2Service = WCLv2Service;
+  console.log('=== window.wclV2Service =', window.wclV2Service);
 }

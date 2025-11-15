@@ -53,36 +53,200 @@ const CASTS = {
     }
 };
 
+// ====== HASH ROUTING SYSTEM ======
+
+/**
+ * Parse hash URL: #/report/DC2WjNJKnzYtMPLG/Kiwiandapple/1
+ * Returns { reportId, playerName, fightId } or null
+ */
+function parseHash() {
+    const hash = window.location.hash;
+    if (!hash || !hash.startsWith('#/report/')) {
+        return null;
+    }
+
+    const parts = hash.substring(9).split('/'); // Remove '#/report/'
+    if (parts.length < 3) {
+        return null;
+    }
+
+    return {
+        reportId: parts[0],
+        playerName: parts[1],
+        fightId: parseInt(parts[2])
+    };
+}
+
+/**
+ * Update URL hash without triggering navigation
+ */
+function updateHash(reportId, playerName, fightId) {
+    const newHash = `#/report/${reportId}/${playerName}/${fightId}`;
+    if (window.location.hash !== newHash) {
+        window.history.pushState(null, '', newHash);
+    }
+}
+
+/**
+ * Navigate to landing page (clear hash)
+ */
+function navigateHome() {
+    window.history.pushState(null, '', window.location.pathname);
+    window.goHome();
+}
+
+/**
+ * Load analysis from URL hash
+ */
+async function loadFromHash() {
+    const route = parseHash();
+    if (!route) {
+        console.log('No valid hash route found');
+        return;
+    }
+
+    console.log('Loading from hash:', route);
+
+    // Set the WCL input
+    const wclInput = document.getElementById('wcl-report');
+    if (wclInput) {
+        wclInput.value = route.reportId;
+    }
+
+    try {
+        // Load the report
+        await window.loadReport();
+
+        // Wait a bit for report to load
+        await new Promise(resolve => setTimeout(resolve, 500));
+
+        // Select player and encounter
+        const playerSelect = document.getElementById('player-select');
+        const encounterSelect = document.getElementById('encounter-select');
+
+        if (playerSelect && encounterSelect) {
+            // Find and select the player
+            for (let option of playerSelect.options) {
+                if (option.value === route.playerName) {
+                    playerSelect.value = route.playerName;
+                    break;
+                }
+            }
+
+            // Find and select the encounter
+            encounterSelect.value = route.fightId.toString();
+
+            // Check if selections are valid
+            if (playerSelect.value && encounterSelect.value) {
+                // Start analysis (which will switch to analysis page)
+                await window.startAnalysis();
+            } else {
+                console.warn('Could not find player or encounter from URL');
+            }
+        }
+    } catch (error) {
+        console.error('Error loading from hash:', error);
+    }
+}
+
+// ====== PAGE NAVIGATION FUNCTIONS ======
+
+/**
+ * Switch from landing page to analysis page
+ */
+window.startAnalysis = function() {
+    document.getElementById('landing-page').style.display = 'none';
+    document.getElementById('analysis-page').style.display = 'block';
+
+    // Copy selections from landing page to analysis page
+    const playerSelect = document.getElementById('player-select');
+    const encounterSelect = document.getElementById('encounter-select');
+    const playerSelectAnalysis = document.getElementById('player-select-analysis');
+    const encounterSelectAnalysis = document.getElementById('encounter-select-analysis');
+
+    // Copy options
+    playerSelectAnalysis.innerHTML = playerSelect.innerHTML;
+    encounterSelectAnalysis.innerHTML = encounterSelect.innerHTML;
+
+    // Copy selected values
+    playerSelectAnalysis.value = playerSelect.value;
+    encounterSelectAnalysis.value = encounterSelect.value;
+
+    // Set up report title bar
+    if (currentReportData) {
+        const reportTitle = document.getElementById('report-title');
+        const wclLink = document.getElementById('wcl-link');
+
+        reportTitle.textContent = `${currentReportData.title || 'Report'} (${currentReportData.owner || 'Unknown'})`;
+        wclLink.href = `https://www.warcraftlogs.com/reports/${window.wclV2Service.extractReportId(document.getElementById('wcl-report').value)}`;
+    }
+
+    // Add change listeners to analysis page selectors (only once)
+    if (!playerSelectAnalysis.hasAttribute('data-listener-attached')) {
+        playerSelectAnalysis.setAttribute('data-listener-attached', 'true');
+        playerSelectAnalysis.addEventListener('change', () => {
+            // Update hash when player changes
+            const reportId = window.wclV2Service.extractReportId(document.getElementById('wcl-report').value);
+            const playerName = playerSelectAnalysis.value;
+            const fightId = encounterSelectAnalysis.value;
+            updateHash(reportId, playerName, fightId);
+            window.analyzeLog();
+        });
+    }
+    if (!encounterSelectAnalysis.hasAttribute('data-listener-attached')) {
+        encounterSelectAnalysis.setAttribute('data-listener-attached', 'true');
+        encounterSelectAnalysis.addEventListener('change', () => {
+            // Update hash when encounter changes
+            const reportId = window.wclV2Service.extractReportId(document.getElementById('wcl-report').value);
+            const playerName = playerSelectAnalysis.value;
+            const fightId = encounterSelectAnalysis.value;
+            updateHash(reportId, playerName, fightId);
+            window.analyzeLog();
+        });
+    }
+
+    // Update URL hash
+    const reportId = window.wclV2Service.extractReportId(document.getElementById('wcl-report').value);
+    const playerName = playerSelect.value;
+    const fightId = encounterSelect.value;
+    updateHash(reportId, playerName, fightId);
+
+    // Trigger analysis
+    window.analyzeLog();
+};
+
+/**
+ * Go back to landing page (home)
+ */
+window.goHome = function() {
+    // Clear hash
+    window.history.pushState(null, '', window.location.pathname);
+
+    document.getElementById('analysis-page').style.display = 'none';
+    document.getElementById('landing-page').style.display = 'flex';
+
+    // Clear analysis results
+    document.getElementById('analysis-results').style.display = 'none';
+    document.getElementById('target-filter-group').style.display = 'none';
+};
+
+/**
+ * Show about overlay
+ */
+window.showAbout = function() {
+    document.getElementById('about-overlay').style.display = 'flex';
+};
+
+/**
+ * Hide about overlay
+ */
+window.hideAbout = function() {
+    document.getElementById('about-overlay').style.display = 'none';
+};
+
 // Initialize
 document.addEventListener('DOMContentLoaded', function() {
-    // Get all input elements
-    const hasteRatingInput = document.getElementById('haste-rating');
-    const shadowformCheckbox = document.getElementById('shadowform');
-    const racialSelect = document.getElementById('racial');
-    const trollBerserkingCheckbox = document.getElementById('troll-berserking');
-    const bloodlustCheckbox = document.getElementById('bloodlust');
-    const talentTier3Select = document.getElementById('talent-tier3');
-    const talentTier5Select = document.getElementById('talent-tier5');
-    const talentTier6Select = document.getElementById('talent-tier6');
-    const powerInfusionCheckbox = document.getElementById('power-infusion-active');
-    const t14_4pcCheckbox = document.getElementById('t14-4pc');
-
-    // Add event listeners for calculator
-    hasteRatingInput.addEventListener('input', calculate);
-    shadowformCheckbox.addEventListener('change', calculate);
-    racialSelect.addEventListener('change', updateRacialOptions);
-    trollBerserkingCheckbox.addEventListener('change', calculate);
-    bloodlustCheckbox.addEventListener('change', calculate);
-    talentTier3Select.addEventListener('change', calculate);
-    talentTier5Select.addEventListener('change', updateTalentOptions);
-    talentTier6Select.addEventListener('change', calculate);
-    powerInfusionCheckbox.addEventListener('change', calculate);
-    t14_4pcCheckbox.addEventListener('change', calculate);
-
-    // Initial calculation
-    updateRacialOptions();
-    updateTalentOptions();
-    calculate();
+    console.log('DOMContentLoaded - Initializing WCL analyzer');
 
     // Add event listeners for WCL analyzer
     const wclInput = document.getElementById('wcl-report');
@@ -95,11 +259,30 @@ document.addEventListener('DOMContentLoaded', function() {
         wclInput.addEventListener('keypress', function(e) {
             console.log('Keypress event:', e.key);
             if (e.key === 'Enter') {
+                e.preventDefault(); // Prevent form submission
                 window.loadReport();
             }
         });
     } else {
         console.error('Could not find wcl-report input element!');
+    }
+
+    // Add hashchange listener for browser back/forward
+    window.addEventListener('hashchange', function() {
+        console.log('Hash changed:', window.location.hash);
+        const route = parseHash();
+        if (route) {
+            loadFromHash();
+        } else {
+            // No valid route, go home
+            window.goHome();
+        }
+    });
+
+    // Check if we have a hash route on page load
+    if (window.location.hash) {
+        console.log('Found hash on load, attempting to load from URL');
+        loadFromHash();
     }
 
     console.log('DOMContentLoaded complete - all event listeners added');
@@ -444,8 +627,16 @@ function calculateDotUptimes(events, fight, fightDuration) {
 // Make loadReport available globally
 window.loadReport = async function loadReport() {
     console.log('loadReport() called');
+    console.log('wclV2Service available?', typeof window.wclV2Service);
+
+    if (typeof window.wclV2Service === 'undefined') {
+        console.error('wclV2Service is not defined! Check if wcl-v2-service.js loaded correctly.');
+        alert('Error: WCL service not loaded. Please refresh the page.');
+        return;
+    }
+
     const input = document.getElementById('wcl-report').value.trim();
-    const reportId = wclV2Service.extractReportId(input);
+    const reportId = window.wclV2Service.extractReportId(input);
 
     if (!reportId) {
         alert('Please enter a valid WCL report ID or URL');
@@ -465,13 +656,13 @@ window.loadReport = async function loadReport() {
     try {
         // Fetch report data from WCL v2 API (authentication happens automatically)
         console.log('Fetching report:', reportId);
-        const reportData = await wclV2Service.fetchReport(reportId);
+        const reportData = await window.wclV2Service.fetchReport(reportId);
         currentReportData = reportData;
 
         console.log('Report data:', reportData);
 
         // Find Priests (spec will be validated when analyzing casts)
-        const priests = wclV2Service.getShadowPriests(reportData);
+        const priests = window.wclV2Service.getShadowPriests(reportData);
 
         if (priests.length === 0) {
             alert('No Priests found in this report!');
@@ -486,7 +677,7 @@ window.loadReport = async function loadReport() {
         playerSelect.disabled = false;
 
         // Find boss encounters
-        const encounters = wclV2Service.getBossEncounters(reportData);
+        const encounters = window.wclV2Service.getBossEncounters(reportData);
 
         if (encounters.length === 0) {
             alert('No boss encounters found in this report!');
@@ -510,10 +701,72 @@ window.loadReport = async function loadReport() {
     }
 }
 
+// Extract unique targets from events and enrich with names from report enemies
+function extractTargetsFromEvents(events, reportData) {
+    const targets = new Map();
+
+    // Build enemy ID -> name mapping from report data
+    const enemyNames = new Map();
+    if (reportData && reportData.masterData && reportData.masterData.enemies) {
+        reportData.masterData.enemies.forEach(enemy => {
+            enemyNames.set(enemy.id, enemy.name);
+        });
+    }
+
+    // First pass: track damage and instances per target ID (not instance)
+    const targetData = new Map();
+    events.forEach(event => {
+        if (event.type === 'damage' && event.targetID && event.targetID > 0) {
+            if (!targetData.has(event.targetID)) {
+                targetData.set(event.targetID, {
+                    totalDamage: 0,
+                    instances: new Set()
+                });
+            }
+            const data = targetData.get(event.targetID);
+            data.totalDamage += (event.amount || 0);
+            data.instances.add(event.targetInstance || 0);
+        }
+    });
+
+    // Second pass: build grouped target list (group by ID, not instance)
+    targetData.forEach((data, targetID) => {
+        // Skip targets we dealt 0 damage to
+        if (data.totalDamage === 0) {
+            return;
+        }
+
+        const targetName = enemyNames.get(targetID) || `Unknown Target`;
+        const instanceCount = data.instances.size;
+
+        // Show count if multiple instances
+        const displayName = instanceCount > 1
+            ? `${targetName} (${instanceCount})`
+            : targetName;
+
+        targets.set(targetID, {
+            id: targetID,
+            name: targetName,
+            displayName: displayName,
+            instanceCount: instanceCount,
+            instances: Array.from(data.instances),
+            totalDamage: data.totalDamage
+        });
+    });
+
+    return Array.from(targets.values());
+}
+
 // Make analyzeLog available globally
 window.analyzeLog = async function analyzeLog() {
-    const playerSelect = document.getElementById('player-select');
-    const encounterSelect = document.getElementById('encounter-select');
+    // Use analysis page selectors if on analysis page, otherwise use landing page
+    const onAnalysisPage = document.getElementById('analysis-page').style.display !== 'none';
+    const playerSelect = onAnalysisPage
+        ? document.getElementById('player-select-analysis')
+        : document.getElementById('player-select');
+    const encounterSelect = onAnalysisPage
+        ? document.getElementById('encounter-select-analysis')
+        : document.getElementById('encounter-select');
 
     if (!playerSelect.value || !encounterSelect.value) {
         alert('Please select both a player and an encounter');
@@ -529,9 +782,15 @@ window.analyzeLog = async function analyzeLog() {
     const fightId = parseInt(encounterSelect.value);
 
     const loadingIndicator = document.getElementById('loading-indicator');
+    const analysisLoading = document.getElementById('analysis-loading');
     const resultsSection = document.getElementById('analysis-results');
 
-    loadingIndicator.style.display = 'block';
+    // Show loading state (only on analysis page)
+    if (onAnalysisPage) {
+        analysisLoading.style.display = 'block';
+    } else {
+        loadingIndicator.style.display = 'block';
+    }
     resultsSection.style.display = 'none';
 
     try {
@@ -544,13 +803,13 @@ window.analyzeLog = async function analyzeLog() {
         }
 
         // Extract report ID from current data
-        const reportId = wclV2Service.extractReportId(document.getElementById('wcl-report').value);
+        const reportId = window.wclV2Service.extractReportId(document.getElementById('wcl-report').value);
 
         console.log('=== ANALYZE STARTING ===');
         console.log('Fetching events for:', { reportId, playerName, fightId, startTime: fight.startTime, endTime: fight.endTime });
 
         // Fetch events from WCL v2 API
-        const eventsData = await wclV2Service.fetchEvents(
+        const eventsData = await window.wclV2Service.fetchEvents(
             reportId,
             fightId,
             playerName,
@@ -570,7 +829,48 @@ window.analyzeLog = async function analyzeLog() {
             return;
         }
 
+        // Fetch buff events (applybuff, removebuff, etc.)
+        console.log('=== FETCHING BUFF EVENTS ===');
+        const buffEventsData = await window.wclV2Service.fetchBuffEvents(
+            reportId,
+            fightId,
+            playerName,
+            fight.startTime,
+            fight.endTime
+        );
+
+        console.log('=== BUFF EVENTS RECEIVED ===');
+        console.log('Buff pages fetched:', buffEventsData.pageCount);
+        console.log('Buff events count:', buffEventsData.data?.length || 0);
+
         const events = eventsData.data;
+        const buffEvents = buffEventsData.data || [];
+
+        console.log('Total events:', events.length);
+        console.log('Total buff events:', buffEvents.length);
+
+        // Extract targets and populate target filter
+        const targets = extractTargetsFromEvents(events, currentReportData);
+        window.allTargets = targets; // Store globally
+
+        const targetFilter = document.getElementById('target-filter');
+        const targetFilterGroup = document.getElementById('target-filter-group');
+
+        // Populate target filter dropdown
+        targetFilter.innerHTML = '<option value="all">All Targets</option>';
+        targets.forEach(target => {
+            const option = document.createElement('option');
+            option.value = target.id;
+            option.textContent = target.displayName;
+            targetFilter.appendChild(option);
+        });
+
+        // Show target filter if there are multiple targets
+        if (targets.length > 1) {
+            targetFilterGroup.style.display = 'block';
+        } else {
+            targetFilterGroup.style.display = 'none';
+        }
 
         // Simple analysis - count casts and damage events by spell
         const castCounts = {};
@@ -605,21 +905,50 @@ window.analyzeLog = async function analyzeLog() {
         // ❌ Removed all UI updates for mfTicks and DoT uptimes
 
         // Analyze casts with quality metrics
-        const castsAnalyzer = new CastsAnalyzer(events, {});
-        const casts = castsAnalyzer.analyze();
+        const castsAnalyzer = new CastsAnalyzer(events, buffEvents, {
+            playerDetails: eventsData.playerDetails,
+            playerName: playerName
+        });
+        const analysisResult = castsAnalyzer.analyze();
+        const casts = analysisResult.casts;
+        const talents = analysisResult.talents;
+
+        // Add target names to casts
+        const enemyNames = new Map();
+        if (currentReportData && currentReportData.masterData && currentReportData.masterData.enemies) {
+            currentReportData.masterData.enemies.forEach(enemy => {
+                enemyNames.set(enemy.id, enemy.name);
+            });
+        }
+        casts.forEach(cast => {
+            if (cast.targetId && cast.targetId > 0) {
+                cast.targetName = enemyNames.get(cast.targetId) || 'Unknown Target';
+            }
+        });
 
         // Store globally for filtering
         window.allCasts = casts;
+        window.currentTalents = talents;
         window.currentFight = fight;
         window.statsCalculator = new CastStatsCalculator(casts, fight);
 
         // Render stats overview (Timeline view by default)
         renderStatsOverview('timeline');
 
+        // Render talents display
+        renderTalents(talents);
+
         // Render cast timeline
         renderCastTimeline(casts, fight);
 
-        // Show results
+        // Add target filter event listener
+        targetFilter.addEventListener('change', () => {
+            renderCastTimeline(window.allCasts, window.currentFight);
+            renderStatsOverview('timeline');
+        });
+
+        // Hide loading, show results
+        analysisLoading.style.display = 'none';
         resultsSection.style.display = 'block';
         document.getElementById('cast-timeline').style.display = 'block';
 
@@ -628,6 +957,7 @@ window.analyzeLog = async function analyzeLog() {
         alert('Error analyzing log: ' + error.message);
     } finally {
         loadingIndicator.style.display = 'none';
+        analysisLoading.style.display = 'none';
     }
 };
 
@@ -645,9 +975,26 @@ function renderCastTimeline(casts, fight) {
         return;
     }
 
-    console.log(`Rendering ${casts.length} casts`);
+    // Apply target filter
+    const targetFilter = document.getElementById('target-filter');
+    const selectedTarget = targetFilter ? targetFilter.value : 'all';
 
-    casts.forEach((cast, index) => {
+    let filteredCasts = casts;
+    if (selectedTarget && selectedTarget !== 'all') {
+        const targetId = Number(selectedTarget);
+        filteredCasts = casts.filter(cast => {
+            return cast.targetId === targetId;
+        });
+    }
+
+    console.log(`Rendering ${filteredCasts.length} of ${casts.length} casts (filtered by target: ${selectedTarget})`);
+
+    if (filteredCasts.length === 0) {
+        castList.innerHTML = '<p style="color: #9ca3af; text-align: center; padding: 20px;">No casts found for selected target</p>';
+        return;
+    }
+
+    filteredCasts.forEach((cast, index) => {
         const castElement = createCastElement(cast, index, fight);
         castList.appendChild(castElement);
     });
@@ -691,22 +1038,46 @@ function createCastElement(cast, index, fight) {
         ? `<img src="${iconPath}" alt="${cast.name}">`
         : '?';
 
+    // Build buff icons HTML (summary buffs in collapsed view)
+    // Always render the container to maintain layout, even if empty
+    let buffIconsHTML = '<div class="cast-buff-icons">';
+    if (cast.summaryBuffs && cast.summaryBuffs.length > 0) {
+        console.log(`Cast ${cast.name} at ${timeText} has ${cast.summaryBuffs.length} summary buffs:`, cast.summaryBuffs);
+        cast.summaryBuffs.forEach(buff => {
+            const buffIconPath = getSpellIcon(buff.id);
+            console.log(`  Buff ${buff.name} (${buff.id}): icon path = ${buffIconPath}`);
+            if (buffIconPath) {
+                buffIconsHTML += `<div class="buff-icon" title="${buff.name}"><img src="${buffIconPath}" alt="${buff.name}"></div>`;
+            }
+        });
+    } else {
+        // Debug: log when there are no buffs
+        if (index < 3) { // Only log first 3 casts to avoid spam
+            console.log(`Cast ${cast.name} at ${timeText} has NO summary buffs. cast.buffs:`, cast.buffs);
+        }
+    }
+    buffIconsHTML += '</div>';
+
     // Build compact HTML (Wrath-style)
     div.innerHTML = `
         <div class="cast-header" onclick="toggleCastDetails(${index})">
             <span class="cast-status ${statusClass}"></span>
+            <div class="cast-time">${timeText}</div>
             <div class="cast-icon-wrapper">
                 <div class="cast-icon">${iconHTML}</div>
             </div>
             <div class="cast-main-content">
                 <div class="cast-info">
-                    <div class="cast-time">${timeText}</div>
-                    <div class="cast-spell-name">${cast.name}</div>
-                    ${targetText ? `<div class="cast-target">${targetText}</div>` : ''}
+                    <div class="cast-name-row">
+                        <span class="cast-spell-name">${cast.name}</span>${targetText ? `<span class="cast-target"> ${targetText}</span>` : ''}
+                    </div>
                 </div>
-                <div class="cast-stats">
-                    <div class="cast-stat-line"><span class="cast-stat-label">Hits:</span> ${hitsText}</div>
-                    <div class="cast-stat-line"><span class="cast-stat-label">Damage:</span> ${damageText}</div>
+                <div class="cast-metrics">
+                    ${buffIconsHTML}
+                    <div class="cast-stats">
+                        <div class="cast-stat-line"><span class="cast-stat-label">Hits:</span> ${hitsText}</div>
+                        <div class="cast-stat-line"><span class="cast-stat-label">Damage:</span> ${damageText}</div>
+                    </div>
                 </div>
             </div>
             <span class="cast-expand-icon">▶</span>
@@ -726,10 +1097,14 @@ function createCastDetailsHTML(cast, fight) {
     let html = '<div class="cast-details-section">';
     html += '<div class="cast-details-grid">';
 
-    // Cast Time
+    // Cast Time / Duration
+    // For DoTs, this is the duration of the DoT effect (including pandemic)
+    // For other spells, this is the cast time
+    const isDoT = cast.hastedTickInterval !== undefined;
+    const timeLabel = isDoT ? 'Duration:' : 'Cast Time:';
     html += `
         <div class="cast-details-item">
-            <span class="cast-details-label">Cast Time:</span>
+            <span class="cast-details-label">${timeLabel}</span>
             <span class="cast-details-value">${(cast.castTimeMs / 1000).toFixed(2)}s</span>
         </div>
     `;
@@ -807,6 +1182,16 @@ function createCastDetailsHTML(cast, fight) {
         `;
     }
 
+    // Pandemic indicator (show carryover time)
+    if (cast.pandemicRefresh && cast.pandemicCarryover) {
+        html += `
+            <div class="cast-details-item">
+                <span class="cast-details-label">Pandemic:</span>
+                <span class="cast-details-value table-accent">+${(cast.pandemicCarryover / 1000).toFixed(1)}s carried over</span>
+            </div>
+        `;
+    }
+
     // Clipped early (for channels)
     if (cast.clippedEarly !== undefined) {
         html += `
@@ -824,12 +1209,50 @@ function createCastDetailsHTML(cast, fight) {
         `;
     }
 
+    // Optimal clip (Insanity pandemic optimization)
+    if (cast.optimalClip) {
+        html += `
+            <div class="cast-details-item">
+                <span class="cast-details-label">Optimization:</span>
+                <span class="cast-details-value table-accent">${cast.clipReason}</span>
+            </div>
+        `;
+    }
+
+    // Missed Insanity optimization error
+    if (cast.missedInsanityOptimization) {
+        html += `
+            <div class="cast-details-item">
+                <span class="cast-details-label">Error:</span>
+                <span class="cast-details-value text-warning">${cast.insanityOptimizationError}</span>
+            </div>
+        `;
+    }
+
     html += '</div></div>';
 
-    // Buffs section (placeholder for now)
-    html += '<div class="cast-details-section">';
-    html += '<h4>Buffs:</h4>';
-    html += '</div>';
+    // Buffs section (detailed buffs in expanded view)
+    if (cast.detailBuffs && cast.detailBuffs.length > 0) {
+        html += '<div class="cast-details-section">';
+        html += '<h4>Buffs:</h4>';
+        html += '<div class="cast-detail-buffs">';
+
+        cast.detailBuffs.forEach(buff => {
+            const buffIconPath = getSpellIcon(buff.id);
+            if (buffIconPath) {
+                html += `
+                    <div class="detail-buff-item">
+                        <div class="buff-icon" title="${buff.name}">
+                            <img src="${buffIconPath}" alt="${buff.name}">
+                        </div>
+                        <span class="buff-name">${buff.name}</span>
+                    </div>
+                `;
+            }
+        });
+
+        html += '</div></div>';
+    }
 
     // Hits section (like Wrath)
     if (cast.instances && cast.instances.length > 0) {
@@ -1000,10 +1423,56 @@ function renderStatsOverview(filter) {
 function createStatField(label, value) {
     return `
         <div class="stat-field">
-            <div class="stat-field-label">${label}</div>
+            <div class="stat-field-label">${label}:</div>
             <div class="stat-field-value">${value}</div>
         </div>
     `;
+}
+
+/**
+ * Normalize talent name to icon filename
+ * E.g., "Void Tendrils" -> "voidtendrils"
+ */
+function normalizeIconName(name) {
+    return name.toLowerCase().replace(/[^a-z0-9]/g, '');
+}
+
+/**
+ * Render talents display
+ */
+function renderTalents(talents) {
+    const talentsDisplay = document.getElementById('talents-display');
+
+    if (!talents || !Array.isArray(talents) || talents.length === 0) {
+        talentsDisplay.style.display = 'none';
+        return;
+    }
+
+    // Sort talents by type (tier)
+    const sortedTalents = [...talents].sort((a, b) => a.type - b.type);
+
+    let html = '<div class="talents-header">Talents</div>';
+    html += '<div class="talents-list">';
+
+    sortedTalents.forEach(talent => {
+        const iconName = normalizeIconName(talent.name);
+        const iconPath = `analyzer/icons/talents/${iconName}.jpg`;
+        const tierLabel = `T${talent.type * 15}`;
+
+        html += `
+            <div class="talent-icon-wrapper" title="${talent.name} (${tierLabel})">
+                <img src="${iconPath}"
+                     alt="${talent.name}"
+                     class="talent-icon"
+                     onerror="this.src='analyzer/icons/talents/placeholder.jpg'">
+            </div>
+        `;
+    });
+
+    html += '</div>';
+
+    talentsDisplay.innerHTML = html;
+    talentsDisplay.style.display = 'block';
 }
 
 /**

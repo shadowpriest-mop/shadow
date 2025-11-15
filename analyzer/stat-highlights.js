@@ -15,7 +15,13 @@ class StatHighlights {
    */
   overall(cast) {
     // Check for major issues (WARNING)
-    if (cast.failed) return Status.WARNING;
+    // Check if this spell should be expected to deal damage
+    const shouldCheckDamage = this._shouldCheckDamage(cast);
+
+    if (cast.failed && shouldCheckDamage) return Status.WARNING;
+
+    // Missed Insanity optimization (should have clipped MF for 3 extra ticks)
+    if (cast.missedInsanityOptimization) return Status.WARNING;
 
     // DoT quality check (Pandemic-aware)
     if (cast.dotQuality) {
@@ -66,6 +72,18 @@ class StatHighlights {
   castLatency(cast) {
     if (!cast.nextCastLatency) return Status.NORMAL;
 
+    // Non-GCD instant casts (Shadowfiend, Berserking, Potion, etc.) use higher thresholds
+    // These can be stacked quickly at pull, but 200-1000ms gaps are normal
+    if (cast.gcd === 0) {
+      // For non-GCD instant casts:
+      // - > 2000ms gap is unusually high (WARNING)
+      // - > 1000ms gap is noticeable but acceptable (NOTICE)
+      if (cast.nextCastLatency > 2000) return Status.WARNING;
+      if (cast.nextCastLatency > 1000) return Status.NOTICE;
+      return Status.NORMAL;
+    }
+
+    // Regular casts (with GCD) use stricter thresholds
     if (cast.nextCastLatency > 500) return Status.WARNING;
     if (cast.nextCastLatency > 300) return Status.NOTICE;
     return Status.NORMAL;
@@ -100,9 +118,14 @@ class StatHighlights {
       case 'optimal':
         return Status.NORMAL;
       case 'late':
+        // Downtime: Warning if >3s, Notice if smaller
         return cast.dotDowntime > 3000 ? Status.WARNING : Status.NOTICE;
-      case 'early':
-        return cast.clippedTicks >= 2 ? Status.WARNING : Status.NOTICE;
+      case 'major-early':
+        // Wasted 2+ ticks
+        return Status.WARNING;
+      case 'minor-early':
+        // Wasted 1 tick
+        return Status.NOTICE;
       default:
         return Status.NORMAL;
     }
@@ -112,8 +135,16 @@ class StatHighlights {
    * Get channel clipping quality status
    */
   channelClipping(cast) {
-    if (!cast.clippedEarly) return Status.NORMAL;
-    return Status.NOTICE;
+    // Missed Insanity optimization is a major error
+    if (cast.missedInsanityOptimization) return Status.WARNING;
+
+    // Optimal clip (Insanity pandemic) is not flagged
+    if (cast.optimalClip) return Status.NORMAL;
+
+    // Regular early clip is a notice
+    if (cast.clippedEarly) return Status.NOTICE;
+
+    return Status.NORMAL;
   }
 
   /**
@@ -125,6 +156,34 @@ class StatHighlights {
     if (cast.timeOffCooldown > 5000) return Status.WARNING;
     if (cast.timeOffCooldown > 2000) return Status.NOTICE;
     return Status.NORMAL;
+  }
+
+  /**
+   * Check if a spell should be expected to deal damage
+   * Spells that don't deal damage (buffs, pets) shouldn't be flagged as failed
+   */
+  _shouldCheckDamage(cast) {
+    const spellData = getSpellData(cast.spellId);
+
+    // If we don't have spell data, assume it should deal damage
+    if (!spellData) return true;
+
+    // Spells with damageType NONE never deal damage (buffs like Berserking, Power Infusion)
+    if (spellData.damageType === DamageType.NONE) return false;
+
+    // Pet summons (Shadowfiend, Mindbender) don't deal damage themselves - the pet does
+    // These are marked as DIRECT damage but don't have immediate damage events
+    const isPetSummon = cast.spellId === SpellId.SHADOWFIEND ||
+                        cast.spellId === SpellId.SHADOWFIEND_ALT ||
+                        cast.spellId === SpellId.MINDBENDER;
+    if (isPetSummon) return false;
+
+    // Spells with travel time (Halo, Cascade, Divine Star) have delayed damage events
+    // Don't flag as failed if no immediate damage is found
+    if (spellData.hasTravelTime) return false;
+
+    // All other spells should deal damage
+    return true;
   }
 
   /**

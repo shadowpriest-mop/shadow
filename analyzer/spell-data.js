@@ -17,11 +17,14 @@ const SpellId = {
   MIND_FLAY: 15407,
   MIND_FLAY_INSANITY: 129197,
   MIND_SEAR: 48045,
+  MIND_SPIKE: 73510,
   SHADOW_WORD_PAIN: 589,
   SHADOW_WORD_DEATH: 32379,
   VAMPIRIC_TOUCH: 34914,
   DEVOURING_PLAGUE: 2944,
   SHADOWFIEND: 34433,
+  SHADOWFIEND_ALT: 132603, // Alternative Shadowfiend ID
+  MINDBENDER: 132604, // Talent version of Shadowfiend
   DISPERSION: 47585,
   VAMPIRIC_EMBRACE: 15286,
   HALO: 120644,
@@ -29,9 +32,25 @@ const SpellId = {
   DIVINE_STAR: 110744,
   PSYCHIC_HORROR: 64044,
   MIND_BOMB: 105421,
+  SILENCE: 15487,
+  POWER_WORD_SHIELD: 17,
+  RENEW: 139,
+  INNER_FIRE: 588,
+  POWER_INFUSION: 10060,
+  ANGELIC_FEATHER: 121536,
+  DESPERATE_PRAYER: 19236,
 
   // Racials
   BERSERKING: 26297, // Troll
+
+  // Engineering/Professions
+  SYNAPSE_SPRINGS: 126734, // Engineering tinker (gloves)
+  GOBLIN_GLIDER: 126389, // Goblin Glider (engineering)
+  G91_LANDSHARK: 124199, // G91 Landshark (engineering mount)
+
+  // Consumables
+  POTION_OF_THE_JADE_SERPENT: 105702, // Intellect potion
+  HEALTHSTONE: 6262, // Warlock healthstone
 
   // Related damage IDs (DoT ticks, channeled ticks, etc.)
   MIND_FLAY_TICK: 15407, // MF uses same ID for cast and damage
@@ -109,6 +128,14 @@ const SPELLS = {
     generatesOrbs: 1 // MoP specific: generates 1 Shadow Orb
   }),
 
+  [SpellId.MIND_SPIKE]: spell({
+    name: 'Mind Spike',
+    damageType: DamageType.DIRECT,
+    baseCastTime: 1.5,
+    maxDamageInstances: 1,
+    cooldown: 0
+  }),
+
   [SpellId.MIND_FLAY]: spell({
     name: 'Mind Flay',
     damageIds: [SpellId.MIND_FLAY_TICK],
@@ -146,6 +173,20 @@ const SPELLS = {
     cooldown: 180
   }),
 
+  [SpellId.SHADOWFIEND_ALT]: spell({
+    name: 'Shadowfiend',
+    damageType: DamageType.DIRECT,
+    maxDuration: 15,
+    cooldown: 180
+  }),
+
+  [SpellId.MINDBENDER]: spell({
+    name: 'Mindbender',
+    damageType: DamageType.DIRECT,
+    maxDuration: 15,
+    cooldown: 60 // Mindbender has shorter cooldown than Shadowfiend
+  }),
+
   [SpellId.DISPERSION]: spell({
     name: 'Dispersion',
     damageType: DamageType.NONE,
@@ -166,7 +207,8 @@ const SPELLS = {
     baseCastTime: 1.5,
     maxDamageInstances: 0, // Variable based on targets
     cooldown: 40,
-    multiTarget: true
+    multiTarget: true,
+    hasTravelTime: true // Damage delayed due to projectile travel
   }),
 
   [SpellId.CASCADE]: spell({
@@ -176,7 +218,8 @@ const SPELLS = {
     baseCastTime: 1.5,
     maxDamageInstances: 0,
     cooldown: 25,
-    multiTarget: true
+    multiTarget: true,
+    hasTravelTime: true // Damage delayed due to projectile travel
   }),
 
   [SpellId.DIVINE_STAR]: spell({
@@ -186,7 +229,8 @@ const SPELLS = {
     baseCastTime: 1.5,
     maxDamageInstances: 0,
     cooldown: 15,
-    multiTarget: true
+    multiTarget: true,
+    hasTravelTime: true // Damage delayed due to projectile travel
   }),
 
   [SpellId.MIND_SEAR]: spell({
@@ -200,10 +244,97 @@ const SPELLS = {
     multiTarget: true
   }),
 
+  [SpellId.MIND_SEAR_TICK]: spell({
+    name: 'Mind Sear',
+    damageType: DamageType.CHANNEL,
+    multiTarget: true
+  }),
+
   [SpellId.BERSERKING]: spell({
     name: 'Berserking',
     damageType: DamageType.NONE,
     cooldown: 180,
+    gcd: false
+  }),
+
+  [SpellId.SYNAPSE_SPRINGS]: spell({
+    name: 'Synapse Springs',
+    damageType: DamageType.NONE,
+    cooldown: 60,
+    gcd: false
+  }),
+
+  [SpellId.SILENCE]: spell({
+    name: 'Silence',
+    damageType: DamageType.NONE,
+    cooldown: 45,
+    gcd: true
+  }),
+
+  [SpellId.POWER_WORD_SHIELD]: spell({
+    name: 'Power Word: Shield',
+    damageType: DamageType.NONE,
+    gcd: true
+  }),
+
+  [SpellId.RENEW]: spell({
+    name: 'Renew',
+    damageType: DamageType.NONE,
+    maxDuration: 15,
+    gcd: true
+  }),
+
+  [SpellId.INNER_FIRE]: spell({
+    name: 'Inner Fire',
+    damageType: DamageType.NONE,
+    gcd: false
+  }),
+
+  [SpellId.POWER_INFUSION]: spell({
+    name: 'Power Infusion',
+    damageType: DamageType.NONE,
+    cooldown: 120,
+    gcd: false
+  }),
+
+  [SpellId.ANGELIC_FEATHER]: spell({
+    name: 'Angelic Feather',
+    damageType: DamageType.NONE,
+    cooldown: 0,
+    gcd: true
+  }),
+
+  [SpellId.DESPERATE_PRAYER]: spell({
+    name: 'Desperate Prayer',
+    damageType: DamageType.NONE,
+    cooldown: 120,
+    gcd: true
+  }),
+
+  [SpellId.GOBLIN_GLIDER]: spell({
+    name: 'Goblin Glider',
+    damageType: DamageType.NONE,
+    cooldown: 0,
+    gcd: false
+  }),
+
+  [SpellId.G91_LANDSHARK]: spell({
+    name: 'G91 Landshark',
+    damageType: DamageType.NONE,
+    cooldown: 0,
+    gcd: false
+  }),
+
+  [SpellId.POTION_OF_THE_JADE_SERPENT]: spell({
+    name: 'Potion of the Jade Serpent',
+    damageType: DamageType.NONE,
+    gcd: false
+  }),
+
+  [SpellId.HEALTHSTONE]: spell({
+    name: 'Healthstone',
+    damageType: DamageType.NONE,
+    cooldown: 120,
     gcd: false
   }),
 
