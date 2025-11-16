@@ -996,6 +996,13 @@ footer a:hover {
     color: #7986CB;
 }
 
+.app-version {
+    margin-left: 12px;
+    font-size: 0.85em;
+    color: #666;
+    font-weight: 500;
+}
+
 .analysis-inputs {
     max-width: 1400px;
     margin: 0 auto;
