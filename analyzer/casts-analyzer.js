@@ -25,6 +25,9 @@ class CastsAnalyzer {
     console.log('Buff events count:', this.buffEvents.length);
     console.log('Sample buff events:', this.buffEvents.slice(0, 3));
 
+    // Step 0: Extract combatantInfo from playerDetails if available
+    this.extractCombatantInfo();
+
     // Step 1: Parse events into CastDetails objects
     this.parseCasts();
 
@@ -34,16 +37,133 @@ class CastsAnalyzer {
     // Step 3: Infer haste for each cast
     this.calculateHaste();
 
-    // Step 4: Calculate quality metrics
+    // Step 4: Clean up DoT damage instances to exclude pre-refresh ticks
+    // (Must run before channel metrics to detect pandemic-based optimal clips)
+    this.cleanupDotDamageInstances();
+
+    // Step 5: Calculate quality metrics
     this.calculateCastLatencies();
     this.calculateDotMetrics();
     this.calculateChannelMetrics();
     this.calculateCooldownMetrics();
 
-    // Step 5: Clean up DoT damage instances to exclude pre-refresh ticks
-    this.cleanupDotDamageInstances();
+    // Extract talents from combatantInfo
+    const talents = this.extractTalents();
 
-    return this.casts;
+    return {
+      casts: this.casts,
+      talents: talents
+    };
+  }
+
+  /**
+   * Extract talents from combatantInfo
+   * Returns array of talent objects or null if no talents available
+   */
+  extractTalents() {
+    if (!this.combatantInfo || !this.combatantInfo.talents) {
+      console.log('No talents available in combatantInfo');
+      return null;
+    }
+
+    const talents = this.combatantInfo.talents;
+    console.log('=== TALENTS EXTRACTED ===');
+    console.log(JSON.stringify(talents, null, 2));
+
+    return talents;
+  }
+
+  /**
+   * Extract combatantInfo from playerDetails
+   * This gives us base stats (haste, intellect, etc.) from API
+   */
+  extractCombatantInfo() {
+    if (!this.settings || !this.settings.playerDetails) {
+      console.log('No playerDetails available, will infer stats from events');
+      return;
+    }
+
+    const playerDetails = this.settings.playerDetails;
+    console.log('=== PLAYER DETAILS ===');
+    console.log(JSON.stringify(playerDetails, null, 2));
+
+    // New structure: playerList array with each player having combatantInfo inside
+    if (playerDetails && playerDetails.playerList && playerDetails.playerList.length > 0) {
+      console.log(`Found ${playerDetails.playerList.length} players in playerList`);
+
+      // Find our player using the playerName from settings
+      let ourPlayer = null;
+      const playerName = this.settings.playerName;
+
+      if (playerName) {
+        console.log(`Looking for player: ${playerName}`);
+        ourPlayer = playerDetails.playerList.find(p => p.name === playerName);
+
+        if (ourPlayer) {
+          console.log(`Found player: ${ourPlayer.name}`);
+        } else {
+          console.log(`Player "${playerName}" not found in playerList`);
+          console.log('Available players:', playerDetails.playerList.map(p => p.name));
+        }
+      } else {
+        console.log('No playerName in settings, cannot identify correct player');
+      }
+
+      // Fallback: use first player if we can't identify
+      if (!ourPlayer) {
+        ourPlayer = playerDetails.playerList[0];
+        console.log('Using first player as fallback:', ourPlayer.name);
+      }
+
+      // Extract combatantInfo from the player object
+      if (ourPlayer && ourPlayer.combatantInfo) {
+        const combatant = ourPlayer.combatantInfo;
+
+        console.log('=== COMBATANT INFO ===');
+        console.log(JSON.stringify(combatant, null, 2));
+
+        // Extract base stats - stats may be objects with min/max or simple numbers
+        if (combatant.stats) {
+          this.baseStats = {
+            hasteRating: combatant.stats.Haste?.max || combatant.stats.Haste?.min || combatant.stats.Haste || 0,
+            intellect: combatant.stats.Intellect?.max || combatant.stats.Intellect?.min || combatant.stats.Intellect || 0,
+            spellPower: combatant.stats.SpellPower?.max || combatant.stats.SpellPower?.min || combatant.stats.SpellPower || 0,
+            critRating: combatant.stats.Crit?.max || combatant.stats.Crit?.min || combatant.stats.Crit || 0,
+            mastery: combatant.stats.Mastery?.max || combatant.stats.Mastery?.min || combatant.stats.Mastery || 0
+          };
+
+          console.log('Base stats extracted:', this.baseStats);
+        }
+
+        // Store gear/talents for reference
+        this.combatantInfo = combatant;
+      }
+    }
+    // Old structure fallback
+    else if (playerDetails && playerDetails.combatantInfo && playerDetails.combatantInfo.length > 0) {
+      console.log(`Found ${playerDetails.combatantInfo.length} combatants (old structure)`);
+
+      const combatant = playerDetails.combatantInfo[0];
+
+      console.log('=== COMBATANT INFO ===');
+      console.log(JSON.stringify(combatant, null, 2));
+
+      if (combatant.stats) {
+        this.baseStats = {
+          hasteRating: combatant.stats.Haste?.max || combatant.stats.Haste?.min || combatant.stats.Haste || 0,
+          intellect: combatant.stats.Intellect?.max || combatant.stats.Intellect?.min || combatant.stats.Intellect || 0,
+          spellPower: combatant.stats.SpellPower?.max || combatant.stats.SpellPower?.min || combatant.stats.SpellPower || 0,
+          critRating: combatant.stats.Crit?.max || combatant.stats.Crit?.min || combatant.stats.Crit || 0,
+          mastery: combatant.stats.Mastery?.max || combatant.stats.Mastery?.min || combatant.stats.Mastery || 0
+        };
+
+        console.log('Base stats extracted:', this.baseStats);
+      }
+
+      this.combatantInfo = combatant;
+    } else {
+      console.log('No combatantInfo found in playerDetails');
+    }
   }
 
   /**
@@ -392,62 +512,113 @@ class CastsAnalyzer {
 
   /**
    * Calculate haste for each cast
-   * Uses actual tick intervals and cast times to infer haste when combatant data unavailable
+   * Now uses combatantInfo base stats + buff data when available
+   * Falls back to inferring from cast times if combatantInfo unavailable
    */
   calculateHaste() {
-    // TODO: Extract base haste from combatant info events if available
-    // For now, infer from cast times
+    const HASTE_RATING_PER_PERCENT = 425.17; // MoP level 90
 
-    for (const cast of this.casts) {
-      const spellData = getSpellData(cast.spellId);
-      if (!spellData) {
-        cast.haste = 1.0; // No haste data
-        continue;
-      }
+    // Check if we have base stats from combatantInfo
+    const hasBaseStats = this.baseStats && this.baseStats.hasteRating !== undefined;
 
-      // Start with base haste (1.0 = no haste)
-      cast.haste = 1.0;
+    if (hasBaseStats) {
+      console.log(`=== Using combatantInfo for haste calculation ===`);
+      console.log(`Base haste rating: ${this.baseStats.hasteRating}`);
 
-      // Try to infer haste from actual cast/tick times
-      if (HasteUtils.canInferHaste(cast, spellData)) {
-        const error = HasteUtils.getHasteError(cast, spellData);
+      // Calculate base haste multiplier from rating
+      const baseHastePercent = this.baseStats.hasteRating / HASTE_RATING_PER_PERCENT;
+      const baseHasteMultiplier = 1 + (baseHastePercent / 100);
 
-        // Only update haste if error is within reasonable bounds
-        if (Math.abs(error) < HasteUtils.ERROR_THRESHOLD) {
-          // Calculate inferred haste
-          let actualDelta, baseDelta;
+      console.log(`Base haste: ${(baseHastePercent).toFixed(2)}% (multiplier: ${baseHasteMultiplier.toFixed(4)})`);
 
-          switch (spellData.damageType) {
-            case DamageType.CHANNEL:
-              if (cast.instances.length > 0) {
-                actualDelta = cast.instances[0].timestamp - cast.castEnd;
-                baseDelta = (spellData.maxDuration / spellData.maxTicks) * 1000;
-                cast.haste = baseDelta / actualDelta;
-              }
-              break;
+      for (const cast of this.casts) {
+        // Start with base haste
+        let hasteMultiplier = baseHasteMultiplier;
+        let hasteBuffs = [];
 
-            case DamageType.DOT:
-              if (cast.instances.length > 1) {
-                actualDelta = cast.instances[cast.instances.length - 1].timestamp -
-                             cast.instances[cast.instances.length - 2].timestamp;
-                baseDelta = spellData.baseTickTime * 1000;
-                cast.haste = baseDelta / actualDelta;
-              }
-              break;
-
-            default:
-              if (cast.castTimeMs > 500) {
-                actualDelta = cast.castTimeMs;
-                baseDelta = spellData.baseCastTime * 1000;
-                cast.haste = baseDelta / actualDelta;
-              }
-              break;
+        // Multiply haste from buffs active at cast time (haste is multiplicative!)
+        if (cast.buffs && cast.buffs.length > 0) {
+          for (const buff of cast.buffs) {
+            if (buff.haste && buff.haste > 0) {
+              // Buff haste is stored as decimal: 0.05 = 5%, 0.30 = 30%
+              const oldMultiplier = hasteMultiplier;
+              hasteMultiplier *= (1 + buff.haste);
+              hasteBuffs.push(`${buff.name || 'Unknown'}: ${(buff.haste * 100).toFixed(1)}% (${oldMultiplier.toFixed(4)} → ${hasteMultiplier.toFixed(4)})`);
+            }
+            if (buff.hasteRating && buff.hasteRating > 0) {
+              // Convert rating to % and multiply
+              const buffHastePercent = buff.hasteRating / HASTE_RATING_PER_PERCENT;
+              const oldMultiplier = hasteMultiplier;
+              hasteMultiplier *= (1 + buffHastePercent / 100);
+              hasteBuffs.push(`${buff.name || 'Unknown'}: ${buff.hasteRating} rating (${oldMultiplier.toFixed(4)} → ${hasteMultiplier.toFixed(4)})`);
+            }
           }
         }
-      }
 
-      // Cap haste at reasonable values (10% to 200%)
-      cast.haste = Math.max(0.5, Math.min(2.0, cast.haste || 1.0));
+        // Log first cast with buffs for debugging
+        if (hasteBuffs.length > 0 && cast === this.casts.find(c => c.buffs && c.buffs.length > 0)) {
+          console.log(`First cast with haste buffs: ${cast.name} at ${(cast.castStart / 1000).toFixed(1)}s`);
+          console.log(`  Base: ${baseHasteMultiplier.toFixed(4)}`);
+          hasteBuffs.forEach(b => console.log(`  ${b}`));
+          console.log(`  Final: ${hasteMultiplier.toFixed(4)} (${((hasteMultiplier - 1) * 100).toFixed(2)}%)`);
+        }
+
+        cast.haste = hasteMultiplier;
+      }
+    } else {
+      console.log('=== No combatantInfo, inferring haste from cast times ===');
+
+      for (const cast of this.casts) {
+        const spellData = getSpellData(cast.spellId);
+        if (!spellData) {
+          cast.haste = 1.0; // No haste data
+          continue;
+        }
+
+        // Start with base haste (1.0 = no haste)
+        cast.haste = 1.0;
+
+        // Try to infer haste from actual cast/tick times
+        if (HasteUtils.canInferHaste(cast, spellData)) {
+          const error = HasteUtils.getHasteError(cast, spellData);
+
+          // Only update haste if error is within reasonable bounds
+          if (Math.abs(error) < HasteUtils.ERROR_THRESHOLD) {
+            // Calculate inferred haste
+            let actualDelta, baseDelta;
+
+            switch (spellData.damageType) {
+              case DamageType.CHANNEL:
+                if (cast.instances.length > 0) {
+                  actualDelta = cast.instances[0].timestamp - cast.castEnd;
+                  baseDelta = (spellData.maxDuration / spellData.maxTicks) * 1000;
+                  cast.haste = baseDelta / actualDelta;
+                }
+                break;
+
+              case DamageType.DOT:
+                if (cast.instances.length > 1) {
+                  actualDelta = cast.instances[cast.instances.length - 1].timestamp -
+                               cast.instances[cast.instances.length - 2].timestamp;
+                  baseDelta = spellData.baseTickTime * 1000;
+                  cast.haste = baseDelta / actualDelta;
+                }
+                break;
+
+              default:
+                if (cast.castTimeMs > 500) {
+                  actualDelta = cast.castTimeMs;
+                  baseDelta = spellData.baseCastTime * 1000;
+                  cast.haste = baseDelta / actualDelta;
+                }
+                break;
+            }
+          }
+        }
+
+        // Cap haste at reasonable values (50% to 200%)
+        cast.haste = Math.max(0.5, Math.min(2.0, cast.haste || 1.0));
+      }
     }
   }
 
@@ -464,9 +635,17 @@ class CastsAnalyzer {
     for (const cast of this.casts) {
       const spellData = getSpellData(cast.spellId);
 
-      // Calculate hasted GCD (1.5s base, reduced by haste, floor 1.0s)
-      const hastedGCD = Math.max(MIN_GCD, BASE_GCD / cast.haste);
-      cast.gcd = hastedGCD;
+      // Check if spell triggers GCD (some spells like Berserking, Power Infusion have gcd: false)
+      const triggersGCD = !spellData || spellData.gcd !== false;
+
+      if (triggersGCD) {
+        // Calculate hasted GCD (1.5s base, reduced by haste, floor 1.0s)
+        const hastedGCD = Math.max(MIN_GCD, BASE_GCD / cast.haste);
+        cast.gcd = hastedGCD;
+      } else {
+        // No GCD for this spell (e.g., Berserking, Power Infusion, Potion)
+        cast.gcd = 0;
+      }
 
       // Determine if this is an instant cast
       // Instant casts have castEnd = castStart (no cast bar)
@@ -476,7 +655,7 @@ class CastsAnalyzer {
       cast.isInstantCast = isInstantCast;
 
       if (isInstantCast) {
-        console.log(`Instant cast detected: ${cast.name} (${cast.spellId}), GCD: ${hastedGCD}ms, castDuration: ${castDuration}ms`);
+        console.log(`Instant cast detected: ${cast.name} (${cast.spellId}), GCD: ${cast.gcd}ms, triggersGCD: ${triggersGCD}, castDuration: ${castDuration}ms`);
       }
     }
 
@@ -729,10 +908,27 @@ class CastsAnalyzer {
           const isMindFlay = (cast.spellId === MF_INSANITY_ID || cast.spellId === MF_REGULAR_ID);
           const isInsanityOptimization = isMindFlay && this.isMindFlayInsanityOptimization(cast);
 
+          // Check if we clipped to cast an optimal DoT refresh
+          // (pandemic refresh OR Insanity preparation)
+          const nextCast = this.getNextCast(cast);
+          const isOptimalDotRefresh = nextCast &&
+                                      nextCast.dotQuality &&
+                                      nextCast.dotQuality.status === 'optimal';
+
+          console.log(`Early clip detected for ${cast.name} at ${(cast.castStart / 1000).toFixed(2)}s`);
+          console.log(`  Next cast: ${nextCast ? nextCast.name : 'none'}`);
+          console.log(`  Next cast dotQuality: ${nextCast && nextCast.dotQuality ? nextCast.dotQuality.status : 'N/A'}`);
+          console.log(`  isInsanityOptimization: ${isInsanityOptimization}`);
+          console.log(`  isOptimalDotRefresh: ${isOptimalDotRefresh}`);
+
           if (isInsanityOptimization) {
             // This is an optimal clip for Insanity pandemic - mark it differently
             cast.optimalClip = true;
             cast.clipReason = 'Insanity pandemic optimization';
+          } else if (isOptimalDotRefresh) {
+            // Clipped to refresh DoT optimally (pandemic OR Insanity prep)
+            cast.optimalClip = true;
+            cast.clipReason = 'Clipped for optimal DoT refresh';
           } else {
             // Regular early clip (potentially bad)
             cast.clippedEarly = true;
@@ -830,6 +1026,8 @@ class CastsAnalyzer {
       // Calculate pandemic carryover time
       const carryoverTime = previousExpiry - cast.castStart;
 
+      console.log(`DoT ${cast.name} at ${(cast.castStart / 1000).toFixed(1)}s: previous expiry=${(previousExpiry / 1000).toFixed(1)}s, carryoverTime=${(carryoverTime / 1000).toFixed(2)}s`);
+
       if (carryoverTime > 0) {
         // This is a pandemic refresh - also clean up current cast
 
@@ -841,6 +1039,8 @@ class CastsAnalyzer {
         // Store pandemic info for display
         cast.pandemicRefresh = true;
         cast.pandemicCarryover = carryoverTime;
+
+        console.log(`  -> Marked as pandemic refresh with ${(carryoverTime / 1000).toFixed(2)}s carryover`);
 
         if (currentRemovedCount > 0) {
           console.log(`Cleaned up ${currentRemovedCount} pre-refresh ticks from current ${cast.name} at ${(cast.castStart / 1000).toFixed(1)}s`);
@@ -868,6 +1068,17 @@ class CastsAnalyzer {
       }
     }
     return null;
+  }
+
+  /**
+   * Get the next cast after the given cast
+   */
+  getNextCast(cast) {
+    const index = this.casts.indexOf(cast);
+    if (index === -1 || index === this.casts.length - 1) {
+      return null;
+    }
+    return this.casts[index + 1];
   }
 
   /**

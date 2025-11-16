@@ -905,8 +905,13 @@ window.analyzeLog = async function analyzeLog() {
         // ❌ Removed all UI updates for mfTicks and DoT uptimes
 
         // Analyze casts with quality metrics
-        const castsAnalyzer = new CastsAnalyzer(events, buffEvents, {});
-        const casts = castsAnalyzer.analyze();
+        const castsAnalyzer = new CastsAnalyzer(events, buffEvents, {
+            playerDetails: eventsData.playerDetails,
+            playerName: playerName
+        });
+        const analysisResult = castsAnalyzer.analyze();
+        const casts = analysisResult.casts;
+        const talents = analysisResult.talents;
 
         // Add target names to casts
         const enemyNames = new Map();
@@ -923,11 +928,15 @@ window.analyzeLog = async function analyzeLog() {
 
         // Store globally for filtering
         window.allCasts = casts;
+        window.currentTalents = talents;
         window.currentFight = fight;
         window.statsCalculator = new CastStatsCalculator(casts, fight);
 
         // Render stats overview (Timeline view by default)
         renderStatsOverview('timeline');
+
+        // Render talents display
+        renderTalents(talents);
 
         // Render cast timeline
         renderCastTimeline(casts, fight);
@@ -1418,6 +1427,70 @@ function createStatField(label, value) {
             <div class="stat-field-value">${value}</div>
         </div>
     `;
+}
+
+/**
+ * Normalize talent name to icon filename
+ * E.g., "Void Tendrils" -> "voidtendrils"
+ */
+function normalizeIconName(name) {
+    return name.toLowerCase().replace(/[^a-z0-9]/g, '');
+}
+
+/**
+ * Render talents display with locked tier positions
+ */
+function renderTalents(talents) {
+    const talentsDisplay = document.getElementById('talents-display');
+
+    if (!talents || !Array.isArray(talents) || talents.length === 0) {
+        talentsDisplay.style.display = 'none';
+        return;
+    }
+
+    // Create a map of tier -> talent for quick lookup
+    const talentsByTier = {};
+    talents.forEach(talent => {
+        talentsByTier[talent.type] = talent;
+    });
+
+    let html = '<div class="talents-header">Talents</div>';
+    html += '<div class="talents-list">';
+
+    // Fixed tier positions: 1=15, 2=30, 3=45, 4=60, 5=75, 6=90
+    const tierLevels = [1, 2, 3, 4, 5, 6];
+
+    tierLevels.forEach(tier => {
+        const level = tier * 15;
+        const talent = talentsByTier[tier];
+
+        html += '<div class="talent-tier">';
+        html += `<div class="talent-tier-label">${level}</div>`;
+
+        if (talent) {
+            const iconName = normalizeIconName(talent.name);
+            const iconPath = `analyzer/icons/talents/${iconName}.jpg`;
+
+            html += `
+                <div class="talent-icon-wrapper" title="${talent.name}">
+                    <img src="${iconPath}"
+                         alt="${talent.name}"
+                         class="talent-icon"
+                         onerror="this.src='analyzer/icons/talents/placeholder.jpg'">
+                </div>
+            `;
+        } else {
+            // Empty slot for this tier
+            html += '<div class="talent-icon-wrapper" style="opacity: 0.3; border-color: #333;"></div>';
+        }
+
+        html += '</div>';
+    });
+
+    html += '</div>';
+
+    talentsDisplay.innerHTML = html;
+    talentsDisplay.style.display = 'block';
 }
 
 /**

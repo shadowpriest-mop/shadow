@@ -219,7 +219,7 @@ const BUFFS = {
   // Profession Enchants
   [AuraId.JADE_SPIRIT]: buff({
     name: 'Jade Spirit',
-    hasteRating: 2000, // Int buff, but shows as important proc
+    intellect: 2000, // Intellect buff, not haste
     trigger: BuffTrigger.EXTERNAL,
     summaryIcon: true
   }),
@@ -247,14 +247,14 @@ const BUFFS = {
   // Trinket Procs
   [AuraId.QUICKENED_TONGUES]: buff({
     name: 'Quickened Tongues',
-    hasteRating: 1000, // Example value
+    hasteRating: 7000, // Essence of Terror proc (varies by ilvl: 6908@496, 7796@509)
     trigger: BuffTrigger.EXTERNAL,
     summaryIcon: true
   }),
 
   [AuraId.INNER_BRILLIANCE]: buff({
     name: 'Inner Brilliance',
-    hasteRating: 1000, // Example value
+    intellect: 1000, // Intellect buff, not haste
     trigger: BuffTrigger.EXTERNAL,
     summaryIcon: true
   })
