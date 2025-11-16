@@ -1438,7 +1438,7 @@ function normalizeIconName(name) {
 }
 
 /**
- * Render talents display
+ * Render talents display with locked tier positions
  */
 function renderTalents(talents) {
     const talentsDisplay = document.getElementById('talents-display');
@@ -1448,25 +1448,43 @@ function renderTalents(talents) {
         return;
     }
 
-    // Sort talents by type (tier)
-    const sortedTalents = [...talents].sort((a, b) => a.type - b.type);
+    // Create a map of tier -> talent for quick lookup
+    const talentsByTier = {};
+    talents.forEach(talent => {
+        talentsByTier[talent.type] = talent;
+    });
 
     let html = '<div class="talents-header">Talents</div>';
     html += '<div class="talents-list">';
 
-    sortedTalents.forEach(talent => {
-        const iconName = normalizeIconName(talent.name);
-        const iconPath = `analyzer/icons/talents/${iconName}.jpg`;
-        const tierLabel = `T${talent.type * 15}`;
+    // Fixed tier positions: 1=15, 2=30, 3=45, 4=60, 5=75, 6=90
+    const tierLevels = [1, 2, 3, 4, 5, 6];
 
-        html += `
-            <div class="talent-icon-wrapper" title="${talent.name} (${tierLabel})">
-                <img src="${iconPath}"
-                     alt="${talent.name}"
-                     class="talent-icon"
-                     onerror="this.src='analyzer/icons/talents/placeholder.jpg'">
-            </div>
-        `;
+    tierLevels.forEach(tier => {
+        const level = tier * 15;
+        const talent = talentsByTier[tier];
+
+        html += '<div class="talent-tier">';
+        html += `<div class="talent-tier-label">${level}</div>`;
+
+        if (talent) {
+            const iconName = normalizeIconName(talent.name);
+            const iconPath = `analyzer/icons/talents/${iconName}.jpg`;
+
+            html += `
+                <div class="talent-icon-wrapper" title="${talent.name}">
+                    <img src="${iconPath}"
+                         alt="${talent.name}"
+                         class="talent-icon"
+                         onerror="this.src='analyzer/icons/talents/placeholder.jpg'">
+                </div>
+            `;
+        } else {
+            // Empty slot for this tier
+            html += '<div class="talent-icon-wrapper" style="opacity: 0.3; border-color: #333;"></div>';
+        }
+
+        html += '</div>';
     });
 
     html += '</div>';

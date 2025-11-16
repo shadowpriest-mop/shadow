@@ -724,9 +724,24 @@ footer a:hover {
 }
 
 .talents-list {
+    display: grid;
+    grid-template-columns: repeat(6, 1fr);
+    gap: 12px;
+    max-width: 600px;
+}
+
+.talent-tier {
     display: flex;
-    flex-wrap: wrap;
+    flex-direction: column;
+    align-items: center;
     gap: 6px;
+}
+
+.talent-tier-label {
+    color: #9ca3af;
+    font-size: 0.75em;
+    font-weight: 600;
+    text-align: center;
 }
 
 .talent-icon-wrapper {
