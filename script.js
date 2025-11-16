@@ -905,8 +905,13 @@ window.analyzeLog = async function analyzeLog() {
         // ❌ Removed all UI updates for mfTicks and DoT uptimes
 
         // Analyze casts with quality metrics
-        const castsAnalyzer = new CastsAnalyzer(events, buffEvents, {});
-        const casts = castsAnalyzer.analyze();
+        const castsAnalyzer = new CastsAnalyzer(events, buffEvents, {
+            playerDetails: eventsData.playerDetails,
+            playerName: playerName
+        });
+        const analysisResult = castsAnalyzer.analyze();
+        const casts = analysisResult.casts;
+        const talents = analysisResult.talents;
 
         // Add target names to casts
         const enemyNames = new Map();
@@ -923,11 +928,15 @@ window.analyzeLog = async function analyzeLog() {
 
         // Store globally for filtering
         window.allCasts = casts;
+        window.currentTalents = talents;
         window.currentFight = fight;
         window.statsCalculator = new CastStatsCalculator(casts, fight);
 
         // Render stats overview (Timeline view by default)
         renderStatsOverview('timeline');
+
+        // Render talents display
+        renderTalents(talents);
 
         // Render cast timeline
         renderCastTimeline(casts, fight);
@@ -1418,6 +1427,52 @@ function createStatField(label, value) {
             <div class="stat-field-value">${value}</div>
         </div>
     `;
+}
+
+/**
+ * Normalize talent name to icon filename
+ * E.g., "Void Tendrils" -> "voidtendrils"
+ */
+function normalizeIconName(name) {
+    return name.toLowerCase().replace(/[^a-z0-9]/g, '');
+}
+
+/**
+ * Render talents display
+ */
+function renderTalents(talents) {
+    const talentsDisplay = document.getElementById('talents-display');
+
+    if (!talents || !Array.isArray(talents) || talents.length === 0) {
+        talentsDisplay.style.display = 'none';
+        return;
+    }
+
+    // Sort talents by type (tier)
+    const sortedTalents = [...talents].sort((a, b) => a.type - b.type);
+
+    let html = '<div class="talents-header">Talents</div>';
+    html += '<div class="talents-list">';
+
+    sortedTalents.forEach(talent => {
+        const iconName = normalizeIconName(talent.name);
+        const iconPath = `analyzer/icons/talents/${iconName}.jpg`;
+        const tierLabel = `T${talent.type * 15}`;
+
+        html += `
+            <div class="talent-icon-wrapper" title="${talent.name} (${tierLabel})">
+                <img src="${iconPath}"
+                     alt="${talent.name}"
+                     class="talent-icon"
+                     onerror="this.src='analyzer/icons/talents/placeholder.jpg'">
+            </div>
+        `;
+    });
+
+    html += '</div>';
+
+    talentsDisplay.innerHTML = html;
+    talentsDisplay.style.display = 'block';
 }
 
 /**

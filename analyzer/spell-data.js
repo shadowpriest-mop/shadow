@@ -207,7 +207,8 @@ const SPELLS = {
     baseCastTime: 1.5,
     maxDamageInstances: 0, // Variable based on targets
     cooldown: 40,
-    multiTarget: true
+    multiTarget: true,
+    hasTravelTime: true // Damage delayed due to projectile travel
   }),
 
   [SpellId.CASCADE]: spell({
@@ -217,7 +218,8 @@ const SPELLS = {
     baseCastTime: 1.5,
     maxDamageInstances: 0,
     cooldown: 25,
-    multiTarget: true
+    multiTarget: true,
+    hasTravelTime: true // Damage delayed due to projectile travel
   }),
 
   [SpellId.DIVINE_STAR]: spell({
@@ -227,7 +229,8 @@ const SPELLS = {
     baseCastTime: 1.5,
     maxDamageInstances: 0,
     cooldown: 15,
-    multiTarget: true
+    multiTarget: true,
+    hasTravelTime: true // Damage delayed due to projectile travel
   }),
 
   [SpellId.MIND_SEAR]: spell({
@@ -256,10 +259,9 @@ const SPELLS = {
 
   [SpellId.SYNAPSE_SPRINGS]: spell({
     name: 'Synapse Springs',
-    damageType: DamageType.DIRECT,
+    damageType: DamageType.NONE,
     cooldown: 60,
-    gcd: false,
-    maxDamageInstances: 1
+    gcd: false
   }),
 
   [SpellId.SILENCE]: spell({

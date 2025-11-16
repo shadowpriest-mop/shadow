@@ -206,6 +206,7 @@ class WCLv2Service {
 
   /**
    * Fetch events for a fight (with pagination support)
+   * Now also fetches playerDetails for combatantInfo
    */
   async fetchEvents(reportCode, fightID, playerName, startTime, endTime) {
     const query = `
@@ -221,6 +222,7 @@ class WCLv2Service {
               data
               nextPageTimestamp
             }
+            table(fightIDs: $fightIDs, dataType: Summary, startTime: $startTime, endTime: $endTime)
           }
         }
       }
@@ -230,6 +232,7 @@ class WCLv2Service {
     const filterExpression = `source.name = "${playerName}"`;
 
     let allEvents = [];
+    let playerDetails = null;
     let currentStartTime = startTime;
     let pageCount = 0;
     const maxPages = 100; // Safety limit to prevent infinite loops
@@ -250,6 +253,47 @@ class WCLv2Service {
       const data = await this.query(query, variables);
       const eventsPage = data.reportData.report.events;
 
+      // Capture table data with combatantInfo from first page only
+      if (pageCount === 1) {
+        if (data.reportData.report.table) {
+          console.log('Table data captured:', data.reportData.report.table);
+          // Parse the table JSON data
+          try {
+            const tableData = typeof data.reportData.report.table === 'string'
+              ? JSON.parse(data.reportData.report.table)
+              : data.reportData.report.table;
+
+            console.log('Parsed table data:', tableData);
+
+            // Check playerDetails.dps/healers/tanks for our player's stats
+            if (tableData && tableData.data && tableData.data.playerDetails) {
+              console.log('PlayerDetails from table:', tableData.data.playerDetails);
+
+              // Find our player in dps/healers/tanks arrays
+              const allPlayers = [
+                ...(tableData.data.playerDetails.dps || []),
+                ...(tableData.data.playerDetails.healers || []),
+                ...(tableData.data.playerDetails.tanks || [])
+              ];
+
+              console.log(`Found ${allPlayers.length} players in playerDetails`);
+              console.log('First player sample:', allPlayers[0]);
+
+              playerDetails = { playerList: allPlayers };
+            } else if (tableData && tableData.combatantInfo) {
+              playerDetails = { combatantInfo: tableData.combatantInfo };
+              console.log(`Found ${tableData.combatantInfo.length} combatants in table data`);
+            } else if (tableData && tableData.data && tableData.data.composition) {
+              // Alternative: combatantInfo might be in composition
+              playerDetails = { combatantInfo: tableData.data.composition };
+              console.log(`Found ${tableData.data.composition.length} combatants in composition`);
+            }
+          } catch (e) {
+            console.error('Error parsing table data:', e);
+          }
+        }
+      }
+
       if (!eventsPage || !eventsPage.data) {
         console.log('No more events data');
         break;
@@ -269,6 +313,82 @@ class WCLv2Service {
     }
 
     console.log(`Total events fetched: ${allEvents.length} across ${pageCount} pages`);
+
+    return {
+      data: allEvents,
+      playerDetails: playerDetails,
+      pageCount: pageCount
+    };
+  }
+
+  /**
+   * Fetch buff/debuff events (applybuff, removebuff, etc.)
+   * Separate from main events to allow different filtering
+   */
+  async fetchBuffEvents(reportCode, fightID, playerName, startTime, endTime) {
+    const query = `
+      query($code: String!, $fightIDs: [Int]!, $startTime: Float!, $endTime: Float!, $filterExpression: String) {
+        reportData {
+          report(code: $code) {
+            events(
+              fightIDs: $fightIDs
+              startTime: $startTime
+              endTime: $endTime
+              filterExpression: $filterExpression
+              dataType: Buffs
+            ) {
+              data
+              nextPageTimestamp
+            }
+          }
+        }
+      }
+    `;
+
+    // Get tracked buff IDs from buff-data.js (window.BUFF_DATA)
+    const buffData = window.BUFF_DATA || {};
+    const trackedBuffIds = Object.keys(buffData).map(id => parseInt(id)).join(',');
+
+    // Filter for buffs applied TO the player (target) with tracked IDs
+    const filterExpression = `target.name = "${playerName}" AND ability.id IN (${trackedBuffIds})`;
+
+    let allEvents = [];
+    let currentStartTime = startTime;
+    let pageCount = 0;
+    const maxPages = 100;
+
+    while (pageCount < maxPages) {
+      pageCount++;
+      console.log(`Fetching buff events page ${pageCount}, startTime: ${currentStartTime}`);
+
+      const variables = {
+        code: reportCode,
+        fightIDs: [fightID],
+        startTime: currentStartTime,
+        endTime: endTime,
+        filterExpression: filterExpression
+      };
+
+      const data = await this.query(query, variables);
+      const eventsPage = data.reportData.report.events;
+
+      if (!eventsPage || !eventsPage.data) {
+        console.log('No more buff events');
+        break;
+      }
+
+      console.log(`Buff page ${pageCount}: ${eventsPage.data.length} events`);
+      allEvents = allEvents.concat(eventsPage.data);
+
+      if (!eventsPage.nextPageTimestamp) {
+        console.log('No more buff pages');
+        break;
+      }
+
+      currentStartTime = eventsPage.nextPageTimestamp;
+    }
+
+    console.log(`Total buff events fetched: ${allEvents.length} across ${pageCount} pages`);
 
     return {
       data: allEvents,
