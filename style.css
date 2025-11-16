@@ -707,18 +707,16 @@ footer a:hover {
 
 /* Talents Display */
 .talents-display {
-    margin: 15px 20px;
-    padding: 12px 15px;
-    background: rgba(30, 30, 46, 0.6);
-    border-radius: 6px;
-    border: 1px solid #424242;
+    background: rgba(25, 25, 35, 0.95);
+    border-bottom: 1px solid #424242;
+    padding: 8px 20px;
 }
 
 .talents-header {
     color: #9ca3af;
-    font-size: 0.85em;
+    font-size: 0.75em;
     font-weight: 600;
-    margin-bottom: 8px;
+    margin-bottom: 6px;
     text-transform: uppercase;
     letter-spacing: 0.5px;
 }
@@ -726,28 +724,28 @@ footer a:hover {
 .talents-list {
     display: grid;
     grid-template-columns: repeat(6, 1fr);
-    gap: 12px;
-    max-width: 600px;
+    gap: 8px;
+    max-width: 400px;
 }
 
 .talent-tier {
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 6px;
+    gap: 4px;
 }
 
 .talent-tier-label {
     color: #9ca3af;
-    font-size: 0.75em;
+    font-size: 0.7em;
     font-weight: 600;
     text-align: center;
 }
 
 .talent-icon-wrapper {
     position: relative;
-    width: 36px;
-    height: 36px;
+    width: 32px;
+    height: 32px;
     border: 2px solid #555;
     border-radius: 4px;
     overflow: hidden;
