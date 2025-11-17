@@ -1454,8 +1454,7 @@ function renderTalents(talents) {
         talentsByTier[talent.type] = talent;
     });
 
-    let html = '<div class="talents-header">Talents</div>';
-    html += '<div class="talents-list">';
+    let html = '<div class="talents-list">';
 
     // Fixed tier positions: 1=15, 2=30, 3=45, 4=60, 5=75, 6=90
     const tierLevels = [1, 2, 3, 4, 5, 6];
