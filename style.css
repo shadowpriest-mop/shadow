@@ -323,8 +323,8 @@ footer a:hover {
     font-size: 0.9em;
     cursor: pointer;
     transition: all 0.2s ease;
-    max-width: 150px;
-    min-width: 120px;
+    width: auto;
+    max-width: 250px;
 }
 
 .target-filter-select:hover {
