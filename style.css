@@ -646,43 +646,46 @@ footer a:hover {
     font-size: 0.85em;
 }
 
-/* Spell Filters */
+/* Spell Filters - Compact */
 .spell-filters {
     display: flex;
-    gap: 6px;
-    margin-bottom: 15px;
+    gap: 4px;
+    margin-bottom: 8px;
     flex-wrap: wrap;
+    padding: 8px 20px;
+    background: rgba(25, 25, 35, 0.95);
+    border-bottom: 1px solid #424242;
 }
 
 .spell-filter-btn {
     display: flex;
     align-items: center;
-    gap: 6px;
-    padding: 8px 12px;
-    background: rgba(30, 30, 46, 0.6);
-    border: 2px solid #424242;
+    gap: 4px;
+    padding: 6px 10px;
+    background: rgba(30, 30, 46, 0.8);
+    border: 1px solid rgba(147, 51, 234, 0.3);
     border-radius: 4px;
     color: #c4b5fd;
     cursor: pointer;
     transition: all 0.2s ease;
-    font-size: 0.9em;
+    font-size: 0.85em;
     font-weight: 500;
 }
 
 .spell-filter-btn:hover {
-    background: rgba(40, 40, 56, 0.7);
-    border-color: #666;
+    background: rgba(40, 40, 56, 0.9);
+    border-color: #9333ea;
 }
 
 .spell-filter-btn.active {
-    background: rgba(121, 134, 203, 0.2);
+    background: rgba(121, 134, 203, 0.25);
     border-color: #7986CB;
     color: #ffffff;
 }
 
 .filter-icon {
-    width: 24px;
-    height: 24px;
+    width: 20px;
+    height: 20px;
     border-radius: 3px;
 }
 
@@ -690,34 +693,33 @@ footer a:hover {
     font-weight: 600;
 }
 
-/* Stats Overview Panel */
+/* Stats Overview Panel - Compact */
 .stats-overview {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-    gap: 6px;
-    margin-bottom: 15px;
-    padding: 12px 15px;
-    background: rgba(30, 30, 46, 0.6);
-    border-radius: 6px;
-    border: 1px solid #424242;
+    gap: 4px;
+    margin-bottom: 8px;
+    padding: 8px 20px;
+    background: rgba(25, 25, 35, 0.95);
+    border-bottom: 1px solid #424242;
 }
 
 .stat-field {
     display: flex;
     flex-direction: row;
     align-items: baseline;
-    gap: 6px;
+    gap: 4px;
 }
 
 .stat-field-label {
     color: #9ca3af;
-    font-size: 0.8em;
+    font-size: 0.75em;
     font-weight: 400;
 }
 
 .stat-field-value {
     color: #e0e0e0;
-    font-size: 0.8em;
+    font-size: 0.75em;
     font-weight: 500;
     font-family: 'Courier New', monospace;
 }
@@ -725,7 +727,7 @@ footer a:hover {
 .stat-field-break {
     grid-column: 1 / -1;
     height: 0;
-    border-bottom: 1px solid #424242;
+    border-bottom: 1px solid rgba(66, 66, 66, 0.5);
     margin: 2px 0;
 }
 
