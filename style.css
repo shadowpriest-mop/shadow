@@ -753,7 +753,7 @@ footer a:hover {
 .selector-group {
     display: flex;
     gap: 12px;
-    margin-left: auto;
+    margin-left: 20px;
 }
 
 .compact-select {
@@ -765,6 +765,8 @@ footer a:hover {
     font-size: 0.9em;
     cursor: pointer;
     transition: all 0.2s ease;
+    width: auto;
+    max-width: 250px;
 }
 
 .compact-select:hover {

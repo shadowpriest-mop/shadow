@@ -672,7 +672,7 @@ window.loadReport = async function loadReport() {
         // Populate player dropdown
         playerSelect.innerHTML = '<option value="">Select a player</option>' +
             priests.map(player =>
-                `<option value="${player.name}">${player.name} (${player.type})</option>`
+                `<option value="${player.name}">${player.name}</option>`
             ).join('');
         playerSelect.disabled = false;
 
