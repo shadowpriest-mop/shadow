@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Shadow Priest - MoP Classic Helper</title>
     <link rel="icon" type="image/x-icon" href="analyzer/icons/favicon.ico">
-    <link rel="stylesheet" href="style.css?v=2.24.4">
+    <link rel="stylesheet" href="style.css?v=2.24.5">
 </head>
 <body>
     <!-- LANDING PAGE -->
@@ -57,7 +57,7 @@
                     <span class="separator">|</span>
                     <a href="https://github.com/shadowpriest-mop/shadow" target="_blank">Source</a>
                 </div>
-                <div class="version-label">v2.24.4</div>
+                <div class="version-label">v2.24.5</div>
             </div>
         </div>
     </div>
@@ -79,38 +79,30 @@
                     </svg>
                 </a>
             </span>
-            <span class="app-version">v2.24.4</span>
+            <span class="app-version">v2.24.5</span>
         </nav>
 
-        <!-- Player/Encounter Selectors -->
-        <div class="analysis-inputs">
-            <div class="form-group inline" id="target-filter-group" style="display: none;">
-                <label for="target-filter">Filter by Target</label>
-                <select id="target-filter">
-                    <option value="all">All Targets</option>
-                </select>
+        <!-- Talents Display & Selectors -->
+        <div class="talents-and-selectors-bar">
+            <div id="talents-display" class="talents-display" style="display: none;">
+                <!-- Talents will be populated by JavaScript -->
             </div>
 
-            <div class="selector-gap"></div>
-
-            <div class="form-group inline">
-                <label for="player-select-analysis">Select Player</label>
-                <select id="player-select-analysis">
+            <div class="selector-group">
+                <select id="player-select-analysis" class="compact-select">
                     <!-- Will be populated by JS -->
                 </select>
-            </div>
-
-            <div class="form-group inline">
-                <label for="encounter-select-analysis">Select Encounter</label>
-                <select id="encounter-select-analysis">
+                <select id="encounter-select-analysis" class="compact-select">
                     <!-- Will be populated by JS -->
                 </select>
             </div>
         </div>
 
-        <!-- Talents Display -->
-        <div id="talents-display" class="talents-display" style="display: none;">
-            <!-- Talents will be populated by JavaScript -->
+        <!-- Target Filter (hidden initially) -->
+        <div id="target-filter-group" style="display: none;">
+            <select id="target-filter">
+                <option value="all">All Targets</option>
+            </select>
         </div>
 
         <!-- Analysis Loading Indicator -->
@@ -207,6 +199,6 @@
     <script src="analyzer/cast-stats-calculator.js?v=2.14"></script>
     <script src="analyzer/spell-icons.js?v=2.19.1"></script>
     <script src="analyzer/event-analyzer.js?v=2.14"></script>
-    <script src="script.js?v=2.24.4"></script>
+    <script src="script.js?v=2.24.5"></script>
 </body>
 </html>

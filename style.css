@@ -705,27 +705,52 @@ footer a:hover {
     margin: 2px 0;
 }
 
-/* Talents Display */
-.talents-display {
+/* Talents & Selectors Bar */
+.talents-and-selectors-bar {
+    display: flex;
+    align-items: center;
+    gap: 20px;
     background: rgba(25, 25, 35, 0.95);
     border-bottom: 1px solid #424242;
     padding: 8px 20px;
 }
 
-.talents-header {
-    color: #9ca3af;
-    font-size: 0.75em;
-    font-weight: 600;
-    margin-bottom: 6px;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
+.talents-display {
+    display: flex;
+    align-items: center;
 }
 
 .talents-list {
     display: grid;
     grid-template-columns: repeat(6, 1fr);
     gap: 8px;
-    max-width: 400px;
+}
+
+.selector-group {
+    display: flex;
+    gap: 12px;
+    margin-left: auto;
+}
+
+.compact-select {
+    padding: 6px 12px;
+    background: rgba(30, 30, 46, 0.8);
+    border: 1px solid rgba(147, 51, 234, 0.3);
+    border-radius: 4px;
+    color: #e0e0e0;
+    font-size: 0.9em;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.compact-select:hover {
+    border-color: #9333ea;
+}
+
+.compact-select:focus {
+    outline: none;
+    border-color: #9333ea;
+    box-shadow: 0 0 0 2px rgba(147, 51, 234, 0.2);
 }
 
 .talent-tier {
