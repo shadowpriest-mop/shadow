@@ -903,6 +903,12 @@ window.analyzeLog = async function analyzeLog() {
 
         // ❌ Removed all UI updates for mfTicks and DoT uptimes
 
+        // Run pre-pull checker
+        console.log('=== RUNNING PRE-PULL CHECKER ===');
+        const prePullChecker = new PrePullChecker(events, buffEvents, fight.startTime);
+        const prePullResults = prePullChecker.analyze();
+        console.log('Pre-pull check complete:', prePullResults);
+
         // Analyze casts with quality metrics
         const castsAnalyzer = new CastsAnalyzer(events, buffEvents, {
             playerDetails: eventsData.playerDetails,
@@ -937,6 +943,9 @@ window.analyzeLog = async function analyzeLog() {
         // Render talents display
         renderTalents(talents);
 
+        // Render pre-pull check
+        renderPrePullCheck(prePullResults);
+
         // Render cast timeline
         renderCastTimeline(casts, fight);
 
@@ -959,6 +968,56 @@ window.analyzeLog = async function analyzeLog() {
         analysisLoading.style.display = 'none';
     }
 };
+
+// ============ Pre-Pull Check Rendering ============
+
+/**
+ * Render the pre-pull check results
+ */
+function renderPrePullCheck(results) {
+    const prepullCheck = document.getElementById('prepull-check');
+    if (!prepullCheck) return;
+
+    let html = '<div class="prepull-check-label">Pre-Pull:</div>';
+    html += '<div class="prepull-check-items">';
+
+    // Halo check
+    const haloStatus = results.halo.status;
+    html += `<div class="prepull-item">`;
+    html += `<span class="prepull-icon ${haloStatus}"></span>`;
+    if (results.halo.found) {
+        html += `<span class="prepull-item-text ${haloStatus}">Halo (${results.halo.timing.toFixed(1)}s)</span>`;
+    } else {
+        html += `<span class="prepull-item-text ${haloStatus}">Halo (missing)</span>`;
+    }
+    html += `</div>`;
+
+    // Mind Spike check
+    const msStatus = results.mindSpike.status;
+    html += `<div class="prepull-item">`;
+    html += `<span class="prepull-icon ${msStatus}"></span>`;
+    if (results.mindSpike.found) {
+        html += `<span class="prepull-item-text ${msStatus}">Mind Spike (${results.mindSpike.timing.toFixed(1)}s)</span>`;
+    } else {
+        html += `<span class="prepull-item-text ${msStatus}">Mind Spike (missing)</span>`;
+    }
+    html += `</div>`;
+
+    // Potion check
+    const potionStatus = results.potion.status;
+    html += `<div class="prepull-item">`;
+    html += `<span class="prepull-icon ${potionStatus}"></span>`;
+    if (results.potion.found) {
+        html += `<span class="prepull-item-text ${potionStatus}">Potion (${results.potion.timing.toFixed(1)}s)</span>`;
+    } else {
+        html += `<span class="prepull-item-text ${potionStatus}">Potion (missing)</span>`;
+    }
+    html += `</div>`;
+
+    html += '</div>';
+
+    prepullCheck.innerHTML = html;
+}
 
 // ============ Cast Timeline Rendering ============
 

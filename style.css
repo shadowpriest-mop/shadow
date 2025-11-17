@@ -647,6 +647,81 @@ footer a:hover {
     font-size: 0.85em;
 }
 
+/* Pre-Pull Check Section */
+.prepull-check {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 10px 20px;
+    background: rgba(25, 25, 35, 0.95);
+    border-bottom: 1px solid #424242;
+    max-width: 1400px;
+    margin: 8px auto 0;
+}
+
+.prepull-check-label {
+    font-weight: 600;
+    color: #c4b5fd;
+    font-size: 0.9em;
+    flex-shrink: 0;
+}
+
+.prepull-check-items {
+    display: flex;
+    gap: 16px;
+    align-items: center;
+    flex: 1;
+}
+
+.prepull-item {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 0.85em;
+}
+
+.prepull-icon {
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    flex-shrink: 0;
+}
+
+.prepull-icon.good {
+    background: #10b981;
+}
+
+.prepull-icon.notice {
+    background: #f59e0b;
+}
+
+.prepull-icon.missing {
+    background: #ef4444;
+}
+
+.prepull-item-text {
+    color: #e0e0e0;
+}
+
+.prepull-item-text.good {
+    color: #10b981;
+}
+
+.prepull-item-text.notice {
+    color: #f59e0b;
+}
+
+.prepull-item-text.missing {
+    color: #ef4444;
+}
+
+.prepull-summary {
+    font-size: 0.85em;
+    color: #9ca3af;
+    font-style: italic;
+}
+
 /* Spell Filters - Compact */
 .spell-filters {
     display: flex;
