@@ -655,6 +655,8 @@ footer a:hover {
     padding: 8px 20px;
     background: rgba(25, 25, 35, 0.95);
     border-bottom: 1px solid #424242;
+    max-width: 1400px;
+    margin: 0 auto 8px;
 }
 
 .spell-filter-btn {
@@ -702,6 +704,8 @@ footer a:hover {
     padding: 8px 20px;
     background: rgba(25, 25, 35, 0.95);
     border-bottom: 1px solid #424242;
+    max-width: 1400px;
+    margin: 0 auto 8px;
 }
 
 .stat-field {
@@ -739,6 +743,8 @@ footer a:hover {
     background: rgba(25, 25, 35, 0.95);
     border-bottom: 1px solid #424242;
     padding: 8px 20px;
+    max-width: 1400px;
+    margin: 0 auto;
 }
 
 .talents-display {
@@ -1006,8 +1012,10 @@ footer a:hover {
     align-items: center;
     height: 56px;
     background: rgba(20, 20, 30, 0.9);
-    padding: 0 16px;
+    padding: 0 20px;
     border-bottom: 1px solid #424242;
+    max-width: 1400px;
+    margin: 0 auto;
 }
 
 .app-bar .logo-link {
