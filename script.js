@@ -986,7 +986,7 @@ function renderPrePullCheck(results) {
     html += `<div class="prepull-item">`;
     html += `<span class="prepull-icon ${haloStatus}"></span>`;
     if (results.halo.found) {
-        html += `<span class="prepull-item-text ${haloStatus}">Halo (${results.halo.timing.toFixed(1)}s)</span>`;
+        html += `<span class="prepull-item-text ${haloStatus}">Halo (+${results.halo.timing.toFixed(1)}s)</span>`;
     } else {
         html += `<span class="prepull-item-text ${haloStatus}">Halo (missing)</span>`;
     }
@@ -997,7 +997,7 @@ function renderPrePullCheck(results) {
     html += `<div class="prepull-item">`;
     html += `<span class="prepull-icon ${msStatus}"></span>`;
     if (results.mindSpike.found) {
-        html += `<span class="prepull-item-text ${msStatus}">Mind Spike (${results.mindSpike.timing.toFixed(1)}s)</span>`;
+        html += `<span class="prepull-item-text ${msStatus}">Mind Spike (+${results.mindSpike.timing.toFixed(1)}s)</span>`;
     } else {
         html += `<span class="prepull-item-text ${msStatus}">Mind Spike (missing)</span>`;
     }
@@ -1008,7 +1008,8 @@ function renderPrePullCheck(results) {
     html += `<div class="prepull-item">`;
     html += `<span class="prepull-icon ${potionStatus}"></span>`;
     if (results.potion.found) {
-        html += `<span class="prepull-item-text ${potionStatus}">Potion (${results.potion.timing.toFixed(1)}s)</span>`;
+        const potionTiming = results.potion.timing >= 0 ? `+${results.potion.timing.toFixed(1)}s` : `${results.potion.timing.toFixed(1)}s`;
+        html += `<span class="prepull-item-text ${potionStatus}">Potion (${potionTiming})</span>`;
     } else {
         html += `<span class="prepull-item-text ${potionStatus}">Potion (missing)</span>`;
     }
