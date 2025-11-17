@@ -47,14 +47,16 @@ class PrePullChecker {
 
   /**
    * Check if Halo was cast in pre-pull
+   * Halo has ~1.5s cast + travel time, so if cast at -2.5s, damage lands ~0-1s after pull
    */
   checkHalo() {
-    // Look for Halo damage events around -2.5s
-    // We check damage instead of cast because of travel time
+    // Look for Halo damage events in the first 3 seconds after combat starts
+    // Pre-pull Halo (-2.5s) should land between 0-1.5s after pull due to cast + travel time
     const haloDamageEvents = this.events.filter(e =>
       e.type === 'damage' &&
       e.abilityGameID === PrePullSpells.HALO_DAMAGE &&
-      e.timestamp < this.fightStart
+      e.timestamp >= this.fightStart &&
+      e.timestamp <= this.fightStart + 3000 // Within 3s of pull
     );
 
     if (haloDamageEvents.length > 0) {
@@ -67,93 +69,95 @@ class PrePullChecker {
       this.results.halo.found = true;
       this.results.halo.timing = timingSeconds;
 
-      // Check if timing is reasonable (-2 to -3.5 seconds)
-      if (timingSeconds >= -3.5 && timingSeconds <= -2.0) {
+      // Check if timing is reasonable (0 to 1.5 seconds after pull = good pre-pull)
+      if (timingSeconds >= 0 && timingSeconds <= 1.5) {
         this.results.halo.status = 'good';
+      } else if (timingSeconds <= 3.0) {
+        this.results.halo.status = 'notice'; // Found but timing suggests late pre-pull or in-combat cast
       } else {
-        this.results.halo.status = 'notice'; // Found but timing is off
+        this.results.halo.status = 'notice';
       }
     }
   }
 
   /**
    * Check if Mind Spike was cast in pre-pull
+   * Mind Spike has 1.5s cast, so if cast at -1s, damage lands right around pull time
    */
   checkMindSpike() {
-    // Look for Mind Spike cast events around -1s
+    // Look for Mind Spike damage in the first 2 seconds after combat starts
+    // Pre-pull Mind Spike (-1s) with 1.5s cast should land around 0.5s after pull
     const mindSpikeEvents = this.events.filter(e =>
       (e.type === 'cast' || e.type === 'damage') &&
       e.abilityGameID === PrePullSpells.MIND_SPIKE &&
-      e.timestamp < this.fightStart
+      e.timestamp >= this.fightStart &&
+      e.timestamp <= this.fightStart + 2000 // Within 2s of pull
     );
 
     if (mindSpikeEvents.length > 0) {
-      // Find the latest mind spike before pull (should be the pre-pull one)
-      const latestMindSpike = mindSpikeEvents.reduce((latest, current) =>
-        current.timestamp > latest.timestamp ? current : latest
+      // Find the earliest mind spike (should be the pre-pull one)
+      const earliestMindSpike = mindSpikeEvents.reduce((earliest, current) =>
+        current.timestamp < earliest.timestamp ? current : earliest
       );
 
-      const timingSeconds = (latestMindSpike.timestamp - this.fightStart) / 1000;
+      const timingSeconds = (earliestMindSpike.timestamp - this.fightStart) / 1000;
       this.results.mindSpike.found = true;
       this.results.mindSpike.timing = timingSeconds;
 
-      // Check if timing is reasonable (-0.5 to -1.5 seconds)
-      if (timingSeconds >= -1.5 && timingSeconds <= -0.5) {
+      // Check if timing is reasonable (0 to 1 second after pull = good pre-pull)
+      if (timingSeconds >= 0 && timingSeconds <= 1.0) {
         this.results.mindSpike.status = 'good';
+      } else if (timingSeconds <= 2.0) {
+        this.results.mindSpike.status = 'notice'; // Found but timing suggests it might be in-combat
       } else {
-        this.results.mindSpike.status = 'notice'; // Found but timing is off
+        this.results.mindSpike.status = 'notice';
       }
     }
   }
 
   /**
    * Check if Potion of Jade Serpent was used and buff is active
+   * Potion buff should be active at the very start of combat
    */
   checkPotion() {
-    // Look for potion buff at fight start
-    // Check if buff is active at or very close to fight start
+    // Look for potion buff applied at or just after fight start (within first 500ms)
+    // Pre-pull potion should have buff active when combat starts
     const potionBuffs = this.buffEvents.filter(e =>
       e.abilityGameID === PrePullSpells.POTION_BUFF &&
       e.type === 'applybuff' &&
-      e.timestamp <= this.fightStart &&
-      e.timestamp >= this.fightStart - 5000 // Within 5 seconds before start
+      e.timestamp >= this.fightStart - 1000 && // Allow 1s before pull
+      e.timestamp <= this.fightStart + 500 // Within 500ms after pull
     );
 
     if (potionBuffs.length > 0) {
-      const latestPotionBuff = potionBuffs.reduce((latest, current) =>
-        current.timestamp > latest.timestamp ? current : latest
+      const earliestPotionBuff = potionBuffs.reduce((earliest, current) =>
+        current.timestamp < earliest.timestamp ? current : earliest
       );
 
-      const timingSeconds = (latestPotionBuff.timestamp - this.fightStart) / 1000;
+      const timingSeconds = (earliestPotionBuff.timestamp - this.fightStart) / 1000;
       this.results.potion.found = true;
       this.results.potion.buffActive = true;
       this.results.potion.timing = timingSeconds;
 
-      // Check if timing is reasonable (-0.5 to -1.5 seconds)
-      if (timingSeconds >= -1.5 && timingSeconds <= 0) {
+      // Check if timing is reasonable (within 0.5s of pull = good)
+      if (timingSeconds >= -1.0 && timingSeconds <= 0.5) {
         this.results.potion.status = 'good';
       } else {
         this.results.potion.status = 'notice'; // Found but timing might be off
       }
     } else {
-      // Also check for potion cast events as fallback
-      const potionCasts = this.events.filter(e =>
-        (e.type === 'cast' || e.type === 'applybuff') &&
-        (e.abilityGameID === PrePullSpells.POTION_OF_JADE_SERPENT ||
-         e.abilityGameID === PrePullSpells.POTION_BUFF) &&
-        e.timestamp < this.fightStart &&
-        e.timestamp >= this.fightStart - 5000
+      // Fallback: check if buff is already active (refreshbuff or similar)
+      const potionRefresh = this.buffEvents.filter(e =>
+        e.abilityGameID === PrePullSpells.POTION_BUFF &&
+        (e.type === 'applybuff' || e.type === 'refreshbuff') &&
+        e.timestamp <= this.fightStart + 1000
       );
 
-      if (potionCasts.length > 0) {
-        const latestPotion = potionCasts.reduce((latest, current) =>
-          current.timestamp > latest.timestamp ? current : latest
-        );
-
-        const timingSeconds = (latestPotion.timestamp - this.fightStart) / 1000;
+      if (potionRefresh.length > 0) {
         this.results.potion.found = true;
-        this.results.potion.timing = timingSeconds;
+        this.results.potion.buffActive = true;
         this.results.potion.status = 'good';
+        this.results.potion.timing = 0;
       }
     }
   }
@@ -184,23 +188,23 @@ class PrePullChecker {
     const items = [];
 
     if (!this.results.halo.found) {
-      items.push('Missing Halo pre-pull (-2.5s)');
+      items.push('Missing Halo pre-pull (damage should land 0-1.5s after pull)');
     } else if (this.results.halo.status === 'notice') {
-      items.push(`Halo timing off (${this.results.halo.timing.toFixed(1)}s, should be ~-2.5s)`);
+      items.push(`Halo timing off (landed at +${this.results.halo.timing.toFixed(1)}s, expected 0-1.5s)`);
     }
 
     if (!this.results.mindSpike.found) {
-      items.push('Missing Mind Spike pre-pull (-1s)');
+      items.push('Missing Mind Spike pre-pull (should land 0-1s after pull)');
     } else if (this.results.mindSpike.status === 'notice') {
-      items.push(`Mind Spike timing off (${this.results.mindSpike.timing.toFixed(1)}s, should be ~-1s)`);
+      items.push(`Mind Spike timing off (landed at +${this.results.mindSpike.timing.toFixed(1)}s, expected 0-1s)`);
     }
 
     if (!this.results.potion.found) {
-      items.push('Missing Potion of Jade Serpent pre-pull (-1s)');
+      items.push('Missing Potion of Jade Serpent (buff should be active at pull)');
     } else if (!this.results.potion.buffActive) {
       items.push('Potion buff not active at pull');
     } else if (this.results.potion.status === 'notice') {
-      items.push(`Potion timing off (${this.results.potion.timing.toFixed(1)}s, should be ~-1s)`);
+      items.push(`Potion timing off (applied at +${this.results.potion.timing.toFixed(1)}s)`);
     }
 
     if (items.length === 0) {
