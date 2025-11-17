@@ -854,7 +854,6 @@ window.analyzeLog = async function analyzeLog() {
         window.allTargets = targets; // Store globally
 
         const targetFilter = document.getElementById('target-filter');
-        const targetFilterGroup = document.getElementById('target-filter-group');
 
         // Populate target filter dropdown
         targetFilter.innerHTML = '<option value="all">All Targets</option>';
@@ -865,11 +864,11 @@ window.analyzeLog = async function analyzeLog() {
             targetFilter.appendChild(option);
         });
 
-        // Show target filter if there are multiple targets
-        if (targets.length > 1) {
-            targetFilterGroup.style.display = 'block';
+        // Show/hide target filter based on number of targets
+        if (targets.length <= 1) {
+            targetFilter.style.display = 'none';
         } else {
-            targetFilterGroup.style.display = 'none';
+            targetFilter.style.display = 'block';
         }
 
         // Simple analysis - count casts and damage events by spell
