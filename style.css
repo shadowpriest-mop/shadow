@@ -651,13 +651,12 @@ footer a:hover {
 .spell-filters {
     display: flex;
     gap: 4px;
-    margin-bottom: 8px;
     flex-wrap: wrap;
     padding: 8px 20px;
     background: rgba(25, 25, 35, 0.95);
     border-bottom: 1px solid #424242;
     max-width: 1400px;
-    margin: 0 auto 8px;
+    margin: 8px auto 0;
 }
 
 .spell-filter-btn {
@@ -701,12 +700,11 @@ footer a:hover {
     display: grid;
     grid-template-columns: repeat(4, 1fr);
     gap: 4px;
-    margin-bottom: 8px;
     padding: 8px 20px;
     background: rgba(25, 25, 35, 0.95);
     border-bottom: 1px solid #424242;
     max-width: 1400px;
-    margin: 0 auto 8px;
+    margin: 0 auto;
 }
 
 .stat-field {
