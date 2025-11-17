@@ -766,7 +766,7 @@ footer a:hover {
     cursor: pointer;
     transition: all 0.2s ease;
     width: auto;
-    max-width: 250px;
+    max-width: 350px;
 }
 
 .compact-select:hover {
