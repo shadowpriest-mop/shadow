@@ -118,10 +118,10 @@ class PrePullChecker {
   /**
    * Check if Potion of Jade Serpent was used and buff is active
    * Potion buff should be active at the very start of combat
+   * If used pre-pull, we may not see applybuff, but we can check removebuff timing
    */
   checkPotion() {
-    // Look for potion buff applied at or just after fight start (within first 500ms)
-    // Pre-pull potion should have buff active when combat starts
+    // Strategy 1: Look for potion buff applied at or just after fight start
     const potionBuffs = this.buffEvents.filter(e =>
       e.abilityGameID === PrePullSpells.POTION_BUFF &&
       e.type === 'applybuff' &&
@@ -138,27 +138,53 @@ class PrePullChecker {
       this.results.potion.found = true;
       this.results.potion.buffActive = true;
       this.results.potion.timing = timingSeconds;
+      this.results.potion.status = 'good';
+      return;
+    }
 
-      // Check if timing is reasonable (within 0.5s of pull = good)
-      if (timingSeconds >= -1.0 && timingSeconds <= 0.5) {
-        this.results.potion.status = 'good';
-      } else {
-        this.results.potion.status = 'notice'; // Found but timing might be off
-      }
-    } else {
-      // Fallback: check if buff is already active (refreshbuff or similar)
-      const potionRefresh = this.buffEvents.filter(e =>
-        e.abilityGameID === PrePullSpells.POTION_BUFF &&
-        (e.type === 'applybuff' || e.type === 'refreshbuff') &&
-        e.timestamp <= this.fightStart + 1000
+    // Strategy 2: Check for removebuff event
+    // Potion lasts 25 seconds, so if it expires between 24-26s, it was used pre-pull
+    const potionRemoves = this.buffEvents.filter(e =>
+      e.abilityGameID === PrePullSpells.POTION_BUFF &&
+      e.type === 'removebuff' &&
+      e.timestamp >= this.fightStart + 24000 && // At least 24s into fight
+      e.timestamp <= this.fightStart + 26000 // At most 26s into fight
+    );
+
+    if (potionRemoves.length > 0) {
+      const firstRemove = potionRemoves.reduce((earliest, current) =>
+        current.timestamp < earliest.timestamp ? current : earliest
       );
 
-      if (potionRefresh.length > 0) {
-        this.results.potion.found = true;
-        this.results.potion.buffActive = true;
+      // Calculate when the potion was applied (25 seconds before it expired)
+      const removeTime = (firstRemove.timestamp - this.fightStart) / 1000;
+      const applyTime = removeTime - 25; // Potion lasts 25 seconds
+
+      this.results.potion.found = true;
+      this.results.potion.buffActive = true;
+      this.results.potion.timing = applyTime;
+
+      // Good if applied within 1.5s before pull
+      if (applyTime >= -1.5 && applyTime <= 0) {
         this.results.potion.status = 'good';
-        this.results.potion.timing = 0;
+      } else {
+        this.results.potion.status = 'notice';
       }
+      return;
+    }
+
+    // Strategy 3: Check if buff is already active (refreshbuff or similar)
+    const potionRefresh = this.buffEvents.filter(e =>
+      e.abilityGameID === PrePullSpells.POTION_BUFF &&
+      (e.type === 'applybuff' || e.type === 'refreshbuff') &&
+      e.timestamp <= this.fightStart + 1000
+    );
+
+    if (potionRefresh.length > 0) {
+      this.results.potion.found = true;
+      this.results.potion.buffActive = true;
+      this.results.potion.status = 'good';
+      this.results.potion.timing = 0;
     }
   }
 
