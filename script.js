@@ -177,7 +177,7 @@ window.startAnalysis = function() {
         const reportTitle = document.getElementById('report-title');
         const wclLink = document.getElementById('wcl-link');
 
-        reportTitle.textContent = `${currentReportData.title || 'Report'} (${currentReportData.owner || 'Unknown'})`;
+        reportTitle.textContent = `${currentReportData.title || 'Report'}`;
         wclLink.href = `https://www.warcraftlogs.com/reports/${window.wclV2Service.extractReportId(document.getElementById('wcl-report').value)}`;
     }
 

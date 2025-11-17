@@ -1045,6 +1045,7 @@ footer a:hover {
 .report-link a {
     display: flex;
     align-items: center;
+    gap: 6px;
     color: #999;
     text-decoration: none;
     transition: color 0.2s;
@@ -1052,6 +1053,11 @@ footer a:hover {
 
 .report-link a:hover {
     color: #7986CB;
+}
+
+.wcl-link-text {
+    font-size: 0.9em;
+    font-weight: 500;
 }
 
 .app-version {
