@@ -121,6 +121,19 @@ class PrePullChecker {
    * If used pre-pull, we may not see applybuff, but we can check removebuff timing
    */
   checkPotion() {
+    console.log('=== Checking Potion ===');
+    console.log('Total buff events:', this.buffEvents.length);
+    console.log('Fight start time:', this.fightStart);
+
+    // Debug: Look for ANY potion-related events
+    const allPotionEvents = this.buffEvents.filter(e =>
+      e.abilityGameID === PrePullSpells.POTION_BUFF
+    );
+    console.log('All potion buff events (ID 114757):', allPotionEvents.length);
+    if (allPotionEvents.length > 0) {
+      console.log('Sample potion events:', allPotionEvents.slice(0, 3));
+    }
+
     // Strategy 1: Look for potion buff applied at or just after fight start
     const potionBuffs = this.buffEvents.filter(e =>
       e.abilityGameID === PrePullSpells.POTION_BUFF &&
@@ -128,6 +141,8 @@ class PrePullChecker {
       e.timestamp >= this.fightStart - 1000 && // Allow 1s before pull
       e.timestamp <= this.fightStart + 500 // Within 500ms after pull
     );
+
+    console.log('Strategy 1 - applybuff near start:', potionBuffs.length);
 
     if (potionBuffs.length > 0) {
       const earliestPotionBuff = potionBuffs.reduce((earliest, current) =>
@@ -139,6 +154,7 @@ class PrePullChecker {
       this.results.potion.buffActive = true;
       this.results.potion.timing = timingSeconds;
       this.results.potion.status = 'good';
+      console.log('Potion found via Strategy 1:', timingSeconds);
       return;
     }
 
@@ -150,6 +166,11 @@ class PrePullChecker {
       e.timestamp >= this.fightStart + 24000 && // At least 24s into fight
       e.timestamp <= this.fightStart + 26000 // At most 26s into fight
     );
+
+    console.log('Strategy 2 - removebuff 24-26s:', potionRemoves.length);
+    if (potionRemoves.length > 0) {
+      console.log('Remove event details:', potionRemoves[0]);
+    }
 
     if (potionRemoves.length > 0) {
       const firstRemove = potionRemoves.reduce((earliest, current) =>
@@ -170,6 +191,7 @@ class PrePullChecker {
       } else {
         this.results.potion.status = 'notice';
       }
+      console.log('Potion found via Strategy 2 - removeTime:', removeTime, 'applyTime:', applyTime);
       return;
     }
 
@@ -180,11 +202,16 @@ class PrePullChecker {
       e.timestamp <= this.fightStart + 1000
     );
 
+    console.log('Strategy 3 - refresh/apply within 1s:', potionRefresh.length);
+
     if (potionRefresh.length > 0) {
       this.results.potion.found = true;
       this.results.potion.buffActive = true;
       this.results.potion.status = 'good';
       this.results.potion.timing = 0;
+      console.log('Potion found via Strategy 3');
+    } else {
+      console.log('Potion NOT FOUND - no strategies succeeded');
     }
   }
 
