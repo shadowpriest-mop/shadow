@@ -1372,7 +1372,6 @@ function renderStatsOverview(filter) {
 
     // Break if showing detailed stats (per-spell view)
     if (filter !== 'timeline') {
-        html += '<div class="stat-field-break"></div>';
         html += createStatField('Hits', stats.hits);
         html += createStatField('Avg Hit', stats.avgHit.toFixed(1));
         html += createStatField('Crit Rate', stats.critRate.toFixed(1) + '%');
@@ -1381,7 +1380,6 @@ function renderStatsOverview(filter) {
 
     // DoT stats (if applicable)
     if (filter === 'timeline' || [589, 34914, 2944].includes(parseInt(filter))) {
-        html += '<div class="stat-field-break"></div>';
         if (stats.avgDotDowntime > 0) {
             html += createStatField('Avg DoT Downtime', (stats.avgDotDowntime / 1000).toFixed(1) + 's');
         }
@@ -1397,7 +1395,6 @@ function renderStatsOverview(filter) {
 
     // Channel stats (MF)
     if (filter === 'timeline' || [15407, 129197].includes(parseInt(filter))) {
-        html += '<div class="stat-field-break"></div>';
         if (stats.avgMfDelay > 0) {
             html += createStatField('Avg MF Delay', stats.avgMfDelay.toFixed(0) + 'ms');
         }
@@ -1410,7 +1407,6 @@ function renderStatsOverview(filter) {
     }
 
     // Encounter stats
-    html += '<div class="stat-field-break"></div>';
     html += createStatField('GCD Usage', stats.gcdUsage.toFixed(0) + '%');
 
     statsOverview.innerHTML = html;
