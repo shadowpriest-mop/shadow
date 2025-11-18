@@ -149,12 +149,10 @@ select option {
 }
 
 select option.kill-option {
-    background: rgba(16, 185, 129, 0.25);
     color: #34d399;
 }
 
 select option.wipe-option {
-    background: rgba(239, 68, 68, 0.25);
     color: #f87171;
 }
 
