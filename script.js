@@ -689,7 +689,8 @@ window.loadReport = async function loadReport() {
             encounters.map(fight => {
                 const duration = Math.round((fight.endTime - fight.startTime) / 1000);
                 const killStatus = fight.kill ? '✓' : '✗';
-                return `<option value="${fight.id}">${killStatus} ${fight.name} (${duration}s)</option>`;
+                const killClass = fight.kill ? 'class="kill-option"' : '';
+                return `<option value="${fight.id}" ${killClass}>${killStatus} ${fight.name} (${duration}s)</option>`;
             }).join('');
         encounterSelect.disabled = false;
 

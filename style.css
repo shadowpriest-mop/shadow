@@ -148,6 +148,11 @@ select option {
     color: #e0e0e0;
 }
 
+select option.kill-option {
+    background: rgba(16, 185, 129, 0.15);
+    color: #6ee7b7;
+}
+
 .checkbox-group {
     display: flex;
     align-items: center;
