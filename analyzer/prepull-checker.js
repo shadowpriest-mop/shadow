@@ -5,8 +5,8 @@ const PrePullSpells = {
   HALO: 120644,
   HALO_DAMAGE: 120696,
   MIND_SPIKE: 73510,
-  POTION_OF_JADE_SERPENT: 105702, // Cast ID
-  POTION_BUFF: 114757 // Buff ID
+  POTION_OF_JADE_SERPENT: 105702, // Cast/Buff ID (same for both)
+  POTION_BUFF: 105702 // Buff uses same ID as cast
 };
 
 const PREPULL_TIMING = {
