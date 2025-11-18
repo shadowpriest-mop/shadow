@@ -17,11 +17,12 @@ const PREPULL_TIMING = {
 };
 
 class PrePullChecker {
-  constructor(events, buffEvents, fightStart, playerID) {
+  constructor(events, buffEvents, fightStart, playerID, playerName) {
     this.events = events || [];
     this.buffEvents = buffEvents || [];
     this.fightStart = fightStart;
     this.playerID = playerID; // Add player ID to filter events
+    this.playerName = playerName || 'Unknown'; // Add player name for debugging
     this.results = {
       halo: { found: false, timing: null, status: 'missing' },
       mindSpike: { found: false, timing: null, status: 'missing' },
@@ -123,10 +124,11 @@ class PrePullChecker {
    */
   checkPotion() {
     console.log('=== Checking Potion ===');
+    console.log('Player name:', this.playerName);
+    console.log('Player ID for filtering:', this.playerID);
     console.log('Total buff events:', this.buffEvents.length);
     console.log('Total regular events:', this.events.length);
     console.log('Fight start time:', this.fightStart);
-    console.log('Player ID for filtering:', this.playerID);
 
     // Debug: Look for ALL potion events BEFORE filtering by player
     const allPotionEventsUnfiltered = this.events.filter(e =>

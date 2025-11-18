@@ -909,7 +909,8 @@ window.analyzeLog = async function analyzeLog() {
         // All events are filtered for this player, so any sourceID is the player's ID
         const playerID = events.find(e => e.sourceID)?.sourceID || null;
         console.log('Player ID:', playerID);
-        const prePullChecker = new PrePullChecker(events, buffEvents, fight.startTime, playerID);
+        console.log('Player Name:', playerName);
+        const prePullChecker = new PrePullChecker(events, buffEvents, fight.startTime, playerID, playerName);
         const prePullResults = prePullChecker.analyze();
         console.log('Pre-pull check complete:', prePullResults);
 
