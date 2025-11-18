@@ -166,6 +166,7 @@ class WCLv2Service {
               startTime
               endTime
               encounterID
+              kill
             }
             masterData {
               players: actors(type: "Player") {

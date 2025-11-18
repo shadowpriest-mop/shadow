@@ -686,9 +686,11 @@ window.loadReport = async function loadReport() {
 
         // Populate encounter dropdown
         encounterSelect.innerHTML = '<option value="">Select an encounter</option>' +
-            encounters.map(fight =>
-                `<option value="${fight.id}">${fight.name} (${Math.round((fight.endTime - fight.startTime) / 1000)}s)</option>`
-            ).join('');
+            encounters.map(fight => {
+                const duration = Math.round((fight.endTime - fight.startTime) / 1000);
+                const killStatus = fight.kill ? '✓' : '✗';
+                return `<option value="${fight.id}">${killStatus} ${fight.name} (${duration}s)</option>`;
+            }).join('');
         encounterSelect.disabled = false;
 
         analyzeBtn.disabled = false;
