@@ -143,86 +143,58 @@ class PrePullChecker {
     );
     console.log('Potion events in regular events:', potionInRegularEvents.length);
     if (potionInRegularEvents.length > 0) {
-      console.log('Sample potion regular events:', potionInRegularEvents.slice(0, 3));
-    }
+      console.log('Sample potion regular events:', potionInRegularEvents.slice(0, 5));
 
-    // Strategy 1: Look for potion buff applied at or just after fight start
-    const potionBuffs = this.buffEvents.filter(e =>
-      e.abilityGameID === PrePullSpells.POTION_BUFF &&
-      e.type === 'applybuff' &&
-      e.timestamp >= this.fightStart - 1000 &&
-      e.timestamp <= this.fightStart + 500
-    );
-
-    console.log('Strategy 1 - applybuff near start:', potionBuffs.length);
-
-    if (potionBuffs.length > 0) {
-      const earliestPotionBuff = potionBuffs.reduce((earliest, current) =>
-        current.timestamp < earliest.timestamp ? current : earliest
+      // Strategy: Check for removebuff in regular events
+      // Potion lasts 25s, if removebuff happens 24-26s into fight, it was pre-pull
+      const potionRemoves = potionInRegularEvents.filter(e =>
+        e.type === 'removebuff' &&
+        e.timestamp >= this.fightStart + 24000 &&
+        e.timestamp <= this.fightStart + 26000
       );
 
-      const timingSeconds = (earliestPotionBuff.timestamp - this.fightStart) / 1000;
-      this.results.potion.found = true;
-      this.results.potion.buffActive = true;
-      this.results.potion.timing = timingSeconds;
-      this.results.potion.status = 'good';
-      console.log('Potion found via Strategy 1:', timingSeconds);
-      return;
-    }
+      console.log('Found removebuff events 24-26s:', potionRemoves.length);
+      if (potionRemoves.length > 0) {
+        console.log('Removebuff event:', potionRemoves[0]);
 
-    // Strategy 2: Check for removebuff event
-    const potionRemoves = this.buffEvents.filter(e =>
-      e.abilityGameID === PrePullSpells.POTION_BUFF &&
-      e.type === 'removebuff' &&
-      e.timestamp >= this.fightStart + 24000 &&
-      e.timestamp <= this.fightStart + 26000
-    );
+        const removeTime = (potionRemoves[0].timestamp - this.fightStart) / 1000;
+        const applyTime = removeTime - 25; // Potion lasts 25 seconds
 
-    console.log('Strategy 2 - removebuff 24-26s:', potionRemoves.length);
-    if (potionRemoves.length > 0) {
-      console.log('Remove event details:', potionRemoves[0]);
-    }
+        this.results.potion.found = true;
+        this.results.potion.buffActive = true;
+        this.results.potion.timing = applyTime;
 
-    if (potionRemoves.length > 0) {
-      const firstRemove = potionRemoves.reduce((earliest, current) =>
-        current.timestamp < earliest.timestamp ? current : earliest
-      );
-
-      const removeTime = (firstRemove.timestamp - this.fightStart) / 1000;
-      const applyTime = removeTime - 25;
-
-      this.results.potion.found = true;
-      this.results.potion.buffActive = true;
-      this.results.potion.timing = applyTime;
-
-      if (applyTime >= -1.5 && applyTime <= 0) {
-        this.results.potion.status = 'good';
-      } else {
-        this.results.potion.status = 'notice';
+        if (applyTime >= -1.5 && applyTime <= 0) {
+          this.results.potion.status = 'good';
+        } else {
+          this.results.potion.status = 'notice';
+        }
+        console.log('Potion detected via removebuff - removeTime:', removeTime, 'applyTime:', applyTime);
+        return;
       }
-      console.log('Potion found via Strategy 2 - removeTime:', removeTime, 'applyTime:', applyTime);
-      return;
+
+      // Fallback: Check for any potion event near start
+      const earlyPotionEvents = potionInRegularEvents.filter(e =>
+        e.timestamp <= this.fightStart + 1000
+      );
+
+      if (earlyPotionEvents.length > 0) {
+        console.log('Found early potion events:', earlyPotionEvents);
+        const earliest = earlyPotionEvents.reduce((e1, e2) =>
+          e1.timestamp < e2.timestamp ? e1 : e2
+        );
+
+        const timingSeconds = (earliest.timestamp - this.fightStart) / 1000;
+        this.results.potion.found = true;
+        this.results.potion.buffActive = true;
+        this.results.potion.timing = timingSeconds;
+        this.results.potion.status = 'good';
+        console.log('Potion detected via early event:', timingSeconds);
+        return;
+      }
     }
 
-    // Strategy 3: Check if buff is already active
-    const potionRefresh = this.buffEvents.filter(e =>
-      e.abilityGameID === PrePullSpells.POTION_BUFF &&
-      (e.type === 'applybuff' || e.type === 'refreshbuff') &&
-      e.timestamp <= this.fightStart + 1000
-    );
-
-    console.log('Strategy 3 - refresh/apply within 1s:', potionRefresh.length);
-
-    if (potionRefresh.length > 0) {
-      this.results.potion.found = true;
-      this.results.potion.buffActive = true;
-      this.results.potion.status = 'good';
-      this.results.potion.timing = 0;
-      console.log('Potion found via Strategy 3');
-    } else {
-      console.log('Potion NOT FOUND - no strategies succeeded');
-      console.log('This likely means potion buffs are not in WCL buff events');
-    }
+    console.log('Potion NOT FOUND - no detection strategies succeeded');
   }
 
   /**
