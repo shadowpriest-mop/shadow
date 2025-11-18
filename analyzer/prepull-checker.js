@@ -17,10 +17,11 @@ const PREPULL_TIMING = {
 };
 
 class PrePullChecker {
-  constructor(events, buffEvents, fightStart) {
+  constructor(events, buffEvents, fightStart, playerID) {
     this.events = events || [];
     this.buffEvents = buffEvents || [];
     this.fightStart = fightStart;
+    this.playerID = playerID; // Add player ID to filter events
     this.results = {
       halo: { found: false, timing: null, status: 'missing' },
       mindSpike: { found: false, timing: null, status: 'missing' },
@@ -137,11 +138,13 @@ class PrePullChecker {
     console.log('All potion buff events (ID 114757) in buffEvents:', allPotionBuffEvents.length);
 
     // Debug: Look for potion in regular events (sometimes consumables are there)
+    // IMPORTANT: Filter by player ID to only check THIS player's potion
     const potionInRegularEvents = this.events.filter(e =>
-      e.abilityGameID === PrePullSpells.POTION_BUFF ||
-      e.abilityGameID === PrePullSpells.POTION_OF_THE_JADE_SERPENT
+      (e.abilityGameID === PrePullSpells.POTION_BUFF ||
+       e.abilityGameID === PrePullSpells.POTION_OF_THE_JADE_SERPENT) &&
+      (e.sourceID === this.playerID || e.targetID === this.playerID) // Only this player's events
     );
-    console.log('Potion events in regular events:', potionInRegularEvents.length);
+    console.log('Potion events for this player in regular events:', potionInRegularEvents.length);
     if (potionInRegularEvents.length > 0) {
       console.log('All potion events with details:');
       potionInRegularEvents.forEach((e, i) => {

@@ -905,7 +905,10 @@ window.analyzeLog = async function analyzeLog() {
 
         // Run pre-pull checker
         console.log('=== RUNNING PRE-PULL CHECKER ===');
-        const prePullChecker = new PrePullChecker(events, buffEvents, fight.startTime);
+        // Get player ID from playerDetails
+        const playerID = eventsData.playerDetails ? eventsData.playerDetails.id : null;
+        console.log('Player ID:', playerID);
+        const prePullChecker = new PrePullChecker(events, buffEvents, fight.startTime, playerID);
         const prePullResults = prePullChecker.analyze();
         console.log('Pre-pull check complete:', prePullResults);
 
