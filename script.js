@@ -907,15 +907,11 @@ window.analyzeLog = async function analyzeLog() {
         // ❌ Removed all UI updates for mfTicks and DoT uptimes
 
         // Run pre-pull checker
-        console.log('=== RUNNING PRE-PULL CHECKER ===');
         // Get player ID from the first event with a sourceID
         // All events are filtered for this player, so any sourceID is the player's ID
         const playerID = events.find(e => e.sourceID)?.sourceID || null;
-        console.log('Player ID:', playerID);
-        console.log('Player Name:', playerName);
         const prePullChecker = new PrePullChecker(events, buffEvents, fight.startTime, playerID, playerName);
         const prePullResults = prePullChecker.analyze();
-        console.log('Pre-pull check complete:', prePullResults);
 
         // Analyze casts with quality metrics
         const castsAnalyzer = new CastsAnalyzer(events, buffEvents, {

@@ -34,16 +34,10 @@ class PrePullChecker {
    * Main analysis function - check for pre-pull actions
    */
   analyze() {
-    console.log('=== PrePullChecker.analyze() ===');
-    console.log('Fight start time:', this.fightStart);
-    console.log('Total events:', this.events.length);
-    console.log('Total buff events:', this.buffEvents.length);
-
     this.checkHalo();
     this.checkMindSpike();
     this.checkPotion();
 
-    console.log('Pre-pull check results:', this.results);
     return this.results;
   }
 
@@ -123,65 +117,23 @@ class PrePullChecker {
    * If used pre-pull, we may not see applybuff, but we can check removebuff timing
    */
   checkPotion() {
-    console.log('=== Checking Potion ===');
-    console.log('Player name:', this.playerName);
-    console.log('Player ID for filtering:', this.playerID);
-    console.log('Total buff events:', this.buffEvents.length);
-    console.log('Total regular events:', this.events.length);
-    console.log('Fight start time:', this.fightStart);
-
-    // Debug: Look for ALL potion events BEFORE filtering by player
-    const allPotionEventsUnfiltered = this.events.filter(e =>
-      e.abilityGameID === PrePullSpells.POTION_BUFF ||
-      e.abilityGameID === PrePullSpells.POTION_OF_THE_JADE_SERPENT
-    );
-    console.log('ALL potion events (before player filter):', allPotionEventsUnfiltered.length);
-
-    if (allPotionEventsUnfiltered.length > 0) {
-      console.log('Showing all potion events with IDs:');
-      allPotionEventsUnfiltered.forEach((e, i) => {
-        const relTime = (e.timestamp - this.fightStart) / 1000;
-        console.log(`  Event ${i}: type=${e.type}, time=+${relTime.toFixed(3)}s, sourceID=${e.sourceID}, targetID=${e.targetID}`);
-      });
-    }
-
-    // Debug: Look for potion in regular events (sometimes consumables are there)
-    // IMPORTANT: Filter by player ID to only check THIS player's potion
+    // Filter potion events by player ID to only check THIS player's potion
     const potionInRegularEvents = this.events.filter(e =>
       (e.abilityGameID === PrePullSpells.POTION_BUFF ||
        e.abilityGameID === PrePullSpells.POTION_OF_THE_JADE_SERPENT) &&
-      (e.sourceID === this.playerID || e.targetID === this.playerID) // Only this player's events
+      (e.sourceID === this.playerID || e.targetID === this.playerID)
     );
-    console.log('Potion events AFTER player filter:', potionInRegularEvents.length);
-    if (potionInRegularEvents.length > 0) {
-      console.log('All potion events with details:');
-      potionInRegularEvents.forEach((e, i) => {
-        const relTime = (e.timestamp - this.fightStart) / 1000;
-        console.log(`  Event ${i}: type=${e.type}, time=+${relTime.toFixed(3)}s, timestamp=${e.timestamp}`);
-      });
 
+    if (potionInRegularEvents.length > 0) {
       // Strategy: Check for removebuff in regular events
       // Potion lasts 25s, if removebuff happens 23-26s into fight, it was pre-pull
       const potionRemoves = potionInRegularEvents.filter(e =>
         e.type === 'removebuff' &&
-        e.timestamp >= this.fightStart + 23000 && // Changed from 24000 to 23000
+        e.timestamp >= this.fightStart + 23000 &&
         e.timestamp <= this.fightStart + 26000
       );
 
-      console.log('Found removebuff events 23-26s:', potionRemoves.length);
-
-      // Also check for ANY removebuff events
-      const allRemoves = potionInRegularEvents.filter(e => e.type === 'removebuff');
-      console.log('All removebuff events (any time):', allRemoves.length);
-      if (allRemoves.length > 0) {
-        allRemoves.forEach(e => {
-          const relTime = (e.timestamp - this.fightStart) / 1000;
-          console.log(`  Removebuff at +${relTime.toFixed(3)}s`);
-        });
-      }
       if (potionRemoves.length > 0) {
-        console.log('Removebuff event:', potionRemoves[0]);
-
         const removeTime = (potionRemoves[0].timestamp - this.fightStart) / 1000;
         const applyTime = removeTime - 25; // Potion lasts 25 seconds
 
@@ -194,7 +146,6 @@ class PrePullChecker {
         } else {
           this.results.potion.status = 'notice';
         }
-        console.log('Potion detected via removebuff - removeTime:', removeTime, 'applyTime:', applyTime);
         return;
       }
 
@@ -205,7 +156,6 @@ class PrePullChecker {
       );
 
       if (earlyPotionEvents.length > 0) {
-        console.log('Found early potion events:', earlyPotionEvents);
         const earliest = earlyPotionEvents.reduce((e1, e2) =>
           e1.timestamp < e2.timestamp ? e1 : e2
         );
@@ -215,12 +165,9 @@ class PrePullChecker {
         this.results.potion.buffActive = true;
         this.results.potion.timing = timingSeconds;
         this.results.potion.status = 'good';
-        console.log('Potion detected via early event:', timingSeconds);
         return;
       }
     }
-
-    console.log('Potion NOT FOUND - no detection strategies succeeded');
   }
 
   /**
