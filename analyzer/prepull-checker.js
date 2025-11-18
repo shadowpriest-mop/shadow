@@ -190,9 +190,10 @@ class PrePullChecker {
         return;
       }
 
-      // Fallback: Check for any potion event near start
+      // Fallback: Check for any potion event near start (but not combatantinfo)
       const earlyPotionEvents = potionInRegularEvents.filter(e =>
-        e.timestamp <= this.fightStart + 1000
+        e.timestamp <= this.fightStart + 1000 &&
+        e.type !== 'combatantinfo' // Exclude metadata events
       );
 
       if (earlyPotionEvents.length > 0) {
