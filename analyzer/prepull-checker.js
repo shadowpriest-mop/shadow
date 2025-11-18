@@ -150,14 +150,14 @@ class PrePullChecker {
       });
 
       // Strategy: Check for removebuff in regular events
-      // Potion lasts 25s, if removebuff happens 24-26s into fight, it was pre-pull
+      // Potion lasts 25s, if removebuff happens 23-26s into fight, it was pre-pull
       const potionRemoves = potionInRegularEvents.filter(e =>
         e.type === 'removebuff' &&
-        e.timestamp >= this.fightStart + 24000 &&
+        e.timestamp >= this.fightStart + 23000 && // Changed from 24000 to 23000
         e.timestamp <= this.fightStart + 26000
       );
 
-      console.log('Found removebuff events 24-26s:', potionRemoves.length);
+      console.log('Found removebuff events 23-26s:', potionRemoves.length);
 
       // Also check for ANY removebuff events
       const allRemoves = potionInRegularEvents.filter(e => e.type === 'removebuff');
