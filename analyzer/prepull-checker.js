@@ -123,23 +123,35 @@ class PrePullChecker {
   checkPotion() {
     console.log('=== Checking Potion ===');
     console.log('Total buff events:', this.buffEvents.length);
+    console.log('Total regular events:', this.events.length);
     console.log('Fight start time:', this.fightStart);
 
-    // Debug: Look for ANY potion-related events
-    const allPotionEvents = this.buffEvents.filter(e =>
+    // Debug: Show all buff IDs we're receiving
+    const uniqueBuffIds = [...new Set(this.buffEvents.map(e => e.abilityGameID))];
+    console.log('Unique buff IDs in buffEvents:', uniqueBuffIds);
+
+    // Debug: Look for ANY potion-related events in buffEvents
+    const allPotionBuffEvents = this.buffEvents.filter(e =>
       e.abilityGameID === PrePullSpells.POTION_BUFF
     );
-    console.log('All potion buff events (ID 114757):', allPotionEvents.length);
-    if (allPotionEvents.length > 0) {
-      console.log('Sample potion events:', allPotionEvents.slice(0, 3));
+    console.log('All potion buff events (ID 114757) in buffEvents:', allPotionBuffEvents.length);
+
+    // Debug: Look for potion in regular events (sometimes consumables are there)
+    const potionInRegularEvents = this.events.filter(e =>
+      e.abilityGameID === PrePullSpells.POTION_BUFF ||
+      e.abilityGameID === PrePullSpells.POTION_OF_THE_JADE_SERPENT
+    );
+    console.log('Potion events in regular events:', potionInRegularEvents.length);
+    if (potionInRegularEvents.length > 0) {
+      console.log('Sample potion regular events:', potionInRegularEvents.slice(0, 3));
     }
 
     // Strategy 1: Look for potion buff applied at or just after fight start
     const potionBuffs = this.buffEvents.filter(e =>
       e.abilityGameID === PrePullSpells.POTION_BUFF &&
       e.type === 'applybuff' &&
-      e.timestamp >= this.fightStart - 1000 && // Allow 1s before pull
-      e.timestamp <= this.fightStart + 500 // Within 500ms after pull
+      e.timestamp >= this.fightStart - 1000 &&
+      e.timestamp <= this.fightStart + 500
     );
 
     console.log('Strategy 1 - applybuff near start:', potionBuffs.length);
@@ -159,12 +171,11 @@ class PrePullChecker {
     }
 
     // Strategy 2: Check for removebuff event
-    // Potion lasts 25 seconds, so if it expires between 24-26s, it was used pre-pull
     const potionRemoves = this.buffEvents.filter(e =>
       e.abilityGameID === PrePullSpells.POTION_BUFF &&
       e.type === 'removebuff' &&
-      e.timestamp >= this.fightStart + 24000 && // At least 24s into fight
-      e.timestamp <= this.fightStart + 26000 // At most 26s into fight
+      e.timestamp >= this.fightStart + 24000 &&
+      e.timestamp <= this.fightStart + 26000
     );
 
     console.log('Strategy 2 - removebuff 24-26s:', potionRemoves.length);
@@ -177,15 +188,13 @@ class PrePullChecker {
         current.timestamp < earliest.timestamp ? current : earliest
       );
 
-      // Calculate when the potion was applied (25 seconds before it expired)
       const removeTime = (firstRemove.timestamp - this.fightStart) / 1000;
-      const applyTime = removeTime - 25; // Potion lasts 25 seconds
+      const applyTime = removeTime - 25;
 
       this.results.potion.found = true;
       this.results.potion.buffActive = true;
       this.results.potion.timing = applyTime;
 
-      // Good if applied within 1.5s before pull
       if (applyTime >= -1.5 && applyTime <= 0) {
         this.results.potion.status = 'good';
       } else {
@@ -195,7 +204,7 @@ class PrePullChecker {
       return;
     }
 
-    // Strategy 3: Check if buff is already active (refreshbuff or similar)
+    // Strategy 3: Check if buff is already active
     const potionRefresh = this.buffEvents.filter(e =>
       e.abilityGameID === PrePullSpells.POTION_BUFF &&
       (e.type === 'applybuff' || e.type === 'refreshbuff') &&
@@ -212,6 +221,7 @@ class PrePullChecker {
       console.log('Potion found via Strategy 3');
     } else {
       console.log('Potion NOT FOUND - no strategies succeeded');
+      console.log('This likely means potion buffs are not in WCL buff events');
     }
   }
 
