@@ -126,16 +126,22 @@ class PrePullChecker {
     console.log('Total buff events:', this.buffEvents.length);
     console.log('Total regular events:', this.events.length);
     console.log('Fight start time:', this.fightStart);
+    console.log('Player ID for filtering:', this.playerID);
 
-    // Debug: Show all buff IDs we're receiving
-    const uniqueBuffIds = [...new Set(this.buffEvents.map(e => e.abilityGameID))];
-    console.log('Unique buff IDs in buffEvents:', uniqueBuffIds);
-
-    // Debug: Look for ANY potion-related events in buffEvents
-    const allPotionBuffEvents = this.buffEvents.filter(e =>
-      e.abilityGameID === PrePullSpells.POTION_BUFF
+    // Debug: Look for ALL potion events BEFORE filtering by player
+    const allPotionEventsUnfiltered = this.events.filter(e =>
+      e.abilityGameID === PrePullSpells.POTION_BUFF ||
+      e.abilityGameID === PrePullSpells.POTION_OF_THE_JADE_SERPENT
     );
-    console.log('All potion buff events (ID 114757) in buffEvents:', allPotionBuffEvents.length);
+    console.log('ALL potion events (before player filter):', allPotionEventsUnfiltered.length);
+
+    if (allPotionEventsUnfiltered.length > 0) {
+      console.log('Showing all potion events with IDs:');
+      allPotionEventsUnfiltered.forEach((e, i) => {
+        const relTime = (e.timestamp - this.fightStart) / 1000;
+        console.log(`  Event ${i}: type=${e.type}, time=+${relTime.toFixed(3)}s, sourceID=${e.sourceID}, targetID=${e.targetID}`);
+      });
+    }
 
     // Debug: Look for potion in regular events (sometimes consumables are there)
     // IMPORTANT: Filter by player ID to only check THIS player's potion
@@ -144,7 +150,7 @@ class PrePullChecker {
        e.abilityGameID === PrePullSpells.POTION_OF_THE_JADE_SERPENT) &&
       (e.sourceID === this.playerID || e.targetID === this.playerID) // Only this player's events
     );
-    console.log('Potion events for this player in regular events:', potionInRegularEvents.length);
+    console.log('Potion events AFTER player filter:', potionInRegularEvents.length);
     if (potionInRegularEvents.length > 0) {
       console.log('All potion events with details:');
       potionInRegularEvents.forEach((e, i) => {
