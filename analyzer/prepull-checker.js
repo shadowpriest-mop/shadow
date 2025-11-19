@@ -55,6 +55,15 @@ class PrePullChecker {
       e.timestamp <= this.fightStart + 3000 // Within 3s of pull
     );
 
+    console.log('=== Checking Halo ===');
+    console.log('Total Halo damage events found (0-3s):', haloDamageEvents.length);
+    if (haloDamageEvents.length > 0) {
+      haloDamageEvents.forEach((e, i) => {
+        const timing = (e.timestamp - this.fightStart) / 1000;
+        console.log(`  Halo damage ${i}: +${timing.toFixed(3)}s, sourceID=${e.sourceID}, targetID=${e.targetID}`);
+      });
+    }
+
     if (haloDamageEvents.length > 0) {
       // Find the earliest halo damage (should be the pre-pull one)
       const earliestHalo = haloDamageEvents.reduce((earliest, current) =>
@@ -89,6 +98,15 @@ class PrePullChecker {
       e.timestamp >= this.fightStart &&
       e.timestamp <= this.fightStart + 2000 // Within 2s of pull
     );
+
+    console.log('=== Checking Mind Spike ===');
+    console.log('Total Mind Spike events found (0-2s):', mindSpikeEvents.length);
+    if (mindSpikeEvents.length > 0) {
+      mindSpikeEvents.forEach((e, i) => {
+        const timing = (e.timestamp - this.fightStart) / 1000;
+        console.log(`  Mind Spike ${i}: type=${e.type}, +${timing.toFixed(3)}s, sourceID=${e.sourceID}`);
+      });
+    }
 
     if (mindSpikeEvents.length > 0) {
       // Find the earliest mind spike (should be the pre-pull one)
