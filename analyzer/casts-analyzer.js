@@ -940,6 +940,16 @@ class CastsAnalyzer {
 
     for (const cast of this.casts) {
       if (cast.spellId === MIND_BLAST_ID) {
+        // Check if THIS Mind Blast was delayed
+        if (lastMindBlastEnd !== null) {
+          const timeSinceMB = cast.castStart - lastMindBlastEnd;
+          const timeOffCooldown = timeSinceMB - MIND_BLAST_CD;
+
+          if (timeOffCooldown > 0) {
+            cast.timeOffCooldown = timeOffCooldown;
+          }
+        }
+
         // Cooldown starts when MB finishes casting (damage happens)
         lastMindBlastEnd = cast.castEnd;
         continue;
