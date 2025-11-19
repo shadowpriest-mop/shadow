@@ -21,10 +21,6 @@ class CastsAnalyzer {
    * Main analysis function - parse events into CastDetails with quality metrics
    */
   analyze() {
-    console.log('=== CastsAnalyzer.analyze() ===');
-    console.log('Buff events count:', this.buffEvents.length);
-    console.log('Sample buff events:', this.buffEvents.slice(0, 3));
-
     // Step 0: Extract combatantInfo from playerDetails if available
     this.extractCombatantInfo();
 
@@ -62,13 +58,10 @@ class CastsAnalyzer {
    */
   extractTalents() {
     if (!this.combatantInfo || !this.combatantInfo.talents) {
-      console.log('No talents available in combatantInfo');
       return null;
     }
 
     const rawTalents = this.combatantInfo.talents;
-    console.log('=== RAW TALENTS FROM WCL ===');
-    console.log(JSON.stringify(rawTalents, null, 2));
 
     // Map talent names to correct tiers (WCL data may have wrong tier info)
     const talentTierMap = {
@@ -111,9 +104,6 @@ class CastsAnalyzer {
       return talent;
     });
 
-    console.log('=== CORRECTED TALENTS ===');
-    console.log(JSON.stringify(correctedTalents, null, 2));
-
     return correctedTalents;
   }
 
@@ -123,48 +113,30 @@ class CastsAnalyzer {
    */
   extractCombatantInfo() {
     if (!this.settings || !this.settings.playerDetails) {
-      console.log('No playerDetails available, will infer stats from events');
       return;
     }
 
     const playerDetails = this.settings.playerDetails;
-    console.log('=== PLAYER DETAILS ===');
-    console.log(JSON.stringify(playerDetails, null, 2));
 
     // New structure: playerList array with each player having combatantInfo inside
     if (playerDetails && playerDetails.playerList && playerDetails.playerList.length > 0) {
-      console.log(`Found ${playerDetails.playerList.length} players in playerList`);
 
       // Find our player using the playerName from settings
       let ourPlayer = null;
       const playerName = this.settings.playerName;
 
       if (playerName) {
-        console.log(`Looking for player: ${playerName}`);
         ourPlayer = playerDetails.playerList.find(p => p.name === playerName);
-
-        if (ourPlayer) {
-          console.log(`Found player: ${ourPlayer.name}`);
-        } else {
-          console.log(`Player "${playerName}" not found in playerList`);
-          console.log('Available players:', playerDetails.playerList.map(p => p.name));
-        }
-      } else {
-        console.log('No playerName in settings, cannot identify correct player');
       }
 
       // Fallback: use first player if we can't identify
       if (!ourPlayer) {
         ourPlayer = playerDetails.playerList[0];
-        console.log('Using first player as fallback:', ourPlayer.name);
       }
 
       // Extract combatantInfo from the player object
       if (ourPlayer && ourPlayer.combatantInfo) {
         const combatant = ourPlayer.combatantInfo;
-
-        console.log('=== COMBATANT INFO ===');
-        console.log(JSON.stringify(combatant, null, 2));
 
         // Extract base stats - stats may be objects with min/max or simple numbers
         if (combatant.stats) {
@@ -175,8 +147,6 @@ class CastsAnalyzer {
             critRating: combatant.stats.Crit?.max || combatant.stats.Crit?.min || combatant.stats.Crit || 0,
             mastery: combatant.stats.Mastery?.max || combatant.stats.Mastery?.min || combatant.stats.Mastery || 0
           };
-
-          console.log('Base stats extracted:', this.baseStats);
         }
 
         // Store gear/talents for reference
@@ -185,12 +155,7 @@ class CastsAnalyzer {
     }
     // Old structure fallback
     else if (playerDetails && playerDetails.combatantInfo && playerDetails.combatantInfo.length > 0) {
-      console.log(`Found ${playerDetails.combatantInfo.length} combatants (old structure)`);
-
       const combatant = playerDetails.combatantInfo[0];
-
-      console.log('=== COMBATANT INFO ===');
-      console.log(JSON.stringify(combatant, null, 2));
 
       if (combatant.stats) {
         this.baseStats = {
@@ -200,13 +165,9 @@ class CastsAnalyzer {
           critRating: combatant.stats.Crit?.max || combatant.stats.Crit?.min || combatant.stats.Crit || 0,
           mastery: combatant.stats.Mastery?.max || combatant.stats.Mastery?.min || combatant.stats.Mastery || 0
         };
-
-        console.log('Base stats extracted:', this.baseStats);
       }
 
       this.combatantInfo = combatant;
-    } else {
-      console.log('No combatantInfo found in playerDetails');
     }
   }
 
@@ -390,8 +351,6 @@ class CastsAnalyzer {
     // Extend Insanity windows based on Mind Flay pandemic optimization
     // When MF is clipped near end of DP, the new MF gets 4 ticks that extend Insanity
     this.extendInsanityWindowsForMindFlayPandemic();
-
-    console.log('Tracked DP periods (Insanity windows):', this.dpPeriods.length);
   }
 
   /**
@@ -434,8 +393,6 @@ class CastsAnalyzer {
           period.extendedEndTime = mfEndTime;
           period.extendedByMF = true;
           period.extensionCast = lastMF;
-
-          console.log(`Extended Insanity window by ${((mfEndTime - period.endTime) / 1000).toFixed(1)}s (MF pandemic optimization)`);
         } else {
           // MF ended before/at DP expiry - MISSED OPTIMIZATION!
           // Should have clipped MF to get 3 extra Insanity-buffed ticks
@@ -450,8 +407,6 @@ class CastsAnalyzer {
             // Mark this MF as having missed the optimization
             lastMF.missedInsanityOptimization = true;
             lastMF.insanityOptimizationError = 'Should have clipped for 3 extra Insanity ticks';
-
-            console.log(`Missed Insanity optimization at ${(lastMF.castStart / 1000).toFixed(1)}s - MF not clipped before DP expired`);
           }
         }
       }
@@ -566,14 +521,9 @@ class CastsAnalyzer {
     const hasBaseStats = this.baseStats && this.baseStats.hasteRating !== undefined;
 
     if (hasBaseStats) {
-      console.log(`=== Using combatantInfo for haste calculation ===`);
-      console.log(`Base haste rating: ${this.baseStats.hasteRating}`);
-
       // Calculate base haste multiplier from rating
       const baseHastePercent = this.baseStats.hasteRating / HASTE_RATING_PER_PERCENT;
       const baseHasteMultiplier = 1 + (baseHastePercent / 100);
-
-      console.log(`Base haste: ${(baseHastePercent).toFixed(2)}% (multiplier: ${baseHasteMultiplier.toFixed(4)})`);
 
       for (const cast of this.casts) {
         // Start with base haste
@@ -599,18 +549,9 @@ class CastsAnalyzer {
           }
         }
 
-        // Log first cast with buffs for debugging
-        if (hasteBuffs.length > 0 && cast === this.casts.find(c => c.buffs && c.buffs.length > 0)) {
-          console.log(`First cast with haste buffs: ${cast.name} at ${(cast.castStart / 1000).toFixed(1)}s`);
-          console.log(`  Base: ${baseHasteMultiplier.toFixed(4)}`);
-          hasteBuffs.forEach(b => console.log(`  ${b}`));
-          console.log(`  Final: ${hasteMultiplier.toFixed(4)} (${((hasteMultiplier - 1) * 100).toFixed(2)}%)`);
-        }
-
         cast.haste = hasteMultiplier;
       }
     } else {
-      console.log('=== No combatantInfo, inferring haste from cast times ===');
 
       for (const cast of this.casts) {
         const spellData = getSpellData(cast.spellId);
@@ -697,10 +638,6 @@ class CastsAnalyzer {
       const isInstantCast = (castDuration === 0) ||
                            (spellData && spellData.baseCastTime === 0);
       cast.isInstantCast = isInstantCast;
-
-      if (isInstantCast) {
-        console.log(`Instant cast detected: ${cast.name} (${cast.spellId}), GCD: ${cast.gcd}ms, triggersGCD: ${triggersGCD}, castDuration: ${castDuration}ms`);
-      }
     }
 
     // Second pass: Calculate latency between casts
@@ -716,7 +653,6 @@ class CastsAnalyzer {
       let latency = rawGap;
       if (current.isInstantCast) {
         latency = rawGap - current.gcd;
-        console.log(`Adjusted instant cast latency: ${current.name}, rawGap: ${rawGap}ms, GCD: ${current.gcd}ms, latency: ${latency}ms`);
       }
 
       // Only track latency if it's a reasonable value
@@ -959,12 +895,6 @@ class CastsAnalyzer {
                                       nextCast.dotQuality &&
                                       nextCast.dotQuality.status === 'optimal';
 
-          console.log(`Early clip detected for ${cast.name} at ${(cast.castStart / 1000).toFixed(2)}s`);
-          console.log(`  Next cast: ${nextCast ? nextCast.name : 'none'}`);
-          console.log(`  Next cast dotQuality: ${nextCast && nextCast.dotQuality ? nextCast.dotQuality.status : 'N/A'}`);
-          console.log(`  isInsanityOptimization: ${isInsanityOptimization}`);
-          console.log(`  isOptimalDotRefresh: ${isOptimalDotRefresh}`);
-
           if (isInsanityOptimization) {
             // This is an optimal clip for Insanity pandemic - mark it differently
             cast.optimalClip = true;
@@ -1057,8 +987,6 @@ class CastsAnalyzer {
       const prevRemovedCount = prevOriginalCount - previous.instances.length;
 
       if (prevRemovedCount > 0) {
-        console.log(`Cleaned up ${prevRemovedCount} post-expiry ticks from previous ${previous.name} at ${(previous.castStart / 1000).toFixed(1)}s`);
-
         // Recalculate previous cast's castEnd
         if (previous.instances.length > 0) {
           const lastInstance = previous.instances[previous.instances.length - 1];
@@ -1069,8 +997,6 @@ class CastsAnalyzer {
 
       // Calculate pandemic carryover time
       const carryoverTime = previousExpiry - cast.castStart;
-
-      console.log(`DoT ${cast.name} at ${(cast.castStart / 1000).toFixed(1)}s: previous expiry=${(previousExpiry / 1000).toFixed(1)}s, carryoverTime=${(carryoverTime / 1000).toFixed(2)}s`);
 
       if (carryoverTime > 0) {
         // This is a pandemic refresh - also clean up current cast
@@ -1083,12 +1009,6 @@ class CastsAnalyzer {
         // Store pandemic info for display
         cast.pandemicRefresh = true;
         cast.pandemicCarryover = carryoverTime;
-
-        console.log(`  -> Marked as pandemic refresh with ${(carryoverTime / 1000).toFixed(2)}s carryover`);
-
-        if (currentRemovedCount > 0) {
-          console.log(`Cleaned up ${currentRemovedCount} pre-refresh ticks from current ${cast.name} at ${(cast.castStart / 1000).toFixed(1)}s`);
-        }
 
         // Recalculate castEnd based on filtered instances
         if (cast.instances.length > 0) {
