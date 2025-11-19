@@ -702,7 +702,7 @@ footer a:hover {
 }
 
 .prepull-icon.good {
-    background: #10b981;
+    background: transparent; /* Don't highlight correct actions */
 }
 
 .prepull-icon.notice {
@@ -718,7 +718,7 @@ footer a:hover {
 }
 
 .prepull-item-text.good {
-    color: #10b981;
+    color: #e0e0e0; /* Neutral - only highlight mistakes */
 }
 
 .prepull-item-text.notice {
@@ -914,7 +914,7 @@ footer a:hover {
 
 /* Text color classes for quality indicators */
 .table-accent {
-    color: #10b981; /* Green */
+    color: #e0e0e0; /* Neutral - only highlight mistakes */
 }
 
 .text-notice {
