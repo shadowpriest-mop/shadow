@@ -28,13 +28,14 @@ class StatHighlights {
     // Missed Insanity optimization (should have clipped MF for 3 extra ticks)
     if (cast.missedInsanityOptimization) return Status.WARNING;
 
+    // Mind Blast cooldown delay (>5s is CRITICAL - missing orb generation)
+    if (cast.timeOffCooldown && cast.timeOffCooldown > 5000) return Status.ERROR;
+
     // DoT quality check (Pandemic-aware)
     if (cast.dotQuality) {
       if (cast.dotQuality.status === 'early' && cast.clippedTicks >= 2) return Status.WARNING;
       if (cast.dotQuality.status === 'late' && cast.dotDowntime > 3000) return Status.WARNING;
     }
-
-    if (cast.timeOffCooldown && cast.timeOffCooldown > 5000) return Status.WARNING;
 
     // Check for minor issues (NOTICE)
     if (cast.dotQuality) {
@@ -154,11 +155,12 @@ class StatHighlights {
 
   /**
    * Get cooldown usage quality status
+   * Mind Blast delays >5s are critical (missing Shadow Orb generation)
    */
   cooldownUsage(cast) {
     if (!cast.timeOffCooldown) return Status.NORMAL;
 
-    if (cast.timeOffCooldown > 5000) return Status.WARNING;
+    if (cast.timeOffCooldown > 5000) return Status.ERROR;  // Critical: missing orbs
     if (cast.timeOffCooldown > 2000) return Status.NOTICE;
     return Status.NORMAL;
   }

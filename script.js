@@ -1173,6 +1173,19 @@ function createCastDetailsHTML(cast, fight) {
         `;
     }
 
+    // Mind Blast Cooldown Warning
+    if (cast.timeOffCooldown && cast.timeOffCooldown > 0) {
+        const status = statHighlights.cooldownUsage(cast);
+        const cssClass = statHighlights.getTextClass(status);
+        const severity = cast.timeOffCooldown > 5000 ? '⚠️ CRITICAL:' : 'MB Available:';
+        html += `
+            <div class="cast-details-item">
+                <span class="cast-details-label">${severity}</span>
+                <span class="cast-details-value ${cssClass}">MB ready ${(cast.timeOffCooldown / 1000).toFixed(1)}s ago</span>
+            </div>
+        `;
+    }
+
     // Shadow Orb Detection (for Devouring Plague)
     if (cast.spellId === 2944 && cast.detectedOrbs !== undefined) {
         const orbClass = cast.orbError ? 'text-error' : 'table-accent';
