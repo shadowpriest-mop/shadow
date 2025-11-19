@@ -702,7 +702,7 @@ footer a:hover {
 }
 
 .prepull-icon.good {
-    background: transparent; /* Don't highlight correct actions */
+    background: #10b981; /* Soft emerald green */
 }
 
 .prepull-icon.notice {
@@ -718,7 +718,7 @@ footer a:hover {
 }
 
 .prepull-item-text.good {
-    color: #e0e0e0; /* Neutral - only highlight mistakes */
+    color: #10b981; /* Soft emerald green */
 }
 
 .prepull-item-text.notice {
