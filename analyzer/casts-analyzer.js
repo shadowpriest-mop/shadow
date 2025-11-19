@@ -42,6 +42,7 @@ class CastsAnalyzer {
     this.calculateDotMetrics();
     this.calculateChannelMetrics();
     this.calculateCooldownMetrics();
+    this.detectDevouringPlagueOrbs();
 
     // Extract talents from combatantInfo
     const talents = this.extractTalents();
@@ -1043,6 +1044,81 @@ class CastsAnalyzer {
       return null;
     }
     return this.casts[index + 1];
+  }
+
+  /**
+   * Detect Shadow Orbs spent for Devouring Plague casts
+   * Uses damage analysis to infer orb count (1-3) since orbs aren't tracked in WCL
+   */
+  detectDevouringPlagueOrbs() {
+    const DP_SPELL_ID = 2944;
+
+    // DP spell power coefficients (per orb)
+    const DP_COEF_INIT = 1.416572684916214;  // Initial hit coefficient
+    const DP_COEF_TICK = 0.2361049406;        // Tick coefficient
+
+    for (const cast of this.casts) {
+      if (cast.spellId !== DP_SPELL_ID) continue;
+      if (!cast.instances || cast.instances.length === 0) continue;
+
+      // Get spell power (from combatantInfo or estimate)
+      const spellPower = this.baseStats?.spellPower || this.baseStats?.intellect || 10000;
+
+      // Separate initial hit from ticks
+      const initialHit = cast.instances[0];
+      const ticks = cast.instances.slice(1);
+
+      if (ticks.length === 0) continue; // Need at least one tick to analyze
+
+      // Calculate average non-crit tick damage (more reliable than initial hit)
+      const nonCritTicks = ticks.filter(t => !t.critical);
+      if (nonCritTicks.length === 0) continue; // All ticks crit (rare), can't analyze
+
+      const avgTickDamage = nonCritTicks.reduce((sum, t) => sum + t.amount, 0) / nonCritTicks.length;
+
+      // Calculate expected tick damage for 1, 2, 3 orbs (before mastery)
+      // Note: We need to account for mastery increasing shadow damage
+      const expectedTickBase1 = 1 * DP_COEF_TICK * spellPower;
+      const expectedTickBase2 = 2 * DP_COEF_TICK * spellPower;
+      const expectedTickBase3 = 3 * DP_COEF_TICK * spellPower;
+
+      // Estimate mastery multiplier from actual vs expected damage
+      // (avgTickDamage = expectedTickBase * masteryMultiplier)
+      const masteryMultiplier3orb = avgTickDamage / expectedTickBase3;
+
+      // Calculate what tick damage would be for 1 and 2 orbs with same mastery
+      const expectedTick1 = expectedTickBase1 * masteryMultiplier3orb;
+      const expectedTick2 = expectedTickBase2 * masteryMultiplier3orb;
+      const expectedTick3 = expectedTickBase3 * masteryMultiplier3orb;
+
+      // Calculate deviation from each orb count
+      const deviation1 = Math.abs(avgTickDamage - expectedTick1) / expectedTick1;
+      const deviation2 = Math.abs(avgTickDamage - expectedTick2) / expectedTick2;
+      const deviation3 = Math.abs(avgTickDamage - expectedTick3) / expectedTick3;
+
+      // Find best match (lowest deviation)
+      let detectedOrbs = 3; // Default to 3 (correct)
+      let minDeviation = deviation3;
+
+      if (deviation1 < minDeviation && deviation1 < 0.15) {
+        detectedOrbs = 1;
+        minDeviation = deviation1;
+      }
+      if (deviation2 < minDeviation && deviation2 < 0.15) {
+        detectedOrbs = 2;
+        minDeviation = deviation2;
+      }
+
+      // Store results on cast
+      cast.detectedOrbs = detectedOrbs;
+      cast.orbDeviation = minDeviation;
+
+      // Flag as major error if not 3 orbs
+      if (detectedOrbs < 3) {
+        cast.orbError = true;
+        cast.orbErrorMessage = `Cast with ${detectedOrbs} orb${detectedOrbs > 1 ? 's' : ''} (should be 3)`;
+      }
+    }
   }
 
   /**

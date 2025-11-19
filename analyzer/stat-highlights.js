@@ -20,8 +20,8 @@ class StatHighlights {
 
     if (cast.failed && shouldCheckDamage) return Status.WARNING;
 
-    // Missed Insanity optimization (should have clipped MF for 3 extra ticks)
-    if (cast.missedInsanityOptimization) return Status.WARNING;
+    // Shadow Orb error (cast DP with <3 orbs)
+    if (cast.orbError) return Status.WARNING;
 
     // Missed Insanity optimization (should have clipped MF for 3 extra ticks)
     if (cast.missedInsanityOptimization) return Status.WARNING;
