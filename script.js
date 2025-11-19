@@ -172,7 +172,7 @@ window.startAnalysis = function() {
         const reportTitle = document.getElementById('report-title');
         const wclLink = document.getElementById('wcl-link');
 
-        reportTitle.textContent = `${currentReportData.title || 'Report'} (${currentReportData.owner || 'Unknown'})`;
+        reportTitle.textContent = `${currentReportData.title || 'Report'}`;
         wclLink.href = `https://www.warcraftlogs.com/reports/${window.wclV2Service.extractReportId(document.getElementById('wcl-report').value)}`;
     }
 
@@ -571,8 +571,6 @@ function calculateDotUptimes(events, fight, fightDuration) {
             (e.type === 'applydebuff' || e.type === 'refreshdebuff' || e.type === 'removedebuff')
         );
 
-        console.log(`${dotSpells[spellId]} debuff events:`, debuffEvents.length);
-
         let totalUptime = 0;
         let currentStart = null;
 
@@ -650,7 +648,7 @@ window.loadReport = async function loadReport() {
         // Populate player dropdown
         playerSelect.innerHTML = '<option value="">Select a player</option>' +
             priests.map(player =>
-                `<option value="${player.name}">${player.name} (${player.type})</option>`
+                `<option value="${player.name}">${player.name}</option>`
             ).join('');
         playerSelect.disabled = false;
 
@@ -664,9 +662,12 @@ window.loadReport = async function loadReport() {
 
         // Populate encounter dropdown
         encounterSelect.innerHTML = '<option value="">Select an encounter</option>' +
-            encounters.map(fight =>
-                `<option value="${fight.id}">${fight.name} (${Math.round((fight.endTime - fight.startTime) / 1000)}s)</option>`
-            ).join('');
+            encounters.map(fight => {
+                const duration = Math.round((fight.endTime - fight.startTime) / 1000);
+                const killStatus = fight.kill ? '✓' : '✗';
+                const statusClass = fight.kill ? 'class="kill-option"' : 'class="wipe-option"';
+                return `<option value="${fight.id}" ${statusClass}>${killStatus} ${fight.name} (${duration}s)</option>`;
+            }).join('');
         encounterSelect.disabled = false;
 
         analyzeBtn.disabled = false;
@@ -783,9 +784,6 @@ window.analyzeLog = async function analyzeLog() {
         // Extract report ID from current data
         const reportId = window.wclV2Service.extractReportId(document.getElementById('wcl-report').value);
 
-        console.log('=== ANALYZE STARTING ===');
-        console.log('Fetching events for:', { reportId, playerName, fightId, startTime: fight.startTime, endTime: fight.endTime });
-
         // Fetch events from WCL v2 API
         const eventsData = await window.wclV2Service.fetchEvents(
             reportId,
@@ -795,12 +793,6 @@ window.analyzeLog = async function analyzeLog() {
             fight.endTime
         );
 
-        console.log('=== EVENTS DATA RECEIVED ===');
-        console.log('Full eventsData object:', eventsData);
-        console.log('Pages fetched:', eventsData.pageCount);
-        console.log('eventsData type:', typeof eventsData);
-        console.log('eventsData.data exists?', !!eventsData?.data);
-
         if (!eventsData || !eventsData.data) {
             console.error('NO EVENT DATA - eventsData:', eventsData);
             alert('No event data returned from WCL. Check console for details.');
@@ -808,7 +800,6 @@ window.analyzeLog = async function analyzeLog() {
         }
 
         // Fetch buff events (applybuff, removebuff, etc.)
-        console.log('=== FETCHING BUFF EVENTS ===');
         const buffEventsData = await window.wclV2Service.fetchBuffEvents(
             reportId,
             fightId,
@@ -817,22 +808,14 @@ window.analyzeLog = async function analyzeLog() {
             fight.endTime
         );
 
-        console.log('=== BUFF EVENTS RECEIVED ===');
-        console.log('Buff pages fetched:', buffEventsData.pageCount);
-        console.log('Buff events count:', buffEventsData.data?.length || 0);
-
         const events = eventsData.data;
         const buffEvents = buffEventsData.data || [];
-
-        console.log('Total events:', events.length);
-        console.log('Total buff events:', buffEvents.length);
 
         // Extract targets and populate target filter
         const targets = extractTargetsFromEvents(events, currentReportData);
         window.allTargets = targets; // Store globally
 
         const targetFilter = document.getElementById('target-filter');
-        const targetFilterGroup = document.getElementById('target-filter-group');
 
         // Populate target filter dropdown
         targetFilter.innerHTML = '<option value="all">All Targets</option>';
@@ -843,11 +826,11 @@ window.analyzeLog = async function analyzeLog() {
             targetFilter.appendChild(option);
         });
 
-        // Show target filter if there are multiple targets
-        if (targets.length > 1) {
-            targetFilterGroup.style.display = 'block';
+        // Show/hide target filter based on number of targets
+        if (targets.length <= 1) {
+            targetFilter.style.display = 'none';
         } else {
-            targetFilterGroup.style.display = 'none';
+            targetFilter.style.display = 'block';
         }
 
         // Simple analysis - count casts and damage events by spell
@@ -881,6 +864,13 @@ window.analyzeLog = async function analyzeLog() {
         window.mfTicks = mfTicks; // Store globally
 
         // ❌ Removed all UI updates for mfTicks and DoT uptimes
+
+        // Run pre-pull checker
+        // Get player ID from the first event with a sourceID
+        // All events are filtered for this player, so any sourceID is the player's ID
+        const playerID = events.find(e => e.sourceID)?.sourceID || null;
+        const prePullChecker = new PrePullChecker(events, buffEvents, fight.startTime, playerID, playerName);
+        const prePullResults = prePullChecker.analyze();
 
         // Analyze casts with quality metrics
         const castsAnalyzer = new CastsAnalyzer(events, buffEvents, {
@@ -916,6 +906,9 @@ window.analyzeLog = async function analyzeLog() {
         // Render talents display
         renderTalents(talents);
 
+        // Render pre-pull check
+        renderPrePullCheck(prePullResults);
+
         // Render cast timeline
         renderCastTimeline(casts, fight);
 
@@ -938,6 +931,57 @@ window.analyzeLog = async function analyzeLog() {
         analysisLoading.style.display = 'none';
     }
 };
+
+// ============ Pre-Pull Check Rendering ============
+
+/**
+ * Render the pre-pull check results
+ */
+function renderPrePullCheck(results) {
+    const prepullCheck = document.getElementById('prepull-check');
+    if (!prepullCheck) return;
+
+    let html = '<div class="prepull-check-label">Pre-Pull:</div>';
+    html += '<div class="prepull-check-items">';
+
+    // Halo check
+    const haloStatus = results.halo.status;
+    html += `<div class="prepull-item">`;
+    html += `<span class="prepull-icon ${haloStatus}"></span>`;
+    if (results.halo.found) {
+        html += `<span class="prepull-item-text ${haloStatus}">Halo (+${results.halo.timing.toFixed(1)}s)</span>`;
+    } else {
+        html += `<span class="prepull-item-text ${haloStatus}">Halo (missing)</span>`;
+    }
+    html += `</div>`;
+
+    // Mind Spike check
+    const msStatus = results.mindSpike.status;
+    html += `<div class="prepull-item">`;
+    html += `<span class="prepull-icon ${msStatus}"></span>`;
+    if (results.mindSpike.found) {
+        html += `<span class="prepull-item-text ${msStatus}">Mind Spike (+${results.mindSpike.timing.toFixed(1)}s)</span>`;
+    } else {
+        html += `<span class="prepull-item-text ${msStatus}">Mind Spike (missing)</span>`;
+    }
+    html += `</div>`;
+
+    // Potion check
+    const potionStatus = results.potion.status;
+    html += `<div class="prepull-item">`;
+    html += `<span class="prepull-icon ${potionStatus}"></span>`;
+    if (results.potion.found) {
+        const potionTiming = results.potion.timing >= 0 ? `+${results.potion.timing.toFixed(1)}s` : `${results.potion.timing.toFixed(1)}s`;
+        html += `<span class="prepull-item-text ${potionStatus}">Potion (${potionTiming})</span>`;
+    } else {
+        html += `<span class="prepull-item-text ${potionStatus}">Potion (missing)</span>`;
+    }
+    html += `</div>`;
+
+    html += '</div>';
+
+    prepullCheck.innerHTML = html;
+}
 
 // ============ Cast Timeline Rendering ============
 
@@ -1351,7 +1395,6 @@ function renderStatsOverview(filter) {
 
     // Break if showing detailed stats (per-spell view)
     if (filter !== 'timeline') {
-        html += '<div class="stat-field-break"></div>';
         html += createStatField('Hits', stats.hits);
         html += createStatField('Avg Hit', stats.avgHit.toFixed(1));
         html += createStatField('Crit Rate', stats.critRate.toFixed(1) + '%');
@@ -1360,7 +1403,6 @@ function renderStatsOverview(filter) {
 
     // DoT stats (if applicable)
     if (filter === 'timeline' || [589, 34914, 2944].includes(parseInt(filter))) {
-        html += '<div class="stat-field-break"></div>';
         if (stats.avgDotDowntime > 0) {
             html += createStatField('Avg DoT Downtime', (stats.avgDotDowntime / 1000).toFixed(1) + 's');
         }
@@ -1376,7 +1418,6 @@ function renderStatsOverview(filter) {
 
     // Channel stats (MF)
     if (filter === 'timeline' || [15407, 129197].includes(parseInt(filter))) {
-        html += '<div class="stat-field-break"></div>';
         if (stats.avgMfDelay > 0) {
             html += createStatField('Avg MF Delay', stats.avgMfDelay.toFixed(0) + 'ms');
         }
@@ -1389,7 +1430,6 @@ function renderStatsOverview(filter) {
     }
 
     // Encounter stats
-    html += '<div class="stat-field-break"></div>';
     html += createStatField('GCD Usage', stats.gcdUsage.toFixed(0) + '%');
 
     statsOverview.innerHTML = html;
@@ -1432,8 +1472,7 @@ function renderTalents(talents) {
         talentsByTier[talent.type] = talent;
     });
 
-    let html = '<div class="talents-header">Talents</div>';
-    html += '<div class="talents-list">';
+    let html = '<div class="talents-list">';
 
     // Fixed tier positions: 1=15, 2=30, 3=45, 4=60, 5=75, 6=90
     const tierLevels = [1, 2, 3, 4, 5, 6];

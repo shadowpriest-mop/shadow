@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Shadow Priest - MoP Classic Helper</title>
     <link rel="icon" type="image/x-icon" href="analyzer/icons/favicon.ico">
-    <link rel="stylesheet" href="style.css?v=2.19.3">
+    <link rel="stylesheet" href="style.css?v=2.26.6">
 </head>
 <body>
     <!-- LANDING PAGE -->
@@ -57,7 +57,7 @@
                     <span class="separator">|</span>
                     <a href="https://github.com/shadowpriest-mop/shadow" target="_blank">Source</a>
                 </div>
-                <div class="version-label">v2.24.0</div>
+                <div class="version-label">v2.26.6</div>
             </div>
         </div>
     </div>
@@ -74,43 +74,31 @@
             </span>
             <span class="report-link">
                 <a href="#" id="wcl-link" target="_blank" title="View on WCL">
+                    <span class="wcl-link-text">WCL link</span>
                     <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
                         <path d="M19 19H5V5h7V3H5c-1.11 0-2 .9-2 2v14c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2v-7h-2v7zM14 3v2h3.59l-9.83 9.83 1.41 1.41L19 6.41V10h2V3h-7z"/>
                     </svg>
                 </a>
             </span>
+            <span class="app-version">v2.26.6</span>
         </nav>
 
-        <!-- Player/Encounter Selectors -->
-        <div class="analysis-inputs">
-            <div class="form-group inline" id="target-filter-group" style="display: none;">
-                <label for="target-filter">Filter by Target</label>
-                <select id="target-filter">
-                    <option value="all">All Targets</option>
-                </select>
+        <!-- Talents Display & Selectors -->
+        <div class="talents-and-selectors-bar">
+            <div id="talents-display" class="talents-display" style="display: none;">
+                <!-- Talents will be populated by JavaScript -->
             </div>
 
-            <div class="selector-gap"></div>
-
-            <div class="form-group inline">
-                <label for="player-select-analysis">Select Player</label>
-                <select id="player-select-analysis">
+            <div class="selector-group">
+                <select id="player-select-analysis" class="compact-select">
                     <!-- Will be populated by JS -->
                 </select>
-            </div>
-
-            <div class="form-group inline">
-                <label for="encounter-select-analysis">Select Encounter</label>
-                <select id="encounter-select-analysis">
+                <select id="encounter-select-analysis" class="compact-select">
                     <!-- Will be populated by JS -->
                 </select>
             </div>
         </div>
 
-        <!-- Talents Display -->
-        <div id="talents-display" class="talents-display" style="display: none;">
-            <!-- Talents will be populated by JavaScript -->
-        </div>
 
         <!-- Analysis Loading Indicator -->
         <div id="analysis-loading" class="analysis-loading" style="display: none;">
@@ -121,6 +109,11 @@
 
         <!-- Analysis Results -->
         <div id="analysis-results" style="display: none;">
+            <!-- Pre-Pull Actions Check -->
+            <div id="prepull-check" class="prepull-check">
+                <!-- Will be populated by JavaScript -->
+            </div>
+
             <div id="cast-timeline">
                 <!-- Spell Filter Buttons -->
                 <div class="spell-filters">
@@ -158,8 +151,11 @@
                     <!-- Stats will be populated by JavaScript -->
                 </div>
 
-                <!-- Quality filters -->
+                <!-- Quality filters with Target Filter -->
                 <div class="cast-filters">
+                    <select id="target-filter" class="target-filter-select">
+                        <option value="all">All Targets</option>
+                    </select>
                     <label>
                         <input type="checkbox" id="filter-warnings" checked> Show Warnings
                     </label>
@@ -202,10 +198,11 @@
     <script src="analyzer/wcl-v2-service.js?v=2.23.4"></script>
     <script src="analyzer/cast-details.js?v=2.19.1"></script>
     <script src="analyzer/stat-highlights.js?v=2.21.8"></script>
-    <script src="analyzer/casts-analyzer.js?v=2.23.7"></script>
+    <script src="analyzer/casts-analyzer.js?v=2.24.2"></script>
     <script src="analyzer/cast-stats-calculator.js?v=2.14"></script>
     <script src="analyzer/spell-icons.js?v=2.19.1"></script>
     <script src="analyzer/event-analyzer.js?v=2.14"></script>
-    <script src="script.js?v=2.23.7"></script>
+    <script src="analyzer/prepull-checker.js?v=2.26.6"></script>
+    <script src="script.js?v=2.26.6"></script>
 </body>
 </html>

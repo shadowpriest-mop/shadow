@@ -66,11 +66,55 @@ class CastsAnalyzer {
       return null;
     }
 
-    const talents = this.combatantInfo.talents;
-    console.log('=== TALENTS EXTRACTED ===');
-    console.log(JSON.stringify(talents, null, 2));
+    const rawTalents = this.combatantInfo.talents;
+    console.log('=== RAW TALENTS FROM WCL ===');
+    console.log(JSON.stringify(rawTalents, null, 2));
 
-    return talents;
+    // Map talent names to correct tiers (WCL data may have wrong tier info)
+    const talentTierMap = {
+      // Tier 1 (Level 15)
+      'Void Tendrils': 1,
+      'Psyfiend': 1,
+      'Dominate Mind': 1,
+      // Tier 2 (Level 30)
+      'Body and Soul': 2,
+      'Angelic Feather': 2,
+      'Phantasm': 2,
+      // Tier 3 (Level 45)
+      'From Darkness, Comes Light': 3,
+      'Mindbender': 3,
+      'Solace and Insanity': 3,
+      // Tier 4 (Level 60)
+      'Desperate Prayer': 4,
+      'Spectral Guise': 4,
+      'Angelic Bulwark': 4,
+      // Tier 5 (Level 75)
+      'Twist of Fate': 5,
+      'Power Infusion': 5,
+      'Divine Insight': 5,
+      // Tier 6 (Level 90)
+      'Cascade': 6,
+      'Divine Star': 6,
+      'Halo': 6
+    };
+
+    // Remap talents to correct tiers
+    const correctedTalents = rawTalents.map(talent => {
+      const correctTier = talentTierMap[talent.name];
+      if (correctTier) {
+        return {
+          ...talent,
+          type: correctTier
+        };
+      }
+      console.warn(`Unknown talent: ${talent.name}, keeping original tier ${talent.type}`);
+      return talent;
+    });
+
+    console.log('=== CORRECTED TALENTS ===');
+    console.log(JSON.stringify(correctedTalents, null, 2));
+
+    return correctedTalents;
   }
 
   /**
