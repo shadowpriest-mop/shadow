@@ -1,6 +1,4 @@
 // MoP Shadow Priest Haste Calculator
-console.log('script.js loading...');
-
 // Constants imported from haste.js (loaded via HasteUtils global)
 // Use HasteUtils.HASTE_RATING_PER_PERCENT, etc.
 
@@ -101,11 +99,8 @@ function navigateHome() {
 async function loadFromHash() {
     const route = parseHash();
     if (!route) {
-        console.log('No valid hash route found');
         return;
     }
-
-    console.log('Loading from hash:', route);
 
     // Set the WCL input
     const wclInput = document.getElementById('wcl-report');
@@ -246,18 +241,13 @@ window.hideAbout = function() {
 
 // Initialize
 document.addEventListener('DOMContentLoaded', function() {
-    console.log('DOMContentLoaded - Initializing WCL analyzer');
-
     // Add event listeners for WCL analyzer
     const wclInput = document.getElementById('wcl-report');
     if (wclInput) {
-        console.log('Adding WCL report event listeners');
         wclInput.addEventListener('blur', function() {
-            console.log('Blur event triggered');
             window.loadReport();
         });
         wclInput.addEventListener('keypress', function(e) {
-            console.log('Keypress event:', e.key);
             if (e.key === 'Enter') {
                 e.preventDefault(); // Prevent form submission
                 window.loadReport();
@@ -269,7 +259,6 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Add hashchange listener for browser back/forward
     window.addEventListener('hashchange', function() {
-        console.log('Hash changed:', window.location.hash);
         const route = parseHash();
         if (route) {
             loadFromHash();
@@ -281,13 +270,8 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Check if we have a hash route on page load
     if (window.location.hash) {
-        console.log('Found hash on load, attempting to load from URL');
         loadFromHash();
     }
-
-    console.log('DOMContentLoaded complete - all event listeners added');
-    console.log('window.loadReport available:', typeof window.loadReport);
-    console.log('window.analyzeLog available:', typeof window.analyzeLog);
 });
 
 function updateRacialOptions() {
@@ -626,9 +610,6 @@ function calculateDotUptimes(events, fight, fightDuration) {
 
 // Make loadReport available globally
 window.loadReport = async function loadReport() {
-    console.log('loadReport() called');
-    console.log('wclV2Service available?', typeof window.wclV2Service);
-
     if (typeof window.wclV2Service === 'undefined') {
         console.error('wclV2Service is not defined! Check if wcl-v2-service.js loaded correctly.');
         alert('Error: WCL service not loaded. Please refresh the page.');
@@ -655,11 +636,8 @@ window.loadReport = async function loadReport() {
 
     try {
         // Fetch report data from WCL v2 API (authentication happens automatically)
-        console.log('Fetching report:', reportId);
         const reportData = await window.wclV2Service.fetchReport(reportId);
         currentReportData = reportData;
-
-        console.log('Report data:', reportData);
 
         // Find Priests (spec will be validated when analyzing casts)
         const priests = window.wclV2Service.getShadowPriests(reportData);
