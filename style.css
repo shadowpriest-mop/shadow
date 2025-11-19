@@ -406,6 +406,11 @@ footer a:hover {
     background: #ef4444;
 }
 
+.cast-status.error {
+    background: #dc2626; /* Bright red for critical errors */
+    box-shadow: 0 0 8px rgba(220, 38, 38, 0.5); /* Glow effect */
+}
+
 .cast-time {
     font-family: 'Courier New', monospace;
     color: #7986CB;
@@ -918,6 +923,11 @@ footer a:hover {
 
 .text-warning {
     color: #ef4444; /* Red */
+}
+
+.text-error {
+    color: #dc2626; /* Bright red for critical errors */
+    font-weight: 600; /* Make it bold */
 }
 
 /* ============================================ */

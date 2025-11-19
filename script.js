@@ -1175,7 +1175,7 @@ function createCastDetailsHTML(cast, fight) {
 
     // Shadow Orb Detection (for Devouring Plague)
     if (cast.spellId === 2944 && cast.detectedOrbs !== undefined) {
-        const orbClass = cast.orbError ? 'text-warning' : 'table-accent';
+        const orbClass = cast.orbError ? 'text-error' : 'table-accent';
         html += `
             <div class="cast-details-item">
                 <span class="cast-details-label">Shadow Orbs:</span>
@@ -1187,8 +1187,8 @@ function createCastDetailsHTML(cast, fight) {
         if (cast.orbError) {
             html += `
                 <div class="cast-details-item">
-                    <span class="cast-details-label">Orb Error:</span>
-                    <span class="cast-details-value text-warning">${cast.orbErrorMessage}</span>
+                    <span class="cast-details-label">⚠️ CRITICAL:</span>
+                    <span class="cast-details-value text-error">${cast.orbErrorMessage}</span>
                 </div>
             `;
         }

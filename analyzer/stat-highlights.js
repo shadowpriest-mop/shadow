@@ -6,7 +6,8 @@
 const Status = {
   NORMAL: 'NORMAL',
   NOTICE: 'NOTICE',
-  WARNING: 'WARNING'
+  WARNING: 'WARNING',
+  ERROR: 'ERROR'  // Critical errors (red, most severe)
 };
 
 class StatHighlights {
@@ -20,8 +21,9 @@ class StatHighlights {
 
     if (cast.failed && shouldCheckDamage) return Status.WARNING;
 
-    // Shadow Orb error (cast DP with <3 orbs)
-    if (cast.orbError) return Status.WARNING;
+    // Shadow Orb error (cast DP with <3 orbs) - CRITICAL ERROR
+    // Massive DPS loss, especially with Solace & Insanity talent
+    if (cast.orbError) return Status.ERROR;
 
     // Missed Insanity optimization (should have clipped MF for 3 extra ticks)
     if (cast.missedInsanityOptimization) return Status.WARNING;
@@ -196,7 +198,8 @@ class StatHighlights {
     const statusMap = {
       [Status.NORMAL]: 'normal',
       [Status.NOTICE]: 'notice',
-      [Status.WARNING]: 'warning'
+      [Status.WARNING]: 'warning',
+      [Status.ERROR]: 'error'  // Critical error - bright red
     };
     return statusMap[status] || 'normal';
   }
@@ -208,7 +211,8 @@ class StatHighlights {
     const textMap = {
       [Status.NORMAL]: 'table-accent',
       [Status.NOTICE]: 'text-notice',
-      [Status.WARNING]: 'text-warning'
+      [Status.WARNING]: 'text-warning',
+      [Status.ERROR]: 'text-error'  // Critical error - bright red
     };
     return textMap[status] || 'table-accent';
   }
