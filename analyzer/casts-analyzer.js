@@ -930,22 +930,24 @@ class CastsAnalyzer {
 
   /**
    * Calculate cooldown metrics: time Mind Blast was ready but not used
+   * Important: MB cooldown starts when the cast FINISHES (castEnd), not when it starts!
    */
   calculateCooldownMetrics() {
     const MIND_BLAST_ID = 8092;
     const MIND_BLAST_CD = 8000; // 8 second cooldown
 
-    let lastMindBlastTime = null;
+    let lastMindBlastEnd = null;
 
     for (const cast of this.casts) {
       if (cast.spellId === MIND_BLAST_ID) {
-        lastMindBlastTime = cast.castStart;
+        // Cooldown starts when MB finishes casting (damage happens)
+        lastMindBlastEnd = cast.castEnd;
         continue;
       }
 
       // For non-Mind Blast casts, check if MB was off cooldown
-      if (lastMindBlastTime !== null) {
-        const timeSinceMB = cast.castStart - lastMindBlastTime;
+      if (lastMindBlastEnd !== null) {
+        const timeSinceMB = cast.castStart - lastMindBlastEnd;
         const timeOffCooldown = timeSinceMB - MIND_BLAST_CD;
 
         if (timeOffCooldown > 0) {
