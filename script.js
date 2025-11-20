@@ -1424,15 +1424,10 @@ function renderStatsOverview(filter) {
     // Basic stats
     html += createStatField('Casts', stats.castCount);
     html += createStatField('Damage', stats.totalDamage.toLocaleString());
-    html += createStatField('Active DPS', stats.activeDps.toFixed(1));
-    html += createStatField('Active Time', activeTimeStr);
 
-    // Break if showing detailed stats (per-spell view)
+    // Crit rate when filtering by specific spell
     if (filter !== 'timeline') {
-        html += createStatField('Hits', stats.hits);
-        html += createStatField('Avg Hit', stats.avgHit.toFixed(1));
         html += createStatField('Crit Rate', stats.critRate.toFixed(1) + '%');
-        html += createStatField('Damage/GCD', stats.damagePerGcd.toFixed(0));
     }
 
     // DoT stats (if applicable)
