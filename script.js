@@ -1488,6 +1488,19 @@ function normalizeIconName(name) {
 }
 
 /**
+ * Get the proper display name for a talent
+ * E.g., "Mind Control" -> "Dominate Mind"
+ */
+function getTalentDisplayName(name) {
+    // Special mappings for talents where WCL name differs from proper talent name
+    const displayNameMap = {
+        'Mind Control': 'Dominate Mind'  // WCL returns "Mind Control" but talent is called "Dominate Mind"
+    };
+
+    return displayNameMap[name] || name;
+}
+
+/**
  * Render talents display with locked tier positions
  */
 function renderTalents(talents) {
@@ -1518,12 +1531,13 @@ function renderTalents(talents) {
 
         if (talent) {
             const iconName = normalizeIconName(talent.name);
+            const displayName = getTalentDisplayName(talent.name);
             const iconPath = `analyzer/icons/talents/${iconName}.jpg`;
 
             html += `
-                <div class="talent-icon-wrapper" title="${talent.name}">
+                <div class="talent-icon-wrapper" title="${displayName}">
                     <img src="${iconPath}"
-                         alt="${talent.name}"
+                         alt="${displayName}"
                          class="talent-icon"
                          onerror="this.src='analyzer/icons/talents/placeholder.jpg'">
                 </div>
