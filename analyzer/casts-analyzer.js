@@ -70,6 +70,7 @@ class CastsAnalyzer {
       'Void Tendrils': 1,
       'Psyfiend': 1,
       'Dominate Mind': 1,
+      'Mind Control': 1,  // WCL returns this name instead of "Dominate Mind"
       // Tier 2 (Level 30)
       'Body and Soul': 2,
       'Angelic Feather': 2,

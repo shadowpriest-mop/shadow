@@ -1478,7 +1478,13 @@ function createStatField(label, value) {
  * E.g., "Void Tendrils" -> "voidtendrils"
  */
 function normalizeIconName(name) {
-    return name.toLowerCase().replace(/[^a-z0-9]/g, '');
+    // Special mappings for talents where WCL name differs from icon filename
+    const iconNameMap = {
+        'mindcontrol': 'dominatemind'  // WCL returns "Mind Control" but icon is dominatemind.jpg
+    };
+
+    const normalized = name.toLowerCase().replace(/[^a-z0-9]/g, '');
+    return iconNameMap[normalized] || normalized;
 }
 
 /**
