@@ -1458,9 +1458,6 @@ function renderStatsOverview(filter) {
         }
     }
 
-    // Encounter stats
-    html += createStatField('GCD Usage', stats.gcdUsage.toFixed(0) + '%');
-
     statsOverview.innerHTML = html;
 }
 
