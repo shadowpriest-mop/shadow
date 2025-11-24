@@ -1430,6 +1430,22 @@ function renderStatsOverview(filter) {
         html += createStatField('Crit Rate', stats.critRate.toFixed(1) + '%');
     }
 
+    // Mind Blast specific stats
+    if (filter === '8092') {
+        const mbStats = window.statsCalculator.calculateMindBlastStats(filteredCasts);
+        html += createStatField('Potential Casts', mbStats.potentialCasts);
+
+        if (mbStats.missedCasts > 0) {
+            html += createStatField('Missed Casts', `<span style="color: #dc2626; font-weight: 600;">${mbStats.missedCasts}</span>`);
+        } else {
+            html += createStatField('Missed Casts', mbStats.missedCasts);
+        }
+
+        if (mbStats.avgDelay > 0) {
+            html += createStatField('Avg Delay', (mbStats.avgDelay / 1000).toFixed(1) + 's');
+        }
+    }
+
     // DoT stats (if applicable)
     if (filter === 'timeline' || [589, 34914, 2944].includes(parseInt(filter))) {
         if (stats.avgDotDowntime > 0) {
