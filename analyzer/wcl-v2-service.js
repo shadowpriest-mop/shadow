@@ -524,6 +524,85 @@ class WCLv2Service {
     // Filter for boss encounters (encounterID > 0 means it's a boss)
     return report.fights.filter(fight => fight.encounterID > 0);
   }
+
+  /**
+   * EXPERIMENTAL: Fetch position data for movement analysis
+   * This is a proof-of-concept to see if movement tracking is viable
+   */
+  async fetchPositionData(reportCode, fightID, playerName, startTime, endTime) {
+    console.log('=== FETCHING POSITION DATA (EXPERIMENTAL) ===');
+
+    const query = `
+      query($code: String!, $fightIDs: [Int]!, $startTime: Float!, $endTime: Float!, $filterExpression: String) {
+        reportData {
+          report(code: $code) {
+            events(
+              fightIDs: $fightIDs
+              startTime: $startTime
+              endTime: $endTime
+              filterExpression: $filterExpression
+              dataType: All
+              limit: 10000
+            ) {
+              data
+            }
+          }
+        }
+      }
+    `;
+
+    const filterExpression = `source.name = "${playerName}" AND type = "calculateddamage"`;
+
+    const variables = {
+      code: reportCode,
+      fightIDs: [fightID],
+      startTime: startTime,
+      endTime: endTime,
+      filterExpression: filterExpression
+    };
+
+    try {
+      const result = await this.query(query, variables);
+      const events = result.reportData?.report?.events?.data || [];
+
+      console.log(`Found ${events.length} events with position data`);
+
+      // Analyze position changes
+      let positionChanges = 0;
+      let previousPos = null;
+      const MOVEMENT_THRESHOLD = 1; // yards - if position changes by more than this, player is moving
+
+      for (const event of events) {
+        if (event.x !== undefined && event.y !== undefined) {
+          if (previousPos) {
+            const distance = Math.sqrt(
+              Math.pow(event.x - previousPos.x, 2) +
+              Math.pow(event.y - previousPos.y, 2)
+            );
+
+            if (distance > MOVEMENT_THRESHOLD) {
+              positionChanges++;
+            }
+          }
+
+          previousPos = { x: event.x, y: event.y, timestamp: event.timestamp };
+        }
+      }
+
+      console.log(`Position changes detected: ${positionChanges}`);
+      console.log('Sample event with position:', events.find(e => e.x !== undefined));
+
+      return {
+        events: events,
+        positionChanges: positionChanges,
+        totalEvents: events.length
+      };
+
+    } catch (error) {
+      console.error('Error fetching position data:', error);
+      return { events: [], positionChanges: 0, totalEvents: 0 };
+    }
+  }
 }
 
 // Create global instance

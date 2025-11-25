@@ -811,6 +811,17 @@ window.analyzeLog = async function analyzeLog() {
         const events = eventsData.data;
         const buffEvents = buffEventsData.data || [];
 
+        // EXPERIMENTAL: Fetch position data for movement analysis
+        console.log('=== TESTING POSITION DATA FETCH ===');
+        const positionData = await window.wclV2Service.fetchPositionData(
+            reportId,
+            fightId,
+            playerName,
+            fight.startTime,
+            fight.endTime
+        );
+        console.log('Position data result:', positionData);
+
         // Extract targets and populate target filter
         const targets = extractTargetsFromEvents(events, currentReportData);
         window.allTargets = targets; // Store globally
