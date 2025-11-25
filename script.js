@@ -1430,7 +1430,7 @@ function renderStatsOverview(filter) {
     }
 
     // Mind Blast specific stats
-    if (filter === '8092') {
+    if (parseInt(filter) === 8092) {
         const mbStats = window.statsCalculator.calculateMindBlastStats(filteredCasts);
         html += createStatField('Potential Casts', mbStats.potentialCasts);
 
