@@ -551,7 +551,7 @@ class WCLv2Service {
       }
     `;
 
-    const filterExpression = `source.name = "${playerName}" AND type = "calculateddamage"`;
+    const filterExpression = `source.name = "${playerName}"`;
 
     const variables = {
       code: reportCode,
@@ -565,7 +565,21 @@ class WCLv2Service {
       const result = await this.query(query, variables);
       const events = result.reportData?.report?.events?.data || [];
 
-      console.log(`Found ${events.length} events with position data`);
+      console.log(`Found ${events.length} total events`);
+
+      // Check what fields are available on events
+      if (events.length > 0) {
+        console.log('First event structure:', events[0]);
+        console.log('Event fields:', Object.keys(events[0]));
+
+        // Check how many events have position data
+        const eventsWithPosition = events.filter(e => e.x !== undefined && e.y !== undefined);
+        console.log(`Events with position (x, y): ${eventsWithPosition.length}`);
+
+        if (eventsWithPosition.length > 0) {
+          console.log('Sample event WITH position:', eventsWithPosition[0]);
+        }
+      }
 
       // Analyze position changes
       let positionChanges = 0;
@@ -590,7 +604,6 @@ class WCLv2Service {
       }
 
       console.log(`Position changes detected: ${positionChanges}`);
-      console.log('Sample event with position:', events.find(e => e.x !== undefined));
 
       return {
         events: events,
