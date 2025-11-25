@@ -222,13 +222,23 @@ class CastStatsCalculator {
       return { potentialCasts: 0, missedCasts: 0, avgDelay: 0 };
     }
 
+    // Calculate average cast time from actual MB casts (varies with haste)
+    let totalCastTime = 0;
+    for (const cast of mbCasts) {
+      totalCastTime += (cast.castEnd - cast.castStart);
+    }
+    const avgCastTime = totalCastTime / mbCasts.length;
+
+    // Time between MB casts = cooldown + cast time
+    const timeBetweenCasts = MIND_BLAST_CD + avgCastTime;
+
     // Find first MB cast (accounts for opener sequence)
     const firstMB = mbCasts[0];
     const firstMBEnd = firstMB.castEnd;
 
     // Calculate potential casts from first MB to fight end
     const timeAfterFirstMB = this.fight.endTime - firstMBEnd;
-    const potentialCasts = 1 + Math.floor(timeAfterFirstMB / MIND_BLAST_CD);
+    const potentialCasts = 1 + Math.floor(timeAfterFirstMB / timeBetweenCasts);
 
     // Calculate missed casts
     const actualCasts = mbCasts.length;
