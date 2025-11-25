@@ -1423,7 +1423,6 @@ function renderStatsOverview(filter) {
 
     // Basic stats
     html += createStatField('Casts', stats.castCount);
-    html += createStatField('Damage', stats.totalDamage.toLocaleString());
 
     // Crit rate when filtering by specific spell
     if (filter !== 'timeline') {
