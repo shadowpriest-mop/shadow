@@ -529,20 +529,17 @@ class WCLv2Service {
    * EXPERIMENTAL: Fetch position data for movement analysis
    * WCL's replay uses a REST endpoint, not GraphQL!
    */
-  async fetchPositionData(reportCode, fightID, playerName, startTime, endTime) {
+  async fetchPositionData(reportCode, encounterID, playerName, startTime, endTime) {
     console.log('=== FETCHING POSITION DATA (EXPERIMENTAL) ===');
 
     // WCL's replay uses /reports/replaysegment/ REST endpoint
     // Format: /reports/replaysegment/{reportId}/{encounterID}/{startTime}/{endTime}
-
-    // Get the encounter ID from the fight
-    const fight = window.currentReportData?.fights?.find(f => f.id === fightID);
-    const encounterID = fight?.encounterID || fightID; // Use encounterID if available, otherwise fight ID
+    // Note: encounterID is passed directly from caller (extracted from fight object)
 
     const url = `https://classic.warcraftlogs.com/reports/replaysegment/${reportCode}/${encounterID}/${startTime}/${endTime}`;
 
     console.log('Fetching replay segment from:', url);
-    console.log('Fight data:', fight);
+    console.log('Encounter ID:', encounterID);
 
     try {
       const response = await fetch(url, {
