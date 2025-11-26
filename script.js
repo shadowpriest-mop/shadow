@@ -813,9 +813,11 @@ window.analyzeLog = async function analyzeLog() {
 
         // EXPERIMENTAL: Fetch position data for movement analysis
         console.log('=== TESTING POSITION DATA FETCH ===');
+        const encounterID = fight.encounterID || fightId;
+        console.log('Using encounterID:', encounterID, 'for fight:', fightId);
         const positionData = await window.wclV2Service.fetchPositionData(
             reportId,
-            fightId,
+            encounterID,
             playerName,
             fight.startTime,
             fight.endTime
