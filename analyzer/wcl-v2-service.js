@@ -551,8 +551,13 @@ class WCLv2Service {
         }
       });
 
+      console.log('Response status:', response.status, response.statusText);
+      console.log('Response headers:', response.headers);
+
       if (!response.ok) {
         console.error('Replay segment fetch failed:', response.status, response.statusText);
+        const errorText = await response.text();
+        console.error('Error response body:', errorText);
         return { events: [], positionChanges: 0, totalEvents: 0 };
       }
 
@@ -579,6 +584,9 @@ class WCLv2Service {
 
     } catch (error) {
       console.error('Error fetching replay segment:', error);
+      console.error('Error type:', error.name);
+      console.error('Error message:', error.message);
+      console.error('Error stack:', error.stack);
       return { events: [], positionChanges: 0, totalEvents: 0 };
     }
   }
