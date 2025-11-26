@@ -811,19 +811,6 @@ window.analyzeLog = async function analyzeLog() {
         const events = eventsData.data;
         const buffEvents = buffEventsData.data || [];
 
-        // EXPERIMENTAL: Fetch position data for movement analysis
-        console.log('=== TESTING POSITION DATA FETCH ===');
-        const encounterID = fight.encounterID || fightId;
-        console.log('Using encounterID:', encounterID, 'for fight:', fightId);
-        const positionData = await window.wclV2Service.fetchPositionData(
-            reportId,
-            encounterID,
-            playerName,
-            fight.startTime,
-            fight.endTime
-        );
-        console.log('Position data result:', positionData);
-
         // Extract targets and populate target filter
         const targets = extractTargetsFromEvents(events, currentReportData);
         window.allTargets = targets; // Store globally
@@ -1446,12 +1433,6 @@ function renderStatsOverview(filter) {
     if (parseInt(filter) === 8092) {
         const mbStats = window.statsCalculator.calculateMindBlastStats(filteredCasts);
         html += createStatField('Potential Casts', mbStats.potentialCasts);
-
-        if (mbStats.missedCasts > 0) {
-            html += createStatField('Missed Casts', `<span style="color: #dc2626; font-weight: 600;">${mbStats.missedCasts}</span>`);
-        } else {
-            html += createStatField('Missed Casts', mbStats.missedCasts);
-        }
 
         if (mbStats.avgDelay > 0) {
             html += createStatField('Avg Delay', (mbStats.avgDelay / 1000).toFixed(1) + 's');
