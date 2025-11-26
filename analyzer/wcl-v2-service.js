@@ -533,15 +533,16 @@ class WCLv2Service {
     console.log('=== FETCHING POSITION DATA (EXPERIMENTAL) ===');
 
     // WCL's replay uses /reports/replaysegment/ REST endpoint
-    // Format: /reports/replaysegment/{reportId}/{boss}/{startTime}/{endTime}
+    // Format: /reports/replaysegment/{reportId}/{encounterID}/{startTime}/{endTime}
 
-    // First, get the boss ID from the fight
+    // Get the encounter ID from the fight
     const fight = window.currentReportData?.fights?.find(f => f.id === fightID);
-    const bossID = fight?.boss || fightID; // Use boss ID if available, otherwise fight ID
+    const encounterID = fight?.encounterID || fightID; // Use encounterID if available, otherwise fight ID
 
-    const url = `https://classic.warcraftlogs.com/reports/replaysegment/${reportCode}/${bossID}/${startTime}/${endTime}`;
+    const url = `https://classic.warcraftlogs.com/reports/replaysegment/${reportCode}/${encounterID}/${startTime}/${endTime}`;
 
     console.log('Fetching replay segment from:', url);
+    console.log('Fight data:', fight);
 
     try {
       const response = await fetch(url, {
