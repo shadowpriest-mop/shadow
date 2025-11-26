@@ -527,92 +527,58 @@ class WCLv2Service {
 
   /**
    * EXPERIMENTAL: Fetch position data for movement analysis
-   * This is a proof-of-concept to see if movement tracking is viable
+   * WCL's replay uses a REST endpoint, not GraphQL!
    */
   async fetchPositionData(reportCode, fightID, playerName, startTime, endTime) {
     console.log('=== FETCHING POSITION DATA (EXPERIMENTAL) ===');
 
-    const query = `
-      query($code: String!, $fightIDs: [Int]!, $startTime: Float!, $endTime: Float!, $filterExpression: String) {
-        reportData {
-          report(code: $code) {
-            events(
-              fightIDs: $fightIDs
-              startTime: $startTime
-              endTime: $endTime
-              filterExpression: $filterExpression
-              dataType: All
-              limit: 10000
-            ) {
-              data
-            }
-          }
-        }
-      }
-    `;
+    // WCL's replay uses /reports/replaysegment/ REST endpoint
+    // Format: /reports/replaysegment/{reportId}/{boss}/{startTime}/{endTime}
 
-    const filterExpression = `source.name = "${playerName}"`;
+    // First, get the boss ID from the fight
+    const fight = window.currentReportData?.fights?.find(f => f.id === fightID);
+    const bossID = fight?.boss || fightID; // Use boss ID if available, otherwise fight ID
 
-    const variables = {
-      code: reportCode,
-      fightIDs: [fightID],
-      startTime: startTime,
-      endTime: endTime,
-      filterExpression: filterExpression
-    };
+    const url = `https://classic.warcraftlogs.com/reports/replaysegment/${reportCode}/${bossID}/${startTime}/${endTime}`;
+
+    console.log('Fetching replay segment from:', url);
 
     try {
-      const result = await this.query(query, variables);
-      const events = result.reportData?.report?.events?.data || [];
-
-      console.log(`Found ${events.length} total events`);
-
-      // Check what fields are available on events
-      if (events.length > 0) {
-        console.log('First event structure:', events[0]);
-        console.log('Event fields:', Object.keys(events[0]));
-
-        // Check how many events have position data
-        const eventsWithPosition = events.filter(e => e.x !== undefined && e.y !== undefined);
-        console.log(`Events with position (x, y): ${eventsWithPosition.length}`);
-
-        if (eventsWithPosition.length > 0) {
-          console.log('Sample event WITH position:', eventsWithPosition[0]);
+      const response = await fetch(url, {
+        method: 'GET',
+        headers: {
+          'Accept': 'application/json'
         }
+      });
+
+      if (!response.ok) {
+        console.error('Replay segment fetch failed:', response.status, response.statusText);
+        return { events: [], positionChanges: 0, totalEvents: 0 };
       }
 
-      // Analyze position changes
-      let positionChanges = 0;
-      let previousPos = null;
-      const MOVEMENT_THRESHOLD = 1; // yards - if position changes by more than this, player is moving
+      const data = await response.json();
+      console.log('Replay segment data:', data);
+      console.log('Data keys:', Object.keys(data));
 
-      for (const event of events) {
-        if (event.x !== undefined && event.y !== undefined) {
-          if (previousPos) {
-            const distance = Math.sqrt(
-              Math.pow(event.x - previousPos.x, 2) +
-              Math.pow(event.y - previousPos.y, 2)
-            );
-
-            if (distance > MOVEMENT_THRESHOLD) {
-              positionChanges++;
-            }
-          }
-
-          previousPos = { x: event.x, y: event.y, timestamp: event.timestamp };
-        }
+      // Look for position/actor data
+      if (data.series) {
+        console.log('Series data found:', data.series.length, 'series');
+        console.log('First series sample:', data.series[0]);
       }
 
-      console.log(`Position changes detected: ${positionChanges}`);
+      if (data.actors) {
+        console.log('Actors data found:', Object.keys(data.actors).length, 'actors');
+        const playerActor = Object.values(data.actors).find(a => a.name === playerName);
+        console.log('Player actor:', playerActor);
+      }
 
       return {
-        events: events,
-        positionChanges: positionChanges,
-        totalEvents: events.length
+        rawData: data,
+        totalEvents: data.series?.length || 0
       };
 
     } catch (error) {
-      console.error('Error fetching position data:', error);
+      console.error('Error fetching replay segment:', error);
       return { events: [], positionChanges: 0, totalEvents: 0 };
     }
   }
