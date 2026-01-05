@@ -1161,6 +1161,10 @@ class CastsAnalyzer {
    */
   calculateDevouringPlagueMetrics() {
     const DEVOURING_PLAGUE_ID = 2944;
+    const DP_DURATION = 6000; // 6 seconds in milliseconds
+
+    // Get fight end time from settings
+    const fightEndTime = this.settings?.fightEndTime;
 
     for (const cast of this.casts) {
       if (cast.spellId !== DEVOURING_PLAGUE_ID) continue;
@@ -1176,7 +1180,18 @@ class CastsAnalyzer {
         orbsConsumed: cast.orbsConsumed || 0
       };
 
-      if (orbCount < 3) {
+      // Check if this cast is near the end of the fight
+      // If DP won't run its full duration, don't penalize the player
+      const isEndOfFight = fightEndTime && (cast.castStart + DP_DURATION > fightEndTime);
+
+      if (isEndOfFight) {
+        // End-of-fight cast - don't apply quality penalties
+        cast.dpQuality.status = 'optimal';
+        cast.dpQuality.message = `Cast with ${orbCount} orb${orbCount !== 1 ? 's' : ''} (end of fight)`;
+        cast.dpQuality.issue = null;
+        cast.dpQuality.isEndOfFight = true;
+
+      } else if (orbCount < 3) {
         // Cast with less than 3 orbs - always suboptimal
         cast.dpQuality.status = 'warning';
         cast.dpQuality.message = `Cast with only ${orbCount} orb${orbCount !== 1 ? 's' : ''} (should be 3)`;

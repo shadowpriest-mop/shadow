@@ -875,7 +875,9 @@ window.analyzeLog = async function analyzeLog() {
         // Analyze casts with quality metrics
         const castsAnalyzer = new CastsAnalyzer(events, buffEvents, {
             playerDetails: eventsData.playerDetails,
-            playerName: playerName
+            playerName: playerName,
+            fightStartTime: fight.startTime,
+            fightEndTime: fight.endTime
         });
         const analysisResult = castsAnalyzer.analyze();
         const casts = analysisResult.casts;
