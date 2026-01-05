@@ -1049,9 +1049,9 @@ function createCastElement(cast, index, fight) {
     // Format damage
     const damageText = cast.totalDamage > 0 ? cast.totalDamage.toLocaleString() : '0';
 
-    // Format hits (like Wrath: "5/5" or "3/3")
+    // Format hits - just show actual hit count from instances
     const totalHits = cast.instances ? cast.instances.length : 0;
-    const hitsText = `${cast.hits}/${totalHits}`;
+    const hitsText = `${totalHits}`;
 
     // Get target name (if available)
     const targetText = cast.targetName || '';
