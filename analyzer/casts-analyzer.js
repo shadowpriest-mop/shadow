@@ -21,10 +21,6 @@ class CastsAnalyzer {
    * Main analysis function - parse events into CastDetails with quality metrics
    */
   analyze() {
-    console.log('=== CastsAnalyzer.analyze() ===');
-    console.log('Buff events count:', this.buffEvents.length);
-    console.log('Sample buff events:', this.buffEvents.slice(0, 3));
-
     // Step 0: Extract combatantInfo from playerDetails if available
     this.extractCombatantInfo();
 
@@ -46,6 +42,8 @@ class CastsAnalyzer {
     this.calculateDotMetrics();
     this.calculateChannelMetrics();
     this.calculateCooldownMetrics();
+    this.trackShadowOrbs();
+    this.calculateDevouringPlagueMetrics();
 
     // Extract talents from combatantInfo
     const talents = this.extractTalents();
@@ -62,15 +60,54 @@ class CastsAnalyzer {
    */
   extractTalents() {
     if (!this.combatantInfo || !this.combatantInfo.talents) {
-      console.log('No talents available in combatantInfo');
       return null;
     }
 
-    const talents = this.combatantInfo.talents;
-    console.log('=== TALENTS EXTRACTED ===');
-    console.log(JSON.stringify(talents, null, 2));
+    const rawTalents = this.combatantInfo.talents;
 
-    return talents;
+    // Map talent names to correct tiers (WCL data may have wrong tier info)
+    const talentTierMap = {
+      // Tier 1 (Level 15)
+      'Void Tendrils': 1,
+      'Psyfiend': 1,
+      'Dominate Mind': 1,
+      'Mind Control': 1,  // WCL returns this name instead of "Dominate Mind"
+      // Tier 2 (Level 30)
+      'Body and Soul': 2,
+      'Angelic Feather': 2,
+      'Phantasm': 2,
+      // Tier 3 (Level 45)
+      'From Darkness, Comes Light': 3,
+      'Mindbender': 3,
+      'Solace and Insanity': 3,
+      // Tier 4 (Level 60)
+      'Desperate Prayer': 4,
+      'Spectral Guise': 4,
+      'Angelic Bulwark': 4,
+      // Tier 5 (Level 75)
+      'Twist of Fate': 5,
+      'Power Infusion': 5,
+      'Divine Insight': 5,
+      // Tier 6 (Level 90)
+      'Cascade': 6,
+      'Divine Star': 6,
+      'Halo': 6
+    };
+
+    // Remap talents to correct tiers
+    const correctedTalents = rawTalents.map(talent => {
+      const correctTier = talentTierMap[talent.name];
+      if (correctTier) {
+        return {
+          ...talent,
+          type: correctTier
+        };
+      }
+      console.warn(`Unknown talent: ${talent.name}, keeping original tier ${talent.type}`);
+      return talent;
+    });
+
+    return correctedTalents;
   }
 
   /**
@@ -79,48 +116,30 @@ class CastsAnalyzer {
    */
   extractCombatantInfo() {
     if (!this.settings || !this.settings.playerDetails) {
-      console.log('No playerDetails available, will infer stats from events');
       return;
     }
 
     const playerDetails = this.settings.playerDetails;
-    console.log('=== PLAYER DETAILS ===');
-    console.log(JSON.stringify(playerDetails, null, 2));
 
     // New structure: playerList array with each player having combatantInfo inside
     if (playerDetails && playerDetails.playerList && playerDetails.playerList.length > 0) {
-      console.log(`Found ${playerDetails.playerList.length} players in playerList`);
 
       // Find our player using the playerName from settings
       let ourPlayer = null;
       const playerName = this.settings.playerName;
 
       if (playerName) {
-        console.log(`Looking for player: ${playerName}`);
         ourPlayer = playerDetails.playerList.find(p => p.name === playerName);
-
-        if (ourPlayer) {
-          console.log(`Found player: ${ourPlayer.name}`);
-        } else {
-          console.log(`Player "${playerName}" not found in playerList`);
-          console.log('Available players:', playerDetails.playerList.map(p => p.name));
-        }
-      } else {
-        console.log('No playerName in settings, cannot identify correct player');
       }
 
       // Fallback: use first player if we can't identify
       if (!ourPlayer) {
         ourPlayer = playerDetails.playerList[0];
-        console.log('Using first player as fallback:', ourPlayer.name);
       }
 
       // Extract combatantInfo from the player object
       if (ourPlayer && ourPlayer.combatantInfo) {
         const combatant = ourPlayer.combatantInfo;
-
-        console.log('=== COMBATANT INFO ===');
-        console.log(JSON.stringify(combatant, null, 2));
 
         // Extract base stats - stats may be objects with min/max or simple numbers
         if (combatant.stats) {
@@ -131,8 +150,6 @@ class CastsAnalyzer {
             critRating: combatant.stats.Crit?.max || combatant.stats.Crit?.min || combatant.stats.Crit || 0,
             mastery: combatant.stats.Mastery?.max || combatant.stats.Mastery?.min || combatant.stats.Mastery || 0
           };
-
-          console.log('Base stats extracted:', this.baseStats);
         }
 
         // Store gear/talents for reference
@@ -141,12 +158,7 @@ class CastsAnalyzer {
     }
     // Old structure fallback
     else if (playerDetails && playerDetails.combatantInfo && playerDetails.combatantInfo.length > 0) {
-      console.log(`Found ${playerDetails.combatantInfo.length} combatants (old structure)`);
-
       const combatant = playerDetails.combatantInfo[0];
-
-      console.log('=== COMBATANT INFO ===');
-      console.log(JSON.stringify(combatant, null, 2));
 
       if (combatant.stats) {
         this.baseStats = {
@@ -156,13 +168,9 @@ class CastsAnalyzer {
           critRating: combatant.stats.Crit?.max || combatant.stats.Crit?.min || combatant.stats.Crit || 0,
           mastery: combatant.stats.Mastery?.max || combatant.stats.Mastery?.min || combatant.stats.Mastery || 0
         };
-
-        console.log('Base stats extracted:', this.baseStats);
       }
 
       this.combatantInfo = combatant;
-    } else {
-      console.log('No combatantInfo found in playerDetails');
     }
   }
 
@@ -346,8 +354,6 @@ class CastsAnalyzer {
     // Extend Insanity windows based on Mind Flay pandemic optimization
     // When MF is clipped near end of DP, the new MF gets 4 ticks that extend Insanity
     this.extendInsanityWindowsForMindFlayPandemic();
-
-    console.log('Tracked DP periods (Insanity windows):', this.dpPeriods.length);
   }
 
   /**
@@ -390,8 +396,6 @@ class CastsAnalyzer {
           period.extendedEndTime = mfEndTime;
           period.extendedByMF = true;
           period.extensionCast = lastMF;
-
-          console.log(`Extended Insanity window by ${((mfEndTime - period.endTime) / 1000).toFixed(1)}s (MF pandemic optimization)`);
         } else {
           // MF ended before/at DP expiry - MISSED OPTIMIZATION!
           // Should have clipped MF to get 3 extra Insanity-buffed ticks
@@ -406,8 +410,6 @@ class CastsAnalyzer {
             // Mark this MF as having missed the optimization
             lastMF.missedInsanityOptimization = true;
             lastMF.insanityOptimizationError = 'Should have clipped for 3 extra Insanity ticks';
-
-            console.log(`Missed Insanity optimization at ${(lastMF.castStart / 1000).toFixed(1)}s - MF not clipped before DP expired`);
           }
         }
       }
@@ -522,14 +524,9 @@ class CastsAnalyzer {
     const hasBaseStats = this.baseStats && this.baseStats.hasteRating !== undefined;
 
     if (hasBaseStats) {
-      console.log(`=== Using combatantInfo for haste calculation ===`);
-      console.log(`Base haste rating: ${this.baseStats.hasteRating}`);
-
       // Calculate base haste multiplier from rating
       const baseHastePercent = this.baseStats.hasteRating / HASTE_RATING_PER_PERCENT;
       const baseHasteMultiplier = 1 + (baseHastePercent / 100);
-
-      console.log(`Base haste: ${(baseHastePercent).toFixed(2)}% (multiplier: ${baseHasteMultiplier.toFixed(4)})`);
 
       for (const cast of this.casts) {
         // Start with base haste
@@ -555,18 +552,9 @@ class CastsAnalyzer {
           }
         }
 
-        // Log first cast with buffs for debugging
-        if (hasteBuffs.length > 0 && cast === this.casts.find(c => c.buffs && c.buffs.length > 0)) {
-          console.log(`First cast with haste buffs: ${cast.name} at ${(cast.castStart / 1000).toFixed(1)}s`);
-          console.log(`  Base: ${baseHasteMultiplier.toFixed(4)}`);
-          hasteBuffs.forEach(b => console.log(`  ${b}`));
-          console.log(`  Final: ${hasteMultiplier.toFixed(4)} (${((hasteMultiplier - 1) * 100).toFixed(2)}%)`);
-        }
-
         cast.haste = hasteMultiplier;
       }
     } else {
-      console.log('=== No combatantInfo, inferring haste from cast times ===');
 
       for (const cast of this.casts) {
         const spellData = getSpellData(cast.spellId);
@@ -653,10 +641,6 @@ class CastsAnalyzer {
       const isInstantCast = (castDuration === 0) ||
                            (spellData && spellData.baseCastTime === 0);
       cast.isInstantCast = isInstantCast;
-
-      if (isInstantCast) {
-        console.log(`Instant cast detected: ${cast.name} (${cast.spellId}), GCD: ${cast.gcd}ms, triggersGCD: ${triggersGCD}, castDuration: ${castDuration}ms`);
-      }
     }
 
     // Second pass: Calculate latency between casts
@@ -672,7 +656,6 @@ class CastsAnalyzer {
       let latency = rawGap;
       if (current.isInstantCast) {
         latency = rawGap - current.gcd;
-        console.log(`Adjusted instant cast latency: ${current.name}, rawGap: ${rawGap}ms, GCD: ${current.gcd}ms, latency: ${latency}ms`);
       }
 
       // Only track latency if it's a reasonable value
@@ -915,12 +898,6 @@ class CastsAnalyzer {
                                       nextCast.dotQuality &&
                                       nextCast.dotQuality.status === 'optimal';
 
-          console.log(`Early clip detected for ${cast.name} at ${(cast.castStart / 1000).toFixed(2)}s`);
-          console.log(`  Next cast: ${nextCast ? nextCast.name : 'none'}`);
-          console.log(`  Next cast dotQuality: ${nextCast && nextCast.dotQuality ? nextCast.dotQuality.status : 'N/A'}`);
-          console.log(`  isInsanityOptimization: ${isInsanityOptimization}`);
-          console.log(`  isOptimalDotRefresh: ${isOptimalDotRefresh}`);
-
           if (isInsanityOptimization) {
             // This is an optimal clip for Insanity pandemic - mark it differently
             cast.optimalClip = true;
@@ -955,22 +932,34 @@ class CastsAnalyzer {
 
   /**
    * Calculate cooldown metrics: time Mind Blast was ready but not used
+   * Important: MB cooldown starts when the cast FINISHES (castEnd), not when it starts!
    */
   calculateCooldownMetrics() {
     const MIND_BLAST_ID = 8092;
     const MIND_BLAST_CD = 8000; // 8 second cooldown
 
-    let lastMindBlastTime = null;
+    let lastMindBlastEnd = null;
 
     for (const cast of this.casts) {
       if (cast.spellId === MIND_BLAST_ID) {
-        lastMindBlastTime = cast.castStart;
+        // Check if THIS Mind Blast was delayed
+        if (lastMindBlastEnd !== null) {
+          const timeSinceMB = cast.castStart - lastMindBlastEnd;
+          const timeOffCooldown = timeSinceMB - MIND_BLAST_CD;
+
+          if (timeOffCooldown > 0) {
+            cast.timeOffCooldown = timeOffCooldown;
+          }
+        }
+
+        // Cooldown starts when MB finishes casting (damage happens)
+        lastMindBlastEnd = cast.castEnd;
         continue;
       }
 
       // For non-Mind Blast casts, check if MB was off cooldown
-      if (lastMindBlastTime !== null) {
-        const timeSinceMB = cast.castStart - lastMindBlastTime;
+      if (lastMindBlastEnd !== null) {
+        const timeSinceMB = cast.castStart - lastMindBlastEnd;
         const timeOffCooldown = timeSinceMB - MIND_BLAST_CD;
 
         if (timeOffCooldown > 0) {
@@ -1013,8 +1002,6 @@ class CastsAnalyzer {
       const prevRemovedCount = prevOriginalCount - previous.instances.length;
 
       if (prevRemovedCount > 0) {
-        console.log(`Cleaned up ${prevRemovedCount} post-expiry ticks from previous ${previous.name} at ${(previous.castStart / 1000).toFixed(1)}s`);
-
         // Recalculate previous cast's castEnd
         if (previous.instances.length > 0) {
           const lastInstance = previous.instances[previous.instances.length - 1];
@@ -1025,8 +1012,6 @@ class CastsAnalyzer {
 
       // Calculate pandemic carryover time
       const carryoverTime = previousExpiry - cast.castStart;
-
-      console.log(`DoT ${cast.name} at ${(cast.castStart / 1000).toFixed(1)}s: previous expiry=${(previousExpiry / 1000).toFixed(1)}s, carryoverTime=${(carryoverTime / 1000).toFixed(2)}s`);
 
       if (carryoverTime > 0) {
         // This is a pandemic refresh - also clean up current cast
@@ -1039,12 +1024,6 @@ class CastsAnalyzer {
         // Store pandemic info for display
         cast.pandemicRefresh = true;
         cast.pandemicCarryover = carryoverTime;
-
-        console.log(`  -> Marked as pandemic refresh with ${(carryoverTime / 1000).toFixed(2)}s carryover`);
-
-        if (currentRemovedCount > 0) {
-          console.log(`Cleaned up ${currentRemovedCount} pre-refresh ticks from current ${cast.name} at ${(cast.castStart / 1000).toFixed(1)}s`);
-        }
 
         // Recalculate castEnd based on filtered instances
         if (cast.instances.length > 0) {
@@ -1079,6 +1058,164 @@ class CastsAnalyzer {
       return null;
     }
     return this.casts[index + 1];
+  }
+
+  /**
+   * Track Shadow Orbs throughout the fight
+   * WCL doesn't provide resource events for MoP, so we manually track:
+   * - Start: Assume 0 orbs after first DP cast (reset point)
+   * - Mind Blast: +1 orb (always)
+   * - Shadow Word: Death: +1 orb only if >= 9 seconds since last SW:D orb generation
+   * - Devouring Plague: -3 orbs (consumes all)
+   */
+  trackShadowOrbs() {
+    const MIND_BLAST_ID = 8092;
+    const SHADOW_WORD_DEATH_ID = 32379;
+    const DEVOURING_PLAGUE_ID = 2944;
+    const SWD_COOLDOWN = 9000; // 9 second cooldown for orb generation
+
+    let currentOrbs = 0;
+    let lastSwdOrbGenTime = null; // Last time SW:D generated an orb
+    let firstDpFound = false;
+    let timeReached3Orbs = null; // When we reached 3 orbs (for delay tracking)
+
+    console.log('=== TRACKING SHADOW ORBS ===');
+
+    for (const cast of this.casts) {
+      // Wait until first DP cast to start tracking
+      if (!firstDpFound) {
+        if (cast.spellId === DEVOURING_PLAGUE_ID) {
+          firstDpFound = true;
+          currentOrbs = 0; // Reset to 0 after first DP
+          timeReached3Orbs = null;
+          console.log(`Found first DP at ${(cast.castStart / 1000).toFixed(1)}s - starting orb tracking at 0`);
+        }
+        continue;
+      }
+
+      // Store orb count BEFORE this cast
+      cast.orbsBeforeCast = currentOrbs;
+
+      // Handle orb generation/consumption
+      if (cast.spellId === MIND_BLAST_ID) {
+        // Mind Blast always generates 1 orb
+        currentOrbs = Math.min(3, currentOrbs + 1);
+        console.log(`${(cast.castStart / 1000).toFixed(1)}s: Mind Blast +1 orb -> ${currentOrbs} orbs`);
+
+        // Track when we reach 3 orbs
+        if (currentOrbs === 3 && timeReached3Orbs === null) {
+          timeReached3Orbs = cast.castEnd; // Use castEnd (when cast completes)
+          console.log(`  -> Reached 3 orbs at ${(timeReached3Orbs / 1000).toFixed(1)}s`);
+        }
+
+      } else if (cast.spellId === SHADOW_WORD_DEATH_ID) {
+        // SW:D generates 1 orb only if >= 9s since last orb generation
+        const timeSinceLastSwd = lastSwdOrbGenTime ? (cast.castStart - lastSwdOrbGenTime) : Infinity;
+
+        if (timeSinceLastSwd >= SWD_COOLDOWN) {
+          // Generate orb
+          currentOrbs = Math.min(3, currentOrbs + 1);
+          lastSwdOrbGenTime = cast.castStart;
+          console.log(`${(cast.castStart / 1000).toFixed(1)}s: SW:D +1 orb -> ${currentOrbs} orbs (${(timeSinceLastSwd / 1000).toFixed(1)}s since last)`);
+
+          // Track when we reach 3 orbs
+          if (currentOrbs === 3 && timeReached3Orbs === null) {
+            timeReached3Orbs = cast.castEnd;
+            console.log(`  -> Reached 3 orbs at ${(timeReached3Orbs / 1000).toFixed(1)}s`);
+          }
+        } else {
+          // No orb generated (cast within 9s window)
+          console.log(`${(cast.castStart / 1000).toFixed(1)}s: SW:D no orb (only ${(timeSinceLastSwd / 1000).toFixed(1)}s since last)`);
+        }
+
+      } else if (cast.spellId === DEVOURING_PLAGUE_ID) {
+        // DP consumes all orbs (should be 3)
+        cast.orbsConsumed = currentOrbs;
+
+        // Track delay if we had 3 orbs
+        if (currentOrbs === 3 && timeReached3Orbs !== null) {
+          cast.delayAfter3Orbs = cast.castStart - timeReached3Orbs;
+          console.log(`${(cast.castStart / 1000).toFixed(1)}s: DP cast with ${currentOrbs} orbs, delay: ${(cast.delayAfter3Orbs / 1000).toFixed(2)}s`);
+        } else {
+          console.log(`${(cast.castStart / 1000).toFixed(1)}s: DP cast with ${currentOrbs} orbs (suboptimal!)`);
+        }
+
+        currentOrbs = 0;
+        timeReached3Orbs = null; // Reset after DP
+      }
+
+      // Store orb count AFTER this cast
+      cast.orbsAfterCast = currentOrbs;
+    }
+
+    console.log('=== SHADOW ORBS TRACKING COMPLETE ===');
+  }
+
+  /**
+   * Calculate Devouring Plague quality metrics based on orb count and timing
+   * Thresholds:
+   * - Cast with < 3 orbs: WARNING (DPS loss)
+   * - Cast with 3 orbs, < 1s delay: OPTIMAL
+   * - Cast with 3 orbs, 1-5s delay: NOTICE
+   * - Cast with 3 orbs, > 5s delay: WARNING
+   */
+  calculateDevouringPlagueMetrics() {
+    const DEVOURING_PLAGUE_ID = 2944;
+
+    for (const cast of this.casts) {
+      if (cast.spellId !== DEVOURING_PLAGUE_ID) continue;
+
+      // Skip if we don't have orb tracking data (before first DP)
+      if (cast.orbsBeforeCast === undefined) continue;
+
+      const orbCount = cast.orbsBeforeCast;
+
+      // Initialize DP quality metrics
+      cast.dpQuality = {
+        orbCount: orbCount,
+        orbsConsumed: cast.orbsConsumed || 0
+      };
+
+      if (orbCount < 3) {
+        // Cast with less than 3 orbs - always suboptimal
+        cast.dpQuality.status = 'warning';
+        cast.dpQuality.message = `Cast with only ${orbCount} orb${orbCount !== 1 ? 's' : ''} (should be 3)`;
+        cast.dpQuality.issue = 'insufficient-orbs';
+
+      } else if (orbCount === 3) {
+        // Cast with 3 orbs - check delay
+        if (cast.delayAfter3Orbs !== undefined) {
+          const delaySeconds = cast.delayAfter3Orbs / 1000;
+
+          if (delaySeconds < 1) {
+            // Optimal: cast within 1 second
+            cast.dpQuality.status = 'optimal';
+            cast.dpQuality.message = `Cast with 3 orbs (${delaySeconds.toFixed(2)}s delay)`;
+            cast.dpQuality.issue = null;
+
+          } else if (delaySeconds <= 5) {
+            // Notice: 1-5 second delay
+            cast.dpQuality.status = 'notice';
+            cast.dpQuality.message = `${delaySeconds.toFixed(1)}s delay after reaching 3 orbs`;
+            cast.dpQuality.issue = 'delayed-cast';
+
+          } else {
+            // Warning: > 5 second delay
+            cast.dpQuality.status = 'warning';
+            cast.dpQuality.message = `${delaySeconds.toFixed(1)}s delay after reaching 3 orbs (too long)`;
+            cast.dpQuality.issue = 'major-delay';
+          }
+
+          cast.dpQuality.delay = delaySeconds;
+
+        } else {
+          // We had 3 orbs but no delay tracking (edge case)
+          cast.dpQuality.status = 'optimal';
+          cast.dpQuality.message = 'Cast with 3 orbs';
+          cast.dpQuality.issue = null;
+        }
+      }
+    }
   }
 
   /**

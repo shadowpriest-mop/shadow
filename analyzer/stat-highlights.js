@@ -6,7 +6,8 @@
 const Status = {
   NORMAL: 'NORMAL',
   NOTICE: 'NOTICE',
-  WARNING: 'WARNING'
+  WARNING: 'WARNING',
+  ERROR: 'ERROR'  // Critical errors (red, most severe)
 };
 
 class StatHighlights {
@@ -23,8 +24,11 @@ class StatHighlights {
     // Missed Insanity optimization (should have clipped MF for 3 extra ticks)
     if (cast.missedInsanityOptimization) return Status.WARNING;
 
-    // Missed Insanity optimization (should have clipped MF for 3 extra ticks)
-    if (cast.missedInsanityOptimization) return Status.WARNING;
+    // Devouring Plague quality check
+    if (cast.dpQuality) {
+      // Cast with insufficient orbs or major delay
+      if (cast.dpQuality.status === 'warning') return Status.WARNING;
+    }
 
     // DoT quality check (Pandemic-aware)
     if (cast.dotQuality) {
@@ -35,6 +39,11 @@ class StatHighlights {
     if (cast.timeOffCooldown && cast.timeOffCooldown > 5000) return Status.WARNING;
 
     // Check for minor issues (NOTICE)
+    // Devouring Plague minor delay
+    if (cast.dpQuality) {
+      if (cast.dpQuality.status === 'notice') return Status.NOTICE;
+    }
+
     if (cast.dotQuality) {
       if (cast.dotQuality.status === 'early' && cast.clippedTicks === 1) return Status.NOTICE;
       if (cast.dotQuality.status === 'late' && cast.dotDowntime > 1000) return Status.NOTICE;
@@ -152,11 +161,12 @@ class StatHighlights {
 
   /**
    * Get cooldown usage quality status
+   * Mind Blast delays >5s are critical (missing Shadow Orb generation)
    */
   cooldownUsage(cast) {
     if (!cast.timeOffCooldown) return Status.NORMAL;
 
-    if (cast.timeOffCooldown > 5000) return Status.WARNING;
+    if (cast.timeOffCooldown > 5000) return Status.ERROR;  // Critical: missing orbs
     if (cast.timeOffCooldown > 2000) return Status.NOTICE;
     return Status.NORMAL;
   }
@@ -196,7 +206,8 @@ class StatHighlights {
     const statusMap = {
       [Status.NORMAL]: 'normal',
       [Status.NOTICE]: 'notice',
-      [Status.WARNING]: 'warning'
+      [Status.WARNING]: 'warning',
+      [Status.ERROR]: 'error'  // Critical error - bright red
     };
     return statusMap[status] || 'normal';
   }
@@ -208,7 +219,8 @@ class StatHighlights {
     const textMap = {
       [Status.NORMAL]: 'table-accent',
       [Status.NOTICE]: 'text-notice',
-      [Status.WARNING]: 'text-warning'
+      [Status.WARNING]: 'text-warning',
+      [Status.ERROR]: 'text-error'  // Critical error - bright red
     };
     return textMap[status] || 'table-accent';
   }

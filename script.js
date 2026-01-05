@@ -1,6 +1,4 @@
 // MoP Shadow Priest Haste Calculator
-console.log('script.js loading...');
-
 // Constants imported from haste.js (loaded via HasteUtils global)
 // Use HasteUtils.HASTE_RATING_PER_PERCENT, etc.
 
@@ -101,11 +99,8 @@ function navigateHome() {
 async function loadFromHash() {
     const route = parseHash();
     if (!route) {
-        console.log('No valid hash route found');
         return;
     }
-
-    console.log('Loading from hash:', route);
 
     // Set the WCL input
     const wclInput = document.getElementById('wcl-report');
@@ -177,7 +172,7 @@ window.startAnalysis = function() {
         const reportTitle = document.getElementById('report-title');
         const wclLink = document.getElementById('wcl-link');
 
-        reportTitle.textContent = `${currentReportData.title || 'Report'} (${currentReportData.owner || 'Unknown'})`;
+        reportTitle.textContent = `${currentReportData.title || 'Report'}`;
         wclLink.href = `https://www.warcraftlogs.com/reports/${window.wclV2Service.extractReportId(document.getElementById('wcl-report').value)}`;
     }
 
@@ -246,18 +241,13 @@ window.hideAbout = function() {
 
 // Initialize
 document.addEventListener('DOMContentLoaded', function() {
-    console.log('DOMContentLoaded - Initializing WCL analyzer');
-
     // Add event listeners for WCL analyzer
     const wclInput = document.getElementById('wcl-report');
     if (wclInput) {
-        console.log('Adding WCL report event listeners');
         wclInput.addEventListener('blur', function() {
-            console.log('Blur event triggered');
             window.loadReport();
         });
         wclInput.addEventListener('keypress', function(e) {
-            console.log('Keypress event:', e.key);
             if (e.key === 'Enter') {
                 e.preventDefault(); // Prevent form submission
                 window.loadReport();
@@ -269,7 +259,6 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Add hashchange listener for browser back/forward
     window.addEventListener('hashchange', function() {
-        console.log('Hash changed:', window.location.hash);
         const route = parseHash();
         if (route) {
             loadFromHash();
@@ -281,13 +270,8 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Check if we have a hash route on page load
     if (window.location.hash) {
-        console.log('Found hash on load, attempting to load from URL');
         loadFromHash();
     }
-
-    console.log('DOMContentLoaded complete - all event listeners added');
-    console.log('window.loadReport available:', typeof window.loadReport);
-    console.log('window.analyzeLog available:', typeof window.analyzeLog);
 });
 
 function updateRacialOptions() {
@@ -587,8 +571,6 @@ function calculateDotUptimes(events, fight, fightDuration) {
             (e.type === 'applydebuff' || e.type === 'refreshdebuff' || e.type === 'removedebuff')
         );
 
-        console.log(`${dotSpells[spellId]} debuff events:`, debuffEvents.length);
-
         let totalUptime = 0;
         let currentStart = null;
 
@@ -626,9 +608,6 @@ function calculateDotUptimes(events, fight, fightDuration) {
 
 // Make loadReport available globally
 window.loadReport = async function loadReport() {
-    console.log('loadReport() called');
-    console.log('wclV2Service available?', typeof window.wclV2Service);
-
     if (typeof window.wclV2Service === 'undefined') {
         console.error('wclV2Service is not defined! Check if wcl-v2-service.js loaded correctly.');
         alert('Error: WCL service not loaded. Please refresh the page.');
@@ -655,11 +634,8 @@ window.loadReport = async function loadReport() {
 
     try {
         // Fetch report data from WCL v2 API (authentication happens automatically)
-        console.log('Fetching report:', reportId);
         const reportData = await window.wclV2Service.fetchReport(reportId);
         currentReportData = reportData;
-
-        console.log('Report data:', reportData);
 
         // Find Priests (spec will be validated when analyzing casts)
         const priests = window.wclV2Service.getShadowPriests(reportData);
@@ -672,7 +648,7 @@ window.loadReport = async function loadReport() {
         // Populate player dropdown
         playerSelect.innerHTML = '<option value="">Select a player</option>' +
             priests.map(player =>
-                `<option value="${player.name}">${player.name} (${player.type})</option>`
+                `<option value="${player.name}">${player.name}</option>`
             ).join('');
         playerSelect.disabled = false;
 
@@ -686,9 +662,12 @@ window.loadReport = async function loadReport() {
 
         // Populate encounter dropdown
         encounterSelect.innerHTML = '<option value="">Select an encounter</option>' +
-            encounters.map(fight =>
-                `<option value="${fight.id}">${fight.name} (${Math.round((fight.endTime - fight.startTime) / 1000)}s)</option>`
-            ).join('');
+            encounters.map(fight => {
+                const duration = Math.round((fight.endTime - fight.startTime) / 1000);
+                const killStatus = fight.kill ? '✓' : '✗';
+                const statusClass = fight.kill ? 'class="kill-option"' : 'class="wipe-option"';
+                return `<option value="${fight.id}" ${statusClass}>${killStatus} ${fight.name} (${duration}s)</option>`;
+            }).join('');
         encounterSelect.disabled = false;
 
         analyzeBtn.disabled = false;
@@ -805,9 +784,6 @@ window.analyzeLog = async function analyzeLog() {
         // Extract report ID from current data
         const reportId = window.wclV2Service.extractReportId(document.getElementById('wcl-report').value);
 
-        console.log('=== ANALYZE STARTING ===');
-        console.log('Fetching events for:', { reportId, playerName, fightId, startTime: fight.startTime, endTime: fight.endTime });
-
         // Fetch events from WCL v2 API
         const eventsData = await window.wclV2Service.fetchEvents(
             reportId,
@@ -817,12 +793,6 @@ window.analyzeLog = async function analyzeLog() {
             fight.endTime
         );
 
-        console.log('=== EVENTS DATA RECEIVED ===');
-        console.log('Full eventsData object:', eventsData);
-        console.log('Pages fetched:', eventsData.pageCount);
-        console.log('eventsData type:', typeof eventsData);
-        console.log('eventsData.data exists?', !!eventsData?.data);
-
         if (!eventsData || !eventsData.data) {
             console.error('NO EVENT DATA - eventsData:', eventsData);
             alert('No event data returned from WCL. Check console for details.');
@@ -830,7 +800,6 @@ window.analyzeLog = async function analyzeLog() {
         }
 
         // Fetch buff events (applybuff, removebuff, etc.)
-        console.log('=== FETCHING BUFF EVENTS ===');
         const buffEventsData = await window.wclV2Service.fetchBuffEvents(
             reportId,
             fightId,
@@ -839,22 +808,14 @@ window.analyzeLog = async function analyzeLog() {
             fight.endTime
         );
 
-        console.log('=== BUFF EVENTS RECEIVED ===');
-        console.log('Buff pages fetched:', buffEventsData.pageCount);
-        console.log('Buff events count:', buffEventsData.data?.length || 0);
-
         const events = eventsData.data;
         const buffEvents = buffEventsData.data || [];
-
-        console.log('Total events:', events.length);
-        console.log('Total buff events:', buffEvents.length);
 
         // Extract targets and populate target filter
         const targets = extractTargetsFromEvents(events, currentReportData);
         window.allTargets = targets; // Store globally
 
         const targetFilter = document.getElementById('target-filter');
-        const targetFilterGroup = document.getElementById('target-filter-group');
 
         // Populate target filter dropdown
         targetFilter.innerHTML = '<option value="all">All Targets</option>';
@@ -865,11 +826,11 @@ window.analyzeLog = async function analyzeLog() {
             targetFilter.appendChild(option);
         });
 
-        // Show target filter if there are multiple targets
-        if (targets.length > 1) {
-            targetFilterGroup.style.display = 'block';
+        // Show/hide target filter based on number of targets
+        if (targets.length <= 1) {
+            targetFilter.style.display = 'none';
         } else {
-            targetFilterGroup.style.display = 'none';
+            targetFilter.style.display = 'block';
         }
 
         // Simple analysis - count casts and damage events by spell
@@ -903,6 +864,13 @@ window.analyzeLog = async function analyzeLog() {
         window.mfTicks = mfTicks; // Store globally
 
         // ❌ Removed all UI updates for mfTicks and DoT uptimes
+
+        // Run pre-pull checker
+        // Get player ID from the first event with a sourceID
+        // All events are filtered for this player, so any sourceID is the player's ID
+        const playerID = events.find(e => e.sourceID)?.sourceID || null;
+        const prePullChecker = new PrePullChecker(events, buffEvents, fight.startTime, playerID, playerName);
+        const prePullResults = prePullChecker.analyze();
 
         // Analyze casts with quality metrics
         const castsAnalyzer = new CastsAnalyzer(events, buffEvents, {
@@ -938,6 +906,9 @@ window.analyzeLog = async function analyzeLog() {
         // Render talents display
         renderTalents(talents);
 
+        // Render pre-pull check
+        renderPrePullCheck(prePullResults);
+
         // Render cast timeline
         renderCastTimeline(casts, fight);
 
@@ -960,6 +931,57 @@ window.analyzeLog = async function analyzeLog() {
         analysisLoading.style.display = 'none';
     }
 };
+
+// ============ Pre-Pull Check Rendering ============
+
+/**
+ * Render the pre-pull check results
+ */
+function renderPrePullCheck(results) {
+    const prepullCheck = document.getElementById('prepull-check');
+    if (!prepullCheck) return;
+
+    let html = '<div class="prepull-check-label">Pre-Pull:</div>';
+    html += '<div class="prepull-check-items">';
+
+    // Halo check
+    const haloStatus = results.halo.status;
+    html += `<div class="prepull-item">`;
+    html += `<span class="prepull-icon ${haloStatus}"></span>`;
+    if (results.halo.found) {
+        html += `<span class="prepull-item-text ${haloStatus}">Halo (+${results.halo.timing.toFixed(1)}s)</span>`;
+    } else {
+        html += `<span class="prepull-item-text ${haloStatus}">Halo (missing)</span>`;
+    }
+    html += `</div>`;
+
+    // Mind Spike check
+    const msStatus = results.mindSpike.status;
+    html += `<div class="prepull-item">`;
+    html += `<span class="prepull-icon ${msStatus}"></span>`;
+    if (results.mindSpike.found) {
+        html += `<span class="prepull-item-text ${msStatus}">Mind Spike (+${results.mindSpike.timing.toFixed(1)}s)</span>`;
+    } else {
+        html += `<span class="prepull-item-text ${msStatus}">Mind Spike (missing)</span>`;
+    }
+    html += `</div>`;
+
+    // Potion check
+    const potionStatus = results.potion.status;
+    html += `<div class="prepull-item">`;
+    html += `<span class="prepull-icon ${potionStatus}"></span>`;
+    if (results.potion.found) {
+        const potionTiming = results.potion.timing >= 0 ? `+${results.potion.timing.toFixed(1)}s` : `${results.potion.timing.toFixed(1)}s`;
+        html += `<span class="prepull-item-text ${potionStatus}">Potion (${potionTiming})</span>`;
+    } else {
+        html += `<span class="prepull-item-text ${potionStatus}">Potion (missing)</span>`;
+    }
+    html += `</div>`;
+
+    html += '</div>';
+
+    prepullCheck.innerHTML = html;
+}
 
 // ============ Cast Timeline Rendering ============
 
@@ -1151,8 +1173,43 @@ function createCastDetailsHTML(cast, fight) {
         `;
     }
 
-    // DoT Refresh Quality (Pandemic-aware for MoP)
-    if (cast.dotQuality && [589, 34914, 2944].includes(cast.spellId)) {
+    // Mind Blast Cooldown Warning
+    if (cast.timeOffCooldown && cast.timeOffCooldown > 0) {
+        const status = statHighlights.cooldownUsage(cast);
+        const cssClass = statHighlights.getTextClass(status);
+        const severity = cast.timeOffCooldown > 5000 ? '⚠️ CRITICAL:' : 'MB Available:';
+        html += `
+            <div class="cast-details-item">
+                <span class="cast-details-label">${severity}</span>
+                <span class="cast-details-value ${cssClass}">MB ready ${(cast.timeOffCooldown / 1000).toFixed(1)}s ago</span>
+            </div>
+        `;
+    }
+
+    // Devouring Plague Quality (Orb count and timing)
+    if (cast.dpQuality && cast.spellId === 2944) {
+        const status = cast.dpQuality.status;
+        const cssClass = status === 'optimal' ? 'table-accent' :
+                        status === 'notice' ? 'text-notice' :
+                        'text-warning';
+
+        html += `
+            <div class="cast-details-item">
+                <span class="cast-details-label">Orb Count:</span>
+                <span class="cast-details-value ${cssClass}">${cast.dpQuality.orbCount} / 3</span>
+            </div>
+        `;
+
+        html += `
+            <div class="cast-details-item">
+                <span class="cast-details-label">DP Quality:</span>
+                <span class="cast-details-value ${cssClass}">${cast.dpQuality.message}</span>
+            </div>
+        `;
+    }
+
+    // DoT Refresh Quality (Pandemic-aware for MoP) - SW:P and VT only
+    if (cast.dotQuality && [589, 34914].includes(cast.spellId)) {
         const status = statHighlights.dotRefresh(cast);
         const cssClass = statHighlights.getTextClass(status);
 
@@ -1172,7 +1229,7 @@ function createCastDetailsHTML(cast, fight) {
                 </div>
             `;
         }
-    } else if ([589, 34914, 2944].includes(cast.spellId)) {
+    } else if ([589, 34914].includes(cast.spellId)) {
         // First cast of this DoT
         html += `
             <div class="cast-details-item">
@@ -1367,22 +1424,24 @@ function renderStatsOverview(filter) {
 
     // Basic stats
     html += createStatField('Casts', stats.castCount);
-    html += createStatField('Damage', stats.totalDamage.toLocaleString());
-    html += createStatField('Active DPS', stats.activeDps.toFixed(1));
-    html += createStatField('Active Time', activeTimeStr);
 
-    // Break if showing detailed stats (per-spell view)
+    // Crit rate when filtering by specific spell
     if (filter !== 'timeline') {
-        html += '<div class="stat-field-break"></div>';
-        html += createStatField('Hits', stats.hits);
-        html += createStatField('Avg Hit', stats.avgHit.toFixed(1));
         html += createStatField('Crit Rate', stats.critRate.toFixed(1) + '%');
-        html += createStatField('Damage/GCD', stats.damagePerGcd.toFixed(0));
+    }
+
+    // Mind Blast specific stats
+    if (parseInt(filter) === 8092) {
+        const mbStats = window.statsCalculator.calculateMindBlastStats(filteredCasts);
+        html += createStatField('Potential Casts', mbStats.potentialCasts);
+
+        if (mbStats.avgDelay > 0) {
+            html += createStatField('Avg Delay', (mbStats.avgDelay / 1000).toFixed(1) + 's');
+        }
     }
 
     // DoT stats (if applicable)
     if (filter === 'timeline' || [589, 34914, 2944].includes(parseInt(filter))) {
-        html += '<div class="stat-field-break"></div>';
         if (stats.avgDotDowntime > 0) {
             html += createStatField('Avg DoT Downtime', (stats.avgDotDowntime / 1000).toFixed(1) + 's');
         }
@@ -1398,7 +1457,6 @@ function renderStatsOverview(filter) {
 
     // Channel stats (MF)
     if (filter === 'timeline' || [15407, 129197].includes(parseInt(filter))) {
-        html += '<div class="stat-field-break"></div>';
         if (stats.avgMfDelay > 0) {
             html += createStatField('Avg MF Delay', stats.avgMfDelay.toFixed(0) + 'ms');
         }
@@ -1409,10 +1467,6 @@ function renderStatsOverview(filter) {
             html += createStatField('Clipped MF DPS', '~' + stats.clippedMfDps.toFixed(1));
         }
     }
-
-    // Encounter stats
-    html += '<div class="stat-field-break"></div>';
-    html += createStatField('GCD Usage', stats.gcdUsage.toFixed(0) + '%');
 
     statsOverview.innerHTML = html;
 }
@@ -1434,7 +1488,26 @@ function createStatField(label, value) {
  * E.g., "Void Tendrils" -> "voidtendrils"
  */
 function normalizeIconName(name) {
-    return name.toLowerCase().replace(/[^a-z0-9]/g, '');
+    // Special mappings for talents where WCL name differs from icon filename
+    const iconNameMap = {
+        'mindcontrol': 'dominatemind'  // WCL returns "Mind Control" but icon is dominatemind.jpg
+    };
+
+    const normalized = name.toLowerCase().replace(/[^a-z0-9]/g, '');
+    return iconNameMap[normalized] || normalized;
+}
+
+/**
+ * Get the proper display name for a talent
+ * E.g., "Mind Control" -> "Dominate Mind"
+ */
+function getTalentDisplayName(name) {
+    // Special mappings for talents where WCL name differs from proper talent name
+    const displayNameMap = {
+        'Mind Control': 'Dominate Mind'  // WCL returns "Mind Control" but talent is called "Dominate Mind"
+    };
+
+    return displayNameMap[name] || name;
 }
 
 /**
@@ -1454,8 +1527,7 @@ function renderTalents(talents) {
         talentsByTier[talent.type] = talent;
     });
 
-    let html = '<div class="talents-header">Talents</div>';
-    html += '<div class="talents-list">';
+    let html = '<div class="talents-list">';
 
     // Fixed tier positions: 1=15, 2=30, 3=45, 4=60, 5=75, 6=90
     const tierLevels = [1, 2, 3, 4, 5, 6];
@@ -1469,12 +1541,13 @@ function renderTalents(talents) {
 
         if (talent) {
             const iconName = normalizeIconName(talent.name);
+            const displayName = getTalentDisplayName(talent.name);
             const iconPath = `analyzer/icons/talents/${iconName}.jpg`;
 
             html += `
-                <div class="talent-icon-wrapper" title="${talent.name}">
+                <div class="talent-icon-wrapper" title="${displayName}">
                     <img src="${iconPath}"
-                         alt="${talent.name}"
+                         alt="${displayName}"
                          class="talent-icon"
                          onerror="this.src='analyzer/icons/talents/placeholder.jpg'">
                 </div>
