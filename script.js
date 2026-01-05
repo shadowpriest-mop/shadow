@@ -1133,26 +1133,9 @@ function createCastDetailsHTML(cast, fight) {
         </div>
     `;
 
-    // Haste (if available)
-    if (cast.haste && cast.haste !== 1.0) {
-        const hastePercent = ((cast.haste - 1) * 100).toFixed(1);
-        html += `
-            <div class="cast-details-item">
-                <span class="cast-details-label">Haste:</span>
-                <span class="cast-details-value">${hastePercent}%</span>
-            </div>
-        `;
-    }
+    // Haste removed - not useful for players
 
-    // DoT tick info (if available)
-    if (cast.hastedTickInterval) {
-        html += `
-            <div class="cast-details-item">
-                <span class="cast-details-label">Tick Interval:</span>
-                <span class="cast-details-value">${(cast.hastedTickInterval / 1000).toFixed(2)}s</span>
-            </div>
-        `;
-    }
+    // Tick Interval removed - not useful for players
 
     if (cast.expectedTicks) {
         html += `
@@ -1189,6 +1172,7 @@ function createCastDetailsHTML(cast, fight) {
     }
 
     // Devouring Plague Quality (Orb count and timing)
+    // Only show when there's an actual issue (< 3 orbs or status is not optimal)
     if (cast.dpQuality && cast.spellId === 2944) {
         const status = cast.dpQuality.status;
         const cssClass = status === 'optimal' ? 'table-accent' :
@@ -1202,12 +1186,15 @@ function createCastDetailsHTML(cast, fight) {
             </div>
         `;
 
-        html += `
-            <div class="cast-details-item">
-                <span class="cast-details-label">DP Quality:</span>
-                <span class="cast-details-value ${cssClass}">${cast.dpQuality.message}</span>
-            </div>
-        `;
+        // Only show DP Quality message if there's an issue
+        if (cast.dpQuality.orbCount < 3 || status !== 'optimal') {
+            html += `
+                <div class="cast-details-item">
+                    <span class="cast-details-label">DP Quality:</span>
+                    <span class="cast-details-value ${cssClass}">${cast.dpQuality.message}</span>
+                </div>
+            `;
+        }
     }
 
     // DoT Refresh Quality (Pandemic-aware for MoP) - SW:P and VT only
