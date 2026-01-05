@@ -1397,7 +1397,13 @@ function renderStatsOverview(filter) {
     // Get filtered casts
     let filteredCasts = window.allCasts;
     if (filter !== 'timeline') {
-        filteredCasts = window.allCasts.filter(c => c.spellId === parseInt(filter));
+        const filterSpellId = parseInt(filter);
+        // Mind Flay (15407) should include Mind Flay: Insanity (129197)
+        if (filterSpellId === 15407) {
+            filteredCasts = window.allCasts.filter(c => c.spellId === 15407 || c.spellId === 129197);
+        } else {
+            filteredCasts = window.allCasts.filter(c => c.spellId === filterSpellId);
+        }
     }
 
     // Calculate stats
@@ -1573,7 +1579,13 @@ window.filterBySpell = function(filter) {
     // Re-render timeline with filtered casts
     let filteredCasts = window.allCasts;
     if (filter !== 'timeline') {
-        filteredCasts = window.allCasts.filter(c => c.spellId === parseInt(filter));
+        const filterSpellId = parseInt(filter);
+        // Mind Flay (15407) should include Mind Flay: Insanity (129197)
+        if (filterSpellId === 15407) {
+            filteredCasts = window.allCasts.filter(c => c.spellId === 15407 || c.spellId === 129197);
+        } else {
+            filteredCasts = window.allCasts.filter(c => c.spellId === filterSpellId);
+        }
     }
 
     renderCastTimeline(filteredCasts, window.currentFight);
