@@ -21,15 +21,14 @@ class StatHighlights {
 
     if (cast.failed && shouldCheckDamage) return Status.WARNING;
 
-    // Shadow Orb error (cast DP with <3 orbs) - CRITICAL ERROR
-    // Massive DPS loss, especially with Solace & Insanity talent
-    if (cast.orbError) return Status.ERROR;
-
     // Missed Insanity optimization (should have clipped MF for 3 extra ticks)
     if (cast.missedInsanityOptimization) return Status.WARNING;
 
-    // Mind Blast cooldown delay (>5s is CRITICAL - missing orb generation)
-    if (cast.timeOffCooldown && cast.timeOffCooldown > 5000) return Status.ERROR;
+    // Devouring Plague quality check
+    if (cast.dpQuality) {
+      // Cast with insufficient orbs or major delay
+      if (cast.dpQuality.status === 'warning') return Status.WARNING;
+    }
 
     // DoT quality check (Pandemic-aware)
     if (cast.dotQuality) {
@@ -37,7 +36,14 @@ class StatHighlights {
       if (cast.dotQuality.status === 'late' && cast.dotDowntime > 3000) return Status.WARNING;
     }
 
+    if (cast.timeOffCooldown && cast.timeOffCooldown > 5000) return Status.WARNING;
+
     // Check for minor issues (NOTICE)
+    // Devouring Plague minor delay
+    if (cast.dpQuality) {
+      if (cast.dpQuality.status === 'notice') return Status.NOTICE;
+    }
+
     if (cast.dotQuality) {
       if (cast.dotQuality.status === 'early' && cast.clippedTicks === 1) return Status.NOTICE;
       if (cast.dotQuality.status === 'late' && cast.dotDowntime > 1000) return Status.NOTICE;
