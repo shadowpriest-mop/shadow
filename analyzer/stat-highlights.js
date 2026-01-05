@@ -25,6 +25,11 @@ class StatHighlights {
     if (cast.missedInsanityOptimization) return Status.WARNING;
 
     // Devouring Plague quality check
+    // IMPORTANT: Check end-of-fight DP casts first to skip all other penalties
+    if (cast.dpQuality && cast.dpQuality.isEndOfFight) {
+      return Status.NORMAL;
+    }
+
     if (cast.dpQuality) {
       // Cast with insufficient orbs or major delay
       if (cast.dpQuality.status === 'warning') return Status.WARNING;
