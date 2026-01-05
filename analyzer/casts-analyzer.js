@@ -34,18 +34,22 @@ class CastsAnalyzer {
     // Step 2: Track Devouring Plague periods (Insanity windows)
     this.trackDevouringPlaguePeriods();
 
-    // Step 3: Infer haste for each cast
+    // Step 3: Track Shadow Orbs throughout the fight
+    this.trackShadowOrbs();
+
+    // Step 4: Infer haste for each cast
     this.calculateHaste();
 
-    // Step 4: Clean up DoT damage instances to exclude pre-refresh ticks
+    // Step 5: Clean up DoT damage instances to exclude pre-refresh ticks
     // (Must run before channel metrics to detect pandemic-based optimal clips)
     this.cleanupDotDamageInstances();
 
-    // Step 5: Calculate quality metrics
+    // Step 6: Calculate quality metrics
     this.calculateCastLatencies();
     this.calculateDotMetrics();
     this.calculateChannelMetrics();
     this.calculateCooldownMetrics();
+    this.calculateDevouringPlagueMetrics();
 
     // Extract talents from combatantInfo
     const talents = this.extractTalents();
@@ -975,6 +979,164 @@ class CastsAnalyzer {
 
         if (timeOffCooldown > 0) {
           cast.timeOffCooldown = timeOffCooldown;
+        }
+      }
+    }
+  }
+
+  /**
+   * Track Shadow Orbs throughout the fight
+   * WCL doesn't provide resource events for MoP, so we manually track:
+   * - Start: Assume 0 orbs after first DP cast (reset point)
+   * - Mind Blast: +1 orb (always)
+   * - Shadow Word: Death: +1 orb only if >= 9 seconds since last SW:D orb generation
+   * - Devouring Plague: -3 orbs (consumes all)
+   */
+  trackShadowOrbs() {
+    const MIND_BLAST_ID = 8092;
+    const SHADOW_WORD_DEATH_ID = 32379;
+    const DEVOURING_PLAGUE_ID = 2944;
+    const SWD_COOLDOWN = 9000; // 9 second cooldown for orb generation
+
+    let currentOrbs = 0;
+    let lastSwdOrbGenTime = null; // Last time SW:D generated an orb
+    let firstDpFound = false;
+    let timeReached3Orbs = null; // When we reached 3 orbs (for delay tracking)
+
+    console.log('=== TRACKING SHADOW ORBS ===');
+
+    for (const cast of this.casts) {
+      // Wait until first DP cast to start tracking
+      if (!firstDpFound) {
+        if (cast.spellId === DEVOURING_PLAGUE_ID) {
+          firstDpFound = true;
+          currentOrbs = 0; // Reset to 0 after first DP
+          timeReached3Orbs = null;
+          console.log(`Found first DP at ${(cast.castStart / 1000).toFixed(1)}s - starting orb tracking at 0`);
+        }
+        continue;
+      }
+
+      // Store orb count BEFORE this cast
+      cast.orbsBeforeCast = currentOrbs;
+
+      // Handle orb generation/consumption
+      if (cast.spellId === MIND_BLAST_ID) {
+        // Mind Blast always generates 1 orb
+        currentOrbs = Math.min(3, currentOrbs + 1);
+        console.log(`${(cast.castStart / 1000).toFixed(1)}s: Mind Blast +1 orb -> ${currentOrbs} orbs`);
+
+        // Track when we reach 3 orbs
+        if (currentOrbs === 3 && timeReached3Orbs === null) {
+          timeReached3Orbs = cast.castEnd; // Use castEnd (when cast completes)
+          console.log(`  -> Reached 3 orbs at ${(timeReached3Orbs / 1000).toFixed(1)}s`);
+        }
+
+      } else if (cast.spellId === SHADOW_WORD_DEATH_ID) {
+        // SW:D generates 1 orb only if >= 9s since last orb generation
+        const timeSinceLastSwd = lastSwdOrbGenTime ? (cast.castStart - lastSwdOrbGenTime) : Infinity;
+
+        if (timeSinceLastSwd >= SWD_COOLDOWN) {
+          // Generate orb
+          currentOrbs = Math.min(3, currentOrbs + 1);
+          lastSwdOrbGenTime = cast.castStart;
+          console.log(`${(cast.castStart / 1000).toFixed(1)}s: SW:D +1 orb -> ${currentOrbs} orbs (${(timeSinceLastSwd / 1000).toFixed(1)}s since last)`);
+
+          // Track when we reach 3 orbs
+          if (currentOrbs === 3 && timeReached3Orbs === null) {
+            timeReached3Orbs = cast.castEnd;
+            console.log(`  -> Reached 3 orbs at ${(timeReached3Orbs / 1000).toFixed(1)}s`);
+          }
+        } else {
+          // No orb generated (cast within 9s window)
+          console.log(`${(cast.castStart / 1000).toFixed(1)}s: SW:D no orb (only ${(timeSinceLastSwd / 1000).toFixed(1)}s since last)`);
+        }
+
+      } else if (cast.spellId === DEVOURING_PLAGUE_ID) {
+        // DP consumes all orbs (should be 3)
+        cast.orbsConsumed = currentOrbs;
+
+        // Track delay if we had 3 orbs
+        if (currentOrbs === 3 && timeReached3Orbs !== null) {
+          cast.delayAfter3Orbs = cast.castStart - timeReached3Orbs;
+          console.log(`${(cast.castStart / 1000).toFixed(1)}s: DP cast with ${currentOrbs} orbs, delay: ${(cast.delayAfter3Orbs / 1000).toFixed(2)}s`);
+        } else {
+          console.log(`${(cast.castStart / 1000).toFixed(1)}s: DP cast with ${currentOrbs} orbs (suboptimal!)`);
+        }
+
+        currentOrbs = 0;
+        timeReached3Orbs = null; // Reset after DP
+      }
+
+      // Store orb count AFTER this cast
+      cast.orbsAfterCast = currentOrbs;
+    }
+
+    console.log('=== SHADOW ORBS TRACKING COMPLETE ===');
+  }
+
+  /**
+   * Calculate Devouring Plague quality metrics based on orb count and timing
+   * Thresholds:
+   * - Cast with < 3 orbs: WARNING (DPS loss)
+   * - Cast with 3 orbs, < 1s delay: OPTIMAL
+   * - Cast with 3 orbs, 1-5s delay: NOTICE
+   * - Cast with 3 orbs, > 5s delay: WARNING
+   */
+  calculateDevouringPlagueMetrics() {
+    const DEVOURING_PLAGUE_ID = 2944;
+
+    for (const cast of this.casts) {
+      if (cast.spellId !== DEVOURING_PLAGUE_ID) continue;
+
+      // Skip if we don't have orb tracking data (before first DP)
+      if (cast.orbsBeforeCast === undefined) continue;
+
+      const orbCount = cast.orbsBeforeCast;
+
+      // Initialize DP quality metrics
+      cast.dpQuality = {
+        orbCount: orbCount,
+        orbsConsumed: cast.orbsConsumed || 0
+      };
+
+      if (orbCount < 3) {
+        // Cast with less than 3 orbs - always suboptimal
+        cast.dpQuality.status = 'warning';
+        cast.dpQuality.message = `Cast with only ${orbCount} orb${orbCount !== 1 ? 's' : ''} (should be 3)`;
+        cast.dpQuality.issue = 'insufficient-orbs';
+
+      } else if (orbCount === 3) {
+        // Cast with 3 orbs - check delay
+        if (cast.delayAfter3Orbs !== undefined) {
+          const delaySeconds = cast.delayAfter3Orbs / 1000;
+
+          if (delaySeconds < 1) {
+            // Optimal: cast within 1 second
+            cast.dpQuality.status = 'optimal';
+            cast.dpQuality.message = `Cast with 3 orbs (${delaySeconds.toFixed(2)}s delay)`;
+            cast.dpQuality.issue = null;
+
+          } else if (delaySeconds <= 5) {
+            // Notice: 1-5 second delay
+            cast.dpQuality.status = 'notice';
+            cast.dpQuality.message = `${delaySeconds.toFixed(1)}s delay after reaching 3 orbs`;
+            cast.dpQuality.issue = 'delayed-cast';
+
+          } else {
+            // Warning: > 5 second delay
+            cast.dpQuality.status = 'warning';
+            cast.dpQuality.message = `${delaySeconds.toFixed(1)}s delay after reaching 3 orbs (too long)`;
+            cast.dpQuality.issue = 'major-delay';
+          }
+
+          cast.dpQuality.delay = delaySeconds;
+
+        } else {
+          // We had 3 orbs but no delay tracking (edge case)
+          cast.dpQuality.status = 'optimal';
+          cast.dpQuality.message = 'Cast with 3 orbs';
+          cast.dpQuality.issue = null;
         }
       }
     }

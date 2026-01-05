@@ -23,8 +23,11 @@ class StatHighlights {
     // Missed Insanity optimization (should have clipped MF for 3 extra ticks)
     if (cast.missedInsanityOptimization) return Status.WARNING;
 
-    // Missed Insanity optimization (should have clipped MF for 3 extra ticks)
-    if (cast.missedInsanityOptimization) return Status.WARNING;
+    // Devouring Plague quality check
+    if (cast.dpQuality) {
+      // Cast with insufficient orbs or major delay
+      if (cast.dpQuality.status === 'warning') return Status.WARNING;
+    }
 
     // DoT quality check (Pandemic-aware)
     if (cast.dotQuality) {
@@ -35,6 +38,11 @@ class StatHighlights {
     if (cast.timeOffCooldown && cast.timeOffCooldown > 5000) return Status.WARNING;
 
     // Check for minor issues (NOTICE)
+    // Devouring Plague minor delay
+    if (cast.dpQuality) {
+      if (cast.dpQuality.status === 'notice') return Status.NOTICE;
+    }
+
     if (cast.dotQuality) {
       if (cast.dotQuality.status === 'early' && cast.clippedTicks === 1) return Status.NOTICE;
       if (cast.dotQuality.status === 'late' && cast.dotDowntime > 1000) return Status.NOTICE;

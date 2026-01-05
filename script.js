@@ -1151,8 +1151,30 @@ function createCastDetailsHTML(cast, fight) {
         `;
     }
 
-    // DoT Refresh Quality (Pandemic-aware for MoP)
-    if (cast.dotQuality && [589, 34914, 2944].includes(cast.spellId)) {
+    // Devouring Plague Quality (Orb count and timing)
+    if (cast.dpQuality && cast.spellId === 2944) {
+        const status = cast.dpQuality.status;
+        const cssClass = status === 'optimal' ? 'table-accent' :
+                        status === 'notice' ? 'text-notice' :
+                        'text-warning';
+
+        html += `
+            <div class="cast-details-item">
+                <span class="cast-details-label">Orb Count:</span>
+                <span class="cast-details-value ${cssClass}">${cast.dpQuality.orbCount} / 3</span>
+            </div>
+        `;
+
+        html += `
+            <div class="cast-details-item">
+                <span class="cast-details-label">DP Quality:</span>
+                <span class="cast-details-value ${cssClass}">${cast.dpQuality.message}</span>
+            </div>
+        `;
+    }
+
+    // DoT Refresh Quality (Pandemic-aware for MoP) - SW:P and VT only
+    if (cast.dotQuality && [589, 34914].includes(cast.spellId)) {
         const status = statHighlights.dotRefresh(cast);
         const cssClass = statHighlights.getTextClass(status);
 
@@ -1172,7 +1194,7 @@ function createCastDetailsHTML(cast, fight) {
                 </div>
             `;
         }
-    } else if ([589, 34914, 2944].includes(cast.spellId)) {
+    } else if ([589, 34914].includes(cast.spellId)) {
         // First cast of this DoT
         html += `
             <div class="cast-details-item">
