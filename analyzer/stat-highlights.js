@@ -55,7 +55,7 @@ class StatHighlights {
       // Optimal refreshes (pandemic) are not flagged
     }
 
-    if (cast.clippedEarly) return Status.NOTICE;
+    // clippedEarly removed - clipping MF for higher priority spells (MB, SW:D) is optimal play
     if (cast.timeOffCooldown && cast.timeOffCooldown > 2000) return Status.NOTICE;
     if (cast.nextCastLatency && cast.nextCastLatency > 300) return Status.NOTICE;
 
@@ -158,9 +158,7 @@ class StatHighlights {
     // Optimal clip (Insanity pandemic) is not flagged
     if (cast.optimalClip) return Status.NORMAL;
 
-    // Regular early clip is a notice
-    if (cast.clippedEarly) return Status.NOTICE;
-
+    // Regular early clip removed - clipping MF for higher priority spells is optimal play
     return Status.NORMAL;
   }
 
