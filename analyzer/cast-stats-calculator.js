@@ -41,8 +41,6 @@ class CastStatsCalculator {
 
       // Channel stats
       avgMfDelay: this.calculateAvgCastLatency(castsToAnalyze),
-      earlyMfClips: this.calculateEarlyClips(castsToAnalyze),
-      earlyMfClipsPercent: this.calculateEarlyClipsPercent(castsToAnalyze),
 
       // Encounter stats
       avgSpellpower: 0, // TODO: Need to track spellpower from events
@@ -66,8 +64,6 @@ class CastStatsCalculator {
       clippedDotsPercent: 0,
       avgOffCooldown: 0,
       avgMfDelay: 0,
-      earlyMfClips: 0,
-      earlyMfClipsPercent: 0,
       avgSpellpower: 0,
       avgHaste: 0,
       gcdUsage: 0
@@ -173,18 +169,6 @@ class CastStatsCalculator {
 
     const totalLatency = castsWithLatency.reduce((sum, cast) => sum + cast.nextCastLatency, 0);
     return totalLatency / castsWithLatency.length;
-  }
-
-  calculateEarlyClips(casts) {
-    return casts.filter(c => c.clippedEarly).length;
-  }
-
-  calculateEarlyClipsPercent(casts) {
-    const channelCasts = casts.filter(c => [15407, 129197, 48045].includes(c.spellId));
-    if (channelCasts.length === 0) return 0;
-
-    const clipped = this.calculateEarlyClips(channelCasts);
-    return (clipped / channelCasts.length) * 100;
   }
 
 

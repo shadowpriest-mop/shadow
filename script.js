@@ -1457,9 +1457,6 @@ function renderStatsOverview(filter) {
         if (stats.avgMfDelay > 0) {
             html += createStatField('Avg MF Delay', stats.avgMfDelay.toFixed(0) + 'ms');
         }
-        if (stats.earlyMfClips > 0) {
-            html += createStatField('Early MF Clips', `${stats.earlyMfClips} (${stats.earlyMfClipsPercent.toFixed(1)}%)`);
-        }
     }
 
     statsOverview.innerHTML = html;
