@@ -43,7 +43,6 @@ class CastStatsCalculator {
       avgMfDelay: this.calculateAvgCastLatency(castsToAnalyze),
       earlyMfClips: this.calculateEarlyClips(castsToAnalyze),
       earlyMfClipsPercent: this.calculateEarlyClipsPercent(castsToAnalyze),
-      clippedMfDps: this.calculateClippedDps(castsToAnalyze),
 
       // Encounter stats
       avgSpellpower: 0, // TODO: Need to track spellpower from events
@@ -69,7 +68,6 @@ class CastStatsCalculator {
       avgMfDelay: 0,
       earlyMfClips: 0,
       earlyMfClipsPercent: 0,
-      clippedMfDps: 0,
       avgSpellpower: 0,
       avgHaste: 0,
       gcdUsage: 0
@@ -189,17 +187,6 @@ class CastStatsCalculator {
     return (clipped / channelCasts.length) * 100;
   }
 
-  calculateClippedDps(casts) {
-    // Rough estimate: each early clip loses ~1 tick of damage
-    const earlyClips = this.calculateEarlyClips(casts);
-    const avgHit = this.calculateAvgHit(casts);
-    const activeTime = this.calculateActiveTime(casts);
-
-    if (activeTime === 0) return 0;
-
-    const lostDamage = earlyClips * avgHit;
-    return (lostDamage * 1000) / activeTime;
-  }
 
   calculateGcdUsage(casts) {
     if (this.fightDuration === 0) return 0;

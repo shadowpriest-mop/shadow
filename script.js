@@ -1460,9 +1460,6 @@ function renderStatsOverview(filter) {
         if (stats.earlyMfClips > 0) {
             html += createStatField('Early MF Clips', `${stats.earlyMfClips} (${stats.earlyMfClipsPercent.toFixed(1)}%)`);
         }
-        if (stats.clippedMfDps > 0) {
-            html += createStatField('Clipped MF DPS', '~' + stats.clippedMfDps.toFixed(1));
-        }
     }
 
     statsOverview.innerHTML = html;
