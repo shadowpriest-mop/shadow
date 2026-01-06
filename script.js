@@ -1050,8 +1050,10 @@ function createCastElement(cast, index, fight) {
     const damageText = cast.totalDamage > 0 ? cast.totalDamage.toLocaleString() : '0';
 
     // Format hits - just show actual hit count from instances
+    // Hide for spells that are always 1 hit (SW:D, Mind Blast)
     const totalHits = cast.instances ? cast.instances.length : 0;
     const hitsText = `${totalHits}`;
+    const showHits = ![32379, 8092].includes(cast.spellId); // Hide for SW:D and MB
 
     // Get target name (if available)
     const targetText = cast.targetName || '';
@@ -1099,7 +1101,7 @@ function createCastElement(cast, index, fight) {
                 <div class="cast-metrics">
                     ${buffIconsHTML}
                     <div class="cast-stats">
-                        <div class="cast-stat-line"><span class="cast-stat-label">Hits:</span> ${hitsText}</div>
+                        ${showHits ? `<div class="cast-stat-line"><span class="cast-stat-label">Hits:</span> ${hitsText}</div>` : ''}
                         <div class="cast-stat-line"><span class="cast-stat-label">Damage:</span> ${damageText}</div>
                     </div>
                 </div>
