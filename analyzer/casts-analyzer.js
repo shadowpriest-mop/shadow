@@ -995,6 +995,10 @@ class CastsAnalyzer {
       const spellData = getSpellData(cast.spellId);
       if (!spellData) continue;
 
+      // Store original castEnd times (when cast bar finished) for latency calculations
+      const prevOriginalCastEnd = previous.castEnd;
+      const currOriginalCastEnd = cast.castEnd;
+
       // Calculate when previous cast would have expired (without pandemic carryover)
       const previousDuration = spellData.maxDuration * 1000;
       const previousExpiry = previous.castStart + previousDuration;
@@ -1005,14 +1009,8 @@ class CastsAnalyzer {
       previous.instances = previous.instances.filter(inst => inst.timestamp <= previousExpiry);
       const prevRemovedCount = prevOriginalCount - previous.instances.length;
 
-      if (prevRemovedCount > 0) {
-        // Recalculate previous cast's castEnd
-        if (previous.instances.length > 0) {
-          const lastInstance = previous.instances[previous.instances.length - 1];
-          previous.castEnd = lastInstance.timestamp;
-          previous.castTimeMs = previous.castEnd - previous.castStart;
-        }
-      }
+      // DON'T modify castEnd for DoTs - preserve when cast bar finished
+      // (DoT ticks happen AFTER the cast, modifying castEnd breaks latency calculations)
 
       // Calculate pandemic carryover time
       const carryoverTime = previousExpiry - cast.castStart;
@@ -1029,12 +1027,7 @@ class CastsAnalyzer {
         cast.pandemicRefresh = true;
         cast.pandemicCarryover = carryoverTime;
 
-        // Recalculate castEnd based on filtered instances
-        if (cast.instances.length > 0) {
-          const lastInstance = cast.instances[cast.instances.length - 1];
-          cast.castEnd = lastInstance.timestamp;
-          cast.castTimeMs = cast.castEnd - cast.castStart;
-        }
+        // DON'T modify castEnd - preserve original cast finish time
       }
     }
   }
