@@ -917,6 +917,10 @@ footer a:hover {
     color: #e0e0e0; /* Neutral - only highlight mistakes */
 }
 
+.text-good {
+    color: #10b981; /* Soft emerald green */
+}
+
 .text-notice {
     color: #f59e0b; /* Yellow/Orange */
 }

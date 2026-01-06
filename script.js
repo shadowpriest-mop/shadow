@@ -1455,7 +1455,16 @@ function renderStatsOverview(filter) {
     // Channel stats (MF)
     if (filter === 'timeline' || [15407, 129197].includes(parseInt(filter))) {
         if (stats.avgMfDelay > 0) {
-            html += createStatField('Avg MF Delay', stats.avgMfDelay.toFixed(0) + 'ms');
+            // Color code based on delay: green < 100ms, yellow 101-150ms, red 151ms+
+            let delayClass = '';
+            if (stats.avgMfDelay < 100) {
+                delayClass = 'text-good';
+            } else if (stats.avgMfDelay <= 150) {
+                delayClass = 'text-notice';
+            } else {
+                delayClass = 'text-warning';
+            }
+            html += createStatField('Avg MF Delay', stats.avgMfDelay.toFixed(0) + 'ms', delayClass);
         }
     }
 
@@ -1465,11 +1474,12 @@ function renderStatsOverview(filter) {
 /**
  * Create a stat field HTML
  */
-function createStatField(label, value) {
+function createStatField(label, value, cssClass = '') {
+    const classAttr = cssClass ? ` class="${cssClass}"` : '';
     return `
         <div class="stat-field">
             <div class="stat-field-label">${label}:</div>
-            <div class="stat-field-value">${value}</div>
+            <div class="stat-field-value"${classAttr}>${value}</div>
         </div>
     `;
 }
