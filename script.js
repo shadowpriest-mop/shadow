@@ -1102,7 +1102,7 @@ function createCastElement(cast, index, fight) {
                     ${buffIconsHTML}
                     <div class="cast-stats">
                         ${showHits ? `<div class="cast-stat-line"><span class="cast-stat-label">Hits:</span> ${hitsText}</div>` : ''}
-                        <div class="cast-stat-line"><span class="cast-stat-label">Damage:</span> ${damageText}</div>
+                        ${cast.totalDamage > 0 ? `<div class="cast-stat-line"><span class="cast-stat-label">Damage:</span> ${damageText}</div>` : ''}
                     </div>
                 </div>
             </div>
