@@ -37,6 +37,10 @@ class CastsAnalyzer {
     // (Must run before channel metrics to detect pandemic-based optimal clips)
     this.cleanupDotDamageInstances();
 
+    // Step 4b: Clean up Mind Flay damage instances to exclude post-refresh ticks
+    // Mind Flay has a unique "refresh" mechanic where casting again extends the channel
+    this.cleanupMindFlayDamageInstances();
+
     // Step 5: Calculate quality metrics
     this.calculateCastLatencies();
     this.calculateDotMetrics();
@@ -1033,6 +1037,62 @@ class CastsAnalyzer {
         }
       }
     }
+  }
+
+  /**
+   * Clean up Mind Flay damage instances to handle refresh mechanic
+   *
+   * Mind Flay has a unique "refresh" mechanic where casting it again
+   * extends the channel instead of clipping it. This causes ticks
+   * to be attributed to both the old and new casts.
+   *
+   * Solution: When a Mind Flay is refreshed, only count ticks that
+   * happen BEFORE the next MF cast starts.
+   */
+  cleanupMindFlayDamageInstances() {
+    const MF_SPELL_IDS = [15407, 129197]; // Mind Flay, Mind Flay: Insanity
+
+    for (const cast of this.casts) {
+      if (!MF_SPELL_IDS.includes(cast.spellId)) continue;
+
+      // Find next Mind Flay cast on same target
+      const nextMF = this.findNextMindFlayCast(cast);
+      if (!nextMF) continue; // Last MF cast, no cleanup needed
+
+      // Filter instances: only keep ticks that happened BEFORE the next MF started
+      const originalCount = cast.instances.length;
+      cast.instances = cast.instances.filter(inst => inst.timestamp < nextMF.castStart);
+      const removedCount = originalCount - cast.instances.length;
+
+      if (removedCount > 0) {
+        // Recalculate castEnd based on filtered instances
+        if (cast.instances.length > 0) {
+          const lastInstance = cast.instances[cast.instances.length - 1];
+          cast.castEnd = lastInstance.timestamp;
+          cast.castTimeMs = cast.castEnd - cast.castStart;
+        } else {
+          // All ticks were after the refresh - use castStart as castEnd
+          cast.castEnd = cast.castStart;
+          cast.castTimeMs = 0;
+        }
+      }
+    }
+  }
+
+  /**
+   * Find next Mind Flay cast on same target
+   */
+  findNextMindFlayCast(cast) {
+    const MF_SPELL_IDS = [15407, 129197];
+
+    for (let i = this.casts.indexOf(cast) + 1; i < this.casts.length; i++) {
+      const next = this.casts[i];
+
+      if (MF_SPELL_IDS.includes(next.spellId) && next.hasSameTarget(cast)) {
+        return next;
+      }
+    }
+    return null;
   }
 
   /**
