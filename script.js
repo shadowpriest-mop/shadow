@@ -769,9 +769,32 @@ function extractTargetsFromEvents(events, reportData, fight) {
     // Debug logging for boss detection
     console.log('=== BOSS DETECTION RESULTS ===');
     console.log(`Fight: ${fight.name} (encounterID: ${fight.encounterID})`);
-    targetsList.forEach(target => {
-        console.log(`  ${target.isBoss ? '👑 BOSS' : '⚔️  ADD'}: ${target.name} (damage: ${target.totalDamage.toLocaleString()})`);
-    });
+    console.log(`Total targets found: ${targetsList.length}`);
+
+    const bosses = targetsList.filter(t => t.isBoss);
+    const adds = targetsList.filter(t => !t.isBoss);
+
+    console.log(`Bosses: ${bosses.length}, Adds: ${adds.length}`);
+    console.log('');
+
+    if (bosses.length > 0) {
+        console.log('👑 BOSSES:');
+        bosses.forEach(target => {
+            console.log(`  ${target.name} - ${target.totalDamage.toLocaleString()} damage`);
+        });
+    }
+
+    if (adds.length > 0) {
+        console.log('⚔️  ADDS:');
+        adds.forEach(target => {
+            console.log(`  ${target.name} - ${target.totalDamage.toLocaleString()} damage`);
+        });
+    }
+
+    if (adds.length === 0) {
+        console.log('⚠️  No adds found (pure single target or adds not damaged)');
+    }
+
     console.log('=============================');
 
     return targetsList;
