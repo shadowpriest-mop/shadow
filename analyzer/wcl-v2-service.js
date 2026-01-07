@@ -219,6 +219,7 @@ class WCLv2Service {
               startTime: $startTime
               endTime: $endTime
               filterExpression: $filterExpression
+              includeResources: true
             ) {
               data
               nextPageTimestamp

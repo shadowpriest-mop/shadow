@@ -236,10 +236,24 @@ class CastsAnalyzer {
   /**
    * Parse cast and damage events into CastDetails objects
    * Now includes buff tracking - merges buff events with cast events
+   * Now includes begincast events for accurate cast start timing
    */
   parseCasts() {
     const castEvents = this.events.filter(e => e.type === 'cast');
+    const beginCastEvents = this.events.filter(e => e.type === 'begincast');
     const damageEvents = this.events.filter(e => e.type === 'damage');
+
+    // Create a map of begincast events for matching with cast events
+    // Key: spellId-targetId-targetInstance
+    // Value: array of begincast events (will match and remove as we process)
+    const beginCastMap = new Map();
+    for (const bc of beginCastEvents) {
+      const key = `${bc.abilityGameID}-${bc.targetID || 0}-${bc.targetInstance || 0}`;
+      if (!beginCastMap.has(key)) {
+        beginCastMap.set(key, []);
+      }
+      beginCastMap.get(key).push(bc);
+    }
 
     // Merge buff events and cast events into timeline
     const timeline = this.mergeTimeline(castEvents, this.buffEvents);
@@ -262,6 +276,33 @@ class CastsAnalyzer {
         const spellId = event.abilityGameID;
         const spellData = getSpellData(spellId);
 
+        // Try to find matching begincast event
+        const key = `${spellId}-${event.targetID || 0}-${event.targetInstance || 0}`;
+        let actualCastStart = event.timestamp; // Default to cast finish time
+
+        if (beginCastMap.has(key)) {
+          const begincasts = beginCastMap.get(key);
+          // Find the most recent begincast before this cast event
+          let matchingBegincast = null;
+          let matchIndex = -1;
+
+          for (let i = begincasts.length - 1; i >= 0; i--) {
+            const bc = begincasts[i];
+            // Begincast should be before or at the cast event, and within 10s window
+            if (bc.timestamp <= event.timestamp && (event.timestamp - bc.timestamp) < 10000) {
+              matchingBegincast = bc;
+              matchIndex = i;
+              break;
+            }
+          }
+
+          if (matchingBegincast) {
+            actualCastStart = matchingBegincast.timestamp;
+            // Remove matched begincast so we don't match it again
+            begincasts.splice(matchIndex, 1);
+          }
+        }
+
         // Snapshot current active buffs
         const activeBuffs = this.getActiveBuffs();
 
@@ -270,8 +311,8 @@ class CastsAnalyzer {
           spellId: spellId,
           name: spellData ? spellData.name : `Unknown (${spellId})`,
           rank: 0, // MoP has no spell ranks
-          castStart: event.timestamp,
-          castEnd: event.timestamp, // Will update with last damage
+          castStart: actualCastStart, // Use begincast timestamp if available
+          castEnd: event.timestamp, // Cast finish time
           sourceId: event.sourceID,
           targetId: event.targetID,
           targetInstance: event.targetInstance || 0,
@@ -291,10 +332,14 @@ class CastsAnalyzer {
           if (spellData.damageType === DamageType.DOT || spellData.damageType === DamageType.CHANNEL) {
             cast.castEnd = cast.lastDamageTimestamp;
           }
-          // For spells with cast time (direct damage casts), castEnd is castStart + cast time
+          // For spells with cast time (direct damage casts)
           else if (spellData.baseCastTime > 0) {
-            // Use base cast time for now (haste adjustment happens later)
-            cast.castEnd = cast.castStart + (spellData.baseCastTime * 1000);
+            // If we don't have begincast (actualCastStart === event.timestamp),
+            // calculate castEnd using base cast time
+            if (actualCastStart === event.timestamp) {
+              cast.castEnd = cast.castStart + (spellData.baseCastTime * 1000);
+            }
+            // Otherwise, castEnd is already set correctly from event.timestamp
           }
           // For instant direct damage (baseCastTime === 0), castEnd remains = castStart
           // This prevents damage event latency from affecting cast latency calculations
