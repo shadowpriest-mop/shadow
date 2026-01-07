@@ -244,22 +244,19 @@ class CastsAnalyzer {
     const damageEvents = this.events.filter(e => e.type === 'damage');
 
     console.log(`Found ${beginCastEvents.length} begincast events out of ${this.events.length} total events`);
-    if (beginCastEvents.length > 0) {
-      console.log('Sample begincast event:', beginCastEvents[0]);
-    }
 
     // Create a map of begincast events for matching with cast events
-    // Key: spellId-targetId-targetInstance
+    // Key: spellId only (begincast events have targetID: -1, so we can't match by target)
     // Value: array of begincast events (will match and remove as we process)
     const beginCastMap = new Map();
     for (const bc of beginCastEvents) {
-      const key = `${bc.abilityGameID}-${bc.targetID || 0}-${bc.targetInstance || 0}`;
+      const key = bc.abilityGameID;
       if (!beginCastMap.has(key)) {
         beginCastMap.set(key, []);
       }
       beginCastMap.get(key).push(bc);
     }
-    console.log(`Created begincast map with ${beginCastMap.size} unique spell-target combinations`);
+    console.log(`Created begincast map with ${beginCastMap.size} unique spells`);
 
     // Merge buff events and cast events into timeline
     const timeline = this.mergeTimeline(castEvents, this.buffEvents);
@@ -283,20 +280,11 @@ class CastsAnalyzer {
         const spellData = getSpellData(spellId);
 
         // Try to find matching begincast event
-        const key = `${spellId}-${event.targetID || 0}-${event.targetInstance || 0}`;
+        // Match by spellId only (begincast events have targetID: -1)
         let actualCastStart = event.timestamp; // Default to cast finish time
 
-        // Debug log for Mind Blast - show what we're looking for
-        if (spellId === 8092) {
-          console.log(`MB cast event: looking for key "${key}", has key: ${beginCastMap.has(key)}`);
-          if (beginCastMap.has(key)) {
-            console.log(`  Found ${beginCastMap.get(key).length} begincasts with this key`);
-          }
-          console.log(`  Available keys:`, Array.from(beginCastMap.keys()));
-        }
-
-        if (beginCastMap.has(key)) {
-          const begincasts = beginCastMap.get(key);
+        if (beginCastMap.has(spellId)) {
+          const begincasts = beginCastMap.get(spellId);
           // Find the most recent begincast before this cast event
           let matchingBegincast = null;
           let matchIndex = -1;
@@ -319,13 +307,13 @@ class CastsAnalyzer {
             // Debug log for Mind Blast
             if (spellId === 8092) {
               const castTime = event.timestamp - actualCastStart;
-              console.log(`MB: begincast at ${actualCastStart}, cast at ${event.timestamp}, duration: ${castTime}ms (${(castTime/1000).toFixed(2)}s)`);
+              console.log(`MB: matched begincast at ${actualCastStart}, cast at ${event.timestamp}, duration: ${castTime}ms (${(castTime/1000).toFixed(2)}s)`);
             }
           } else if (spellId === 8092) {
             console.log(`MB: no begincast found in array (checked ${begincasts.length} begincasts)`);
           }
         } else if (spellId === 8092) {
-          console.log(`MB: key not in map`);
+          console.log(`MB: no begincasts for this spell`);
         }
 
         // Snapshot current active buffs
