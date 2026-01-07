@@ -199,9 +199,13 @@ class WCLv2Service {
     console.log('Players count:', data.reportData.report.masterData?.players?.length || 0);
     console.log('Enemies count:', data.reportData.report.masterData?.enemies?.length || 0);
 
-    // Log sample enemy to see what fields are available
+    // Log sample enemies to see what fields are available (filter out Environment)
     if (data.reportData.report.masterData?.enemies?.length > 0) {
-      console.log('Sample enemy data:', data.reportData.report.masterData.enemies[0]);
+      const realEnemies = data.reportData.report.masterData.enemies.filter(e => e.id > 0);
+      console.log('Real enemies count (excluding Environment):', realEnemies.length);
+      if (realEnemies.length > 0) {
+        console.log('First 3 enemy samples:', realEnemies.slice(0, 3));
+      }
     }
 
     // Get player specs from rankings data if available
