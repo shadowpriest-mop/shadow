@@ -286,6 +286,15 @@ class CastsAnalyzer {
         const key = `${spellId}-${event.targetID || 0}-${event.targetInstance || 0}`;
         let actualCastStart = event.timestamp; // Default to cast finish time
 
+        // Debug log for Mind Blast - show what we're looking for
+        if (spellId === 8092) {
+          console.log(`MB cast event: looking for key "${key}", has key: ${beginCastMap.has(key)}`);
+          if (beginCastMap.has(key)) {
+            console.log(`  Found ${beginCastMap.get(key).length} begincasts with this key`);
+          }
+          console.log(`  Available keys:`, Array.from(beginCastMap.keys()));
+        }
+
         if (beginCastMap.has(key)) {
           const begincasts = beginCastMap.get(key);
           // Find the most recent begincast before this cast event
@@ -313,8 +322,10 @@ class CastsAnalyzer {
               console.log(`MB: begincast at ${actualCastStart}, cast at ${event.timestamp}, duration: ${castTime}ms (${(castTime/1000).toFixed(2)}s)`);
             }
           } else if (spellId === 8092) {
-            console.log(`MB: no begincast found, using cast timestamp ${event.timestamp}`);
+            console.log(`MB: no begincast found in array (checked ${begincasts.length} begincasts)`);
           }
+        } else if (spellId === 8092) {
+          console.log(`MB: key not in map`);
         }
 
         // Snapshot current active buffs
