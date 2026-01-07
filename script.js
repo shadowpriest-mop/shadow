@@ -680,8 +680,29 @@ window.loadReport = async function loadReport() {
     }
 }
 
+// Identify if an enemy is a boss based on encounter data
+function identifyBoss(enemyName, fight) {
+    // Trash pulls (no encounterID) have no bosses
+    if (!fight.encounterID || fight.encounterID === 0) {
+        return false;
+    }
+
+    // Simple name matching: does enemy name match fight name?
+    // This works for most single-boss encounters
+    if (enemyName === fight.name) {
+        return true;
+    }
+
+    // Partial matching: does fight name contain enemy name or vice versa?
+    if (fight.name.includes(enemyName) || enemyName.includes(fight.name)) {
+        return true;
+    }
+
+    return false;
+}
+
 // Extract unique targets from events and enrich with names from report enemies
-function extractTargetsFromEvents(events, reportData) {
+function extractTargetsFromEvents(events, reportData, fight) {
     const targets = new Map();
 
     // Build enemy ID -> name mapping from report data
@@ -718,10 +739,19 @@ function extractTargetsFromEvents(events, reportData) {
         const targetName = enemyNames.get(targetID) || `Unknown Target`;
         const instanceCount = data.instances.size;
 
-        // Show count if multiple instances
-        const displayName = instanceCount > 1
-            ? `${targetName} (${instanceCount})`
-            : targetName;
+        // Identify if this is a boss
+        const isBoss = identifyBoss(targetName, fight);
+
+        // Build display name with boss/add label
+        let displayName = targetName;
+        if (instanceCount > 1) {
+            displayName += ` (${instanceCount})`;
+        }
+
+        // Add boss/add label if this is a boss encounter
+        if (fight.encounterID > 0) {
+            displayName += isBoss ? ' [BOSS]' : ' [ADD]';
+        }
 
         targets.set(targetID, {
             id: targetID,
@@ -729,11 +759,22 @@ function extractTargetsFromEvents(events, reportData) {
             displayName: displayName,
             instanceCount: instanceCount,
             instances: Array.from(data.instances),
-            totalDamage: data.totalDamage
+            totalDamage: data.totalDamage,
+            isBoss: isBoss
         });
     });
 
-    return Array.from(targets.values());
+    const targetsList = Array.from(targets.values());
+
+    // Debug logging for boss detection
+    console.log('=== BOSS DETECTION RESULTS ===');
+    console.log(`Fight: ${fight.name} (encounterID: ${fight.encounterID})`);
+    targetsList.forEach(target => {
+        console.log(`  ${target.isBoss ? '👑 BOSS' : '⚔️  ADD'}: ${target.name} (damage: ${target.totalDamage.toLocaleString()})`);
+    });
+    console.log('=============================');
+
+    return targetsList;
 }
 
 // Make analyzeLog available globally
@@ -812,7 +853,7 @@ window.analyzeLog = async function analyzeLog() {
         const buffEvents = buffEventsData.data || [];
 
         // Extract targets and populate target filter
-        const targets = extractTargetsFromEvents(events, currentReportData);
+        const targets = extractTargetsFromEvents(events, currentReportData, fight);
         window.allTargets = targets; // Store globally
 
         const targetFilter = document.getElementById('target-filter');
