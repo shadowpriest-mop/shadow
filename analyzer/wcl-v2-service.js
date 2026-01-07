@@ -182,6 +182,7 @@ class WCLv2Service {
                 gameID
                 type
                 subType
+                petOwner
               }
             }
             rankings
@@ -195,7 +196,13 @@ class WCLv2Service {
     console.log('=== RAW API RESPONSE ===');
     console.log('Full response:', JSON.stringify(data, null, 2));
     console.log('Fights count:', data.reportData.report.fights?.length || 0);
-    console.log('Actors count:', data.reportData.report.masterData?.actors?.length || 0);
+    console.log('Players count:', data.reportData.report.masterData?.players?.length || 0);
+    console.log('Enemies count:', data.reportData.report.masterData?.enemies?.length || 0);
+
+    // Log sample enemy to see what fields are available
+    if (data.reportData.report.masterData?.enemies?.length > 0) {
+      console.log('Sample enemy data:', data.reportData.report.masterData.enemies[0]);
+    }
 
     // Get player specs from rankings data if available
     if (data.reportData.report.rankings) {
