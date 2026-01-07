@@ -243,6 +243,11 @@ class CastsAnalyzer {
     const beginCastEvents = this.events.filter(e => e.type === 'begincast');
     const damageEvents = this.events.filter(e => e.type === 'damage');
 
+    console.log(`Found ${beginCastEvents.length} begincast events out of ${this.events.length} total events`);
+    if (beginCastEvents.length > 0) {
+      console.log('Sample begincast event:', beginCastEvents[0]);
+    }
+
     // Create a map of begincast events for matching with cast events
     // Key: spellId-targetId-targetInstance
     // Value: array of begincast events (will match and remove as we process)
@@ -254,6 +259,7 @@ class CastsAnalyzer {
       }
       beginCastMap.get(key).push(bc);
     }
+    console.log(`Created begincast map with ${beginCastMap.size} unique spell-target combinations`);
 
     // Merge buff events and cast events into timeline
     const timeline = this.mergeTimeline(castEvents, this.buffEvents);
@@ -300,6 +306,14 @@ class CastsAnalyzer {
             actualCastStart = matchingBegincast.timestamp;
             // Remove matched begincast so we don't match it again
             begincasts.splice(matchIndex, 1);
+
+            // Debug log for Mind Blast
+            if (spellId === 8092) {
+              const castTime = event.timestamp - actualCastStart;
+              console.log(`MB: begincast at ${actualCastStart}, cast at ${event.timestamp}, duration: ${castTime}ms (${(castTime/1000).toFixed(2)}s)`);
+            }
+          } else if (spellId === 8092) {
+            console.log(`MB: no begincast found, using cast timestamp ${event.timestamp}`);
           }
         }
 
@@ -345,6 +359,11 @@ class CastsAnalyzer {
           // This prevents damage event latency from affecting cast latency calculations
 
           cast.castTimeMs = cast.castEnd - cast.castStart;
+
+          // Debug log final cast time for Mind Blast
+          if (cast.spellId === 8092) {
+            console.log(`MB final: castStart=${cast.castStart}, castEnd=${cast.castEnd}, castTimeMs=${cast.castTimeMs} (${(cast.castTimeMs/1000).toFixed(2)}s)`);
+          }
         }
 
         this.casts.push(cast);
