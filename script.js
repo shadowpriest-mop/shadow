@@ -1492,14 +1492,17 @@ function createCastDetailsHTML(cast, fight) {
             let distanceInfo = '';
             if (instance.distance !== undefined) {
                 // Halo optimal range: 22-30 yards (28 is best)
+                // >30 yards can happen due to large boss hitboxes (edge hit vs center damage)
                 let distanceClass = '';
                 if (cast.spellId === 120644) { // Halo
                     if (instance.distance >= 22 && instance.distance <= 30) {
                         distanceClass = ' optimal'; // Green: optimal range
                     } else if (instance.distance >= 17 && instance.distance < 22) {
                         distanceClass = ' suboptimal'; // Orange: poor but acceptable
+                    } else if (instance.distance > 30) {
+                        distanceClass = ' suboptimal'; // Orange: likely hitbox weirdness
                     } else {
-                        distanceClass = ' very-bad'; // Red: very bad (0-17 or >30)
+                        distanceClass = ' very-bad'; // Red: very bad (0-17 yards - too close)
                     }
                 }
                 distanceInfo = ` <span class="cast-hit-distance${distanceClass}">${instance.distance} yards</span>`;

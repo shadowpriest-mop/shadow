@@ -587,7 +587,7 @@ class CastsAnalyzer {
     } else if (isChannel) {
       matchWindow = 5000;
     } else if (spellId === 120644) { // Halo
-      matchWindow = 3000; // 30 yards max range
+      matchWindow = 10000; // Generous window to catch delayed hits from large boss hitboxes
     } else if (isAoE) {
       matchWindow = 5000; // Cascade, Divine Star
     } else {
