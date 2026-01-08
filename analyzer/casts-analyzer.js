@@ -244,6 +244,21 @@ class CastsAnalyzer {
     const damageEvents = this.events.filter(e => e.type === 'damage');
 
     console.log(`Found ${beginCastEvents.length} begincast events out of ${this.events.length} total events`);
+    console.log(`Cast events: ${castEvents.length}, Damage events: ${damageEvents.length}`);
+
+    // Debug: Check for Halo events
+    const haloCasts = castEvents.filter(e => e.abilityGameID === 120517);
+    const haloDamage = damageEvents.filter(e => e.abilityGameID === 120644);
+    console.log(`=== HALO EVENT COUNTS ===`);
+    console.log(`Halo casts (120517): ${haloCasts.length}`);
+    console.log(`Halo damage (120644): ${haloDamage.length}`);
+    if (haloCasts.length > 0) {
+      console.log('Halo cast timestamps:', haloCasts.map(e => e.timestamp));
+    }
+    if (haloDamage.length > 0) {
+      console.log('Halo damage timestamps:', haloDamage.slice(0, 5).map(e => e.timestamp));
+    }
+    console.log('========================');
 
     // Create a map of begincast events for matching with cast events
     // Key: spellId only (begincast events have targetID: -1, so we can't match by target)
