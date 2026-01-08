@@ -972,6 +972,9 @@ window.analyzeLog = async function analyzeLog() {
         // Render talents display
         renderTalents(talents);
 
+        // Add tier 6 talent filter button (Halo/Cascade/Divine Star)
+        addTier6TalentButton(talents);
+
         // Render pre-pull check
         renderPrePullCheck(prePullResults);
 
@@ -1750,6 +1753,63 @@ function renderTalents(talents) {
 
     talentsDisplay.innerHTML = html;
     talentsDisplay.style.display = 'block';
+}
+
+/**
+ * Add tier 6 talent filter button based on player's talent choice
+ */
+function addTier6TalentButton(talents) {
+    if (!talents || !Array.isArray(talents) || talents.length === 0) {
+        return;
+    }
+
+    // Find tier 6 talent (Level 90: Halo, Cascade, or Divine Star)
+    const tier6Talent = talents.find(t => t.type === 6);
+
+    if (!tier6Talent) {
+        return;
+    }
+
+    // Map talent names to spell IDs and display info
+    const tier6TalentMap = {
+        'Halo': { spellId: 120644, icon: 'halo.jpg', label: 'Halo' },
+        'Cascade': { spellId: 121135, icon: 'cascade.jpg', label: 'Cascade' },
+        'Divine Star': { spellId: 110744, icon: 'divinestar.jpg', label: 'DS' }
+    };
+
+    const talentInfo = tier6TalentMap[tier6Talent.name];
+
+    if (!talentInfo) {
+        return;
+    }
+
+    // Find the spell filters container
+    const spellFilters = document.querySelector('.spell-filters');
+
+    if (!spellFilters) {
+        return;
+    }
+
+    // Remove any existing tier 6 talent buttons (in case of re-analysis)
+    const existingButton = spellFilters.querySelector('[data-tier6-talent]');
+    if (existingButton) {
+        existingButton.remove();
+    }
+
+    // Create the button
+    const button = document.createElement('button');
+    button.className = 'spell-filter-btn';
+    button.setAttribute('data-spell', talentInfo.spellId);
+    button.setAttribute('data-tier6-talent', 'true');
+    button.onclick = () => filterBySpell(talentInfo.spellId);
+
+    button.innerHTML = `
+        <img src="analyzer/icons/${talentInfo.icon}" alt="${talentInfo.label}" class="filter-icon">
+        <span class="filter-label">${talentInfo.label}</span>
+    `;
+
+    // Append to spell filters
+    spellFilters.appendChild(button);
 }
 
 /**
