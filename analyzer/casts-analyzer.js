@@ -247,11 +247,11 @@ class CastsAnalyzer {
     console.log(`Cast events: ${castEvents.length}, Damage events: ${damageEvents.length}`);
 
     // Debug: Check for Halo events
-    const haloCasts = castEvents.filter(e => e.abilityGameID === 120517);
-    const haloDamage = damageEvents.filter(e => e.abilityGameID === 120644);
+    const haloCasts = castEvents.filter(e => e.abilityGameID === 120644);
+    const haloDamage = damageEvents.filter(e => e.abilityGameID === 120696);
     console.log(`=== HALO EVENT COUNTS ===`);
-    console.log(`Halo casts (120517): ${haloCasts.length}`);
-    console.log(`Halo damage (120644): ${haloDamage.length}`);
+    console.log(`Halo casts (120644): ${haloCasts.length}`);
+    console.log(`Halo damage (120696): ${haloDamage.length}`);
     if (haloCasts.length > 0) {
       console.log('Halo cast timestamps:', haloCasts.map(e => e.timestamp));
     }
@@ -576,7 +576,7 @@ class CastsAnalyzer {
 
     // Mapping of cast spell IDs to their damage spell IDs
     const SPELL_DAMAGE_MAPPINGS = {
-      120517: 120644, // Halo cast -> Halo damage
+      120644: 120696, // Halo cast -> Halo damage
       121135: 127628, // Cascade cast -> Cascade damage
       110744: 122128, // Divine Star cast -> Divine Star damage
     };
@@ -585,15 +585,15 @@ class CastsAnalyzer {
     const damageSpellId = SPELL_DAMAGE_MAPPINGS[spellId] || spellId;
 
     // Debug logging for Halo
-    const isHalo = spellId === 120517;
+    const isHalo = spellId === 120644;
     if (isHalo) {
       console.log(`=== MATCHING HALO DAMAGE ===`);
       console.log(`Cast time: ${castTime}, looking for damage spell ID: ${damageSpellId}`);
       console.log(`Total damage events to search: ${damageEvents.length}`);
 
       // Count Halo damage events
-      const haloDamageEvents = damageEvents.filter(e => e.abilityGameID === 120644);
-      console.log(`Halo damage events (120644) found: ${haloDamageEvents.length}`);
+      const haloDamageEvents = damageEvents.filter(e => e.abilityGameID === 120696);
+      console.log(`Halo damage events (120696) found: ${haloDamageEvents.length}`);
       if (haloDamageEvents.length > 0) {
         console.log('Sample Halo damage events:', haloDamageEvents.slice(0, 3).map(e => ({
           timestamp: e.timestamp,
