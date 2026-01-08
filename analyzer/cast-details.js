@@ -102,7 +102,7 @@ class CastDetails {
 }
 
 class DamageInstance {
-  constructor(event) {
+  constructor(event, castTimestamp = null) {
     this.timestamp = event.timestamp;
     this.targetId = event.targetID;
     this.targetInstance = event.targetInstance || 0;
@@ -112,6 +112,12 @@ class DamageInstance {
     this.critical = event.hitType === 2; // 2 = crit in WCL
     this.immune = event.hitType === 9; // 9 = immune
     this.resisted = event.hitType === 8; // 8 = resist
+
+    // Calculate time difference and distance (for projectile spells like Halo)
+    if (castTimestamp !== null) {
+      this.timeDiff = event.timestamp - castTimestamp; // ms
+      this.distance = Math.round((this.timeDiff / 100) * 10) / 10; // 1 yard per 0.1s (100ms), rounded to 1 decimal
+    }
   }
 }
 

@@ -1488,11 +1488,26 @@ function createCastDetailsHTML(cast, fight) {
                 damageText += ' (Crit)';
             }
 
+            // Add distance info for projectile spells (Halo, Cascade, Divine Star)
+            let distanceInfo = '';
+            if (instance.distance !== undefined) {
+                // Halo optimal range is ~28 yards (25-30 is good)
+                let distanceClass = '';
+                if (cast.spellId === 120644) { // Halo
+                    if (instance.distance >= 25 && instance.distance <= 30) {
+                        distanceClass = ' optimal';
+                    } else if (instance.distance < 20 || instance.distance > 35) {
+                        distanceClass = ' suboptimal';
+                    }
+                }
+                distanceInfo = ` <span class="cast-hit-distance${distanceClass}">${instance.distance} yards</span>`;
+            }
+
             html += `
                 <div class="cast-hit-item">
                     <span class="cast-hit-time">${timeText}</span>
                     <span class="cast-hit-target">Target</span>
-                    <span class="cast-hit-damage">Damage: ${damageText}</span>
+                    <span class="cast-hit-damage">Damage: ${damageText}</span>${distanceInfo}
                 </div>
             `;
         });

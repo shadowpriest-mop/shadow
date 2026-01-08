@@ -632,6 +632,21 @@ footer a:hover {
     white-space: nowrap;
 }
 
+.cast-hit-distance {
+    color: #64B5F6;
+    font-family: 'Courier New', monospace;
+    font-size: 0.9em;
+    margin-left: 8px;
+}
+
+.cast-hit-distance.optimal {
+    color: #10b981;
+}
+
+.cast-hit-distance.suboptimal {
+    color: #f59e0b;
+}
+
 /* Detailed Buff Display (expanded view) */
 .cast-detail-buffs {
     display: flex;

@@ -591,7 +591,8 @@ class CastsAnalyzer {
 
       const timeDiff = dmgEvent.timestamp - castTime;
       if (timeDiff >= 0 && timeDiff <= matchWindow) {
-        instances.push(new DamageInstance(dmgEvent));
+        // For AoE spells, pass castTime to calculate distance
+        instances.push(new DamageInstance(dmgEvent, isAoE ? castTime : null));
       }
     }
 
