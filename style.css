@@ -640,11 +640,15 @@ footer a:hover {
 }
 
 .cast-hit-distance.optimal {
-    color: #10b981;
+    color: #10b981; /* Green - optimal range (22-30 yards) */
 }
 
 .cast-hit-distance.suboptimal {
-    color: #f59e0b;
+    color: #f59e0b; /* Orange - poor but acceptable (17-22 yards) */
+}
+
+.cast-hit-distance.very-bad {
+    color: #dc2626; /* Red - very bad (0-17 or >30 yards) */
 }
 
 /* Detailed Buff Display (expanded view) */
