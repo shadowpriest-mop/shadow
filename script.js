@@ -1162,6 +1162,11 @@ function renderCastTimeline(casts, fight) {
     // Filter by boss/add if needed
     if (!showBoss || !showAdds) {
         filteredCasts = filteredCasts.filter(cast => {
+            // Always show targetless spells (buffs, cooldowns, self-casts)
+            if (!cast.targetId || cast.targetId <= 0) {
+                return true;
+            }
+
             const target = window.allTargets?.find(t => t.id === cast.targetId);
             const isBoss = target?.isBoss || false;
 
