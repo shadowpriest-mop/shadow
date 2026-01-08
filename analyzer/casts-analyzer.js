@@ -552,23 +552,41 @@ class CastsAnalyzer {
 
   /**
    * Match damage events to a cast event
+   * Some spells have different spell IDs for cast vs damage (e.g., Halo, Cascade, Divine Star)
    */
   matchDamageInstances(castEvent, damageEvents) {
     const spellId = castEvent.abilityGameID;
     const castTime = castEvent.timestamp;
     const instances = [];
 
+    // Mapping of cast spell IDs to their damage spell IDs
+    const SPELL_DAMAGE_MAPPINGS = {
+      120517: 120644, // Halo cast -> Halo damage
+      121135: 127628, // Cascade cast -> Cascade damage
+      110744: 122128, // Divine Star cast -> Divine Star damage
+    };
+
+    // Check if this spell has a different damage spell ID
+    const damageSpellId = SPELL_DAMAGE_MAPPINGS[spellId] || spellId;
+
     // For instant casts and direct damage, match within 100ms window
     // For DoTs and channels, match within duration window
+    // For AoE spells (Halo, Cascade, Divine Star), use longer window for travel time
     const spellData = getSpellData(spellId);
     const isDoT = spellData && spellData.damageType === DamageType.DOT;
     const isChannel = spellData && spellData.damageType === DamageType.CHANNEL;
-    const matchWindow = isDoT ? 30000 : (isChannel ? 5000 : 100);
+    const isAoE = SPELL_DAMAGE_MAPPINGS[spellId] !== undefined; // Has separate damage ID = AoE
+    const matchWindow = isDoT ? 30000 : (isChannel ? 5000 : (isAoE ? 5000 : 100));
 
     for (const dmgEvent of damageEvents) {
-      if (dmgEvent.abilityGameID !== spellId) continue;
-      if (dmgEvent.targetID !== castEvent.targetID) continue;
-      if (dmgEvent.targetInstance !== castEvent.targetInstance) continue;
+      if (dmgEvent.abilityGameID !== damageSpellId) continue;
+
+      // For AoE spells with no specific target, don't filter by target
+      // (they hit multiple targets)
+      if (!isAoE) {
+        if (dmgEvent.targetID !== castEvent.targetID) continue;
+        if (dmgEvent.targetInstance !== castEvent.targetInstance) continue;
+      }
 
       const timeDiff = dmgEvent.timestamp - castTime;
       if (timeDiff >= 0 && timeDiff <= matchWindow) {
