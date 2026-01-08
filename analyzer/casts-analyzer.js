@@ -572,12 +572,27 @@ class CastsAnalyzer {
 
     // For instant casts and direct damage, match within 100ms window
     // For DoTs and channels, match within duration window
-    // For AoE spells (Halo, Cascade, Divine Star), use longer window for travel time
+    // For AoE spells, use spell-specific max range windows:
+    // - Halo: 30 yards max = 3000ms (1 yard per 100ms)
+    // - Cascade: likely similar, use 5000ms for now
+    // - Divine Star: likely similar, use 5000ms for now
     const spellData = getSpellData(spellId);
     const isDoT = spellData && spellData.damageType === DamageType.DOT;
     const isChannel = spellData && spellData.damageType === DamageType.CHANNEL;
     const isAoE = SPELL_DAMAGE_MAPPINGS[spellId] !== undefined; // Has separate damage ID = AoE
-    const matchWindow = isDoT ? 30000 : (isChannel ? 5000 : (isAoE ? 5000 : 100));
+
+    let matchWindow;
+    if (isDoT) {
+      matchWindow = 30000;
+    } else if (isChannel) {
+      matchWindow = 5000;
+    } else if (spellId === 120644) { // Halo
+      matchWindow = 3000; // 30 yards max range
+    } else if (isAoE) {
+      matchWindow = 5000; // Cascade, Divine Star
+    } else {
+      matchWindow = 100; // Direct damage
+    }
 
     for (const dmgEvent of damageEvents) {
       if (dmgEvent.abilityGameID !== damageSpellId) continue;
