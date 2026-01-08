@@ -597,6 +597,9 @@ class CastsAnalyzer {
     for (const dmgEvent of damageEvents) {
       if (dmgEvent.abilityGameID !== damageSpellId) continue;
 
+      // Always filter by source - only match damage from the same player who cast the spell
+      if (dmgEvent.sourceID !== castEvent.sourceID) continue;
+
       // For AoE spells with no specific target, don't filter by target
       // (they hit multiple targets)
       if (!isAoE) {
