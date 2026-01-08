@@ -569,6 +569,26 @@ class CastsAnalyzer {
     // Check if this spell has a different damage spell ID
     const damageSpellId = SPELL_DAMAGE_MAPPINGS[spellId] || spellId;
 
+    // Debug logging for Halo
+    const isHalo = spellId === 120517;
+    if (isHalo) {
+      console.log(`=== MATCHING HALO DAMAGE ===`);
+      console.log(`Cast time: ${castTime}, looking for damage spell ID: ${damageSpellId}`);
+      console.log(`Total damage events to search: ${damageEvents.length}`);
+
+      // Count Halo damage events
+      const haloDamageEvents = damageEvents.filter(e => e.abilityGameID === 120644);
+      console.log(`Halo damage events (120644) found: ${haloDamageEvents.length}`);
+      if (haloDamageEvents.length > 0) {
+        console.log('Sample Halo damage events:', haloDamageEvents.slice(0, 3).map(e => ({
+          timestamp: e.timestamp,
+          timeDiff: e.timestamp - castTime,
+          targetID: e.targetID,
+          amount: e.amount
+        })));
+      }
+    }
+
     // For instant casts and direct damage, match within 100ms window
     // For DoTs and channels, match within duration window
     // For AoE spells (Halo, Cascade, Divine Star), use longer window for travel time
@@ -577,6 +597,10 @@ class CastsAnalyzer {
     const isChannel = spellData && spellData.damageType === DamageType.CHANNEL;
     const isAoE = SPELL_DAMAGE_MAPPINGS[spellId] !== undefined; // Has separate damage ID = AoE
     const matchWindow = isDoT ? 30000 : (isChannel ? 5000 : (isAoE ? 5000 : 100));
+
+    if (isHalo) {
+      console.log(`Match window: ${matchWindow}ms (isAoE: ${isAoE})`);
+    }
 
     for (const dmgEvent of damageEvents) {
       if (dmgEvent.abilityGameID !== damageSpellId) continue;
@@ -591,7 +615,17 @@ class CastsAnalyzer {
       const timeDiff = dmgEvent.timestamp - castTime;
       if (timeDiff >= 0 && timeDiff <= matchWindow) {
         instances.push(new DamageInstance(dmgEvent));
+        if (isHalo) {
+          console.log(`✓ Matched Halo damage: +${timeDiff}ms, targetID=${dmgEvent.targetID}, amount=${dmgEvent.amount}`);
+        }
+      } else if (isHalo && timeDiff >= 0 && timeDiff <= 10000) {
+        console.log(`✗ Halo damage OUTSIDE window: +${timeDiff}ms (window: ${matchWindow}ms), targetID=${dmgEvent.targetID}`);
       }
+    }
+
+    if (isHalo) {
+      console.log(`Total Halo instances matched: ${instances.length}`);
+      console.log('======================');
     }
 
     return instances;
