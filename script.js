@@ -984,6 +984,24 @@ window.analyzeLog = async function analyzeLog() {
             renderStatsOverview('timeline');
         });
 
+        // Add boss/add filter event listeners
+        const filterBoss = document.getElementById('filter-boss');
+        const filterAdds = document.getElementById('filter-adds');
+
+        if (filterBoss) {
+            filterBoss.addEventListener('change', () => {
+                renderCastTimeline(window.allCasts, window.currentFight);
+                renderStatsOverview('timeline');
+            });
+        }
+
+        if (filterAdds) {
+            filterAdds.addEventListener('change', () => {
+                renderCastTimeline(window.allCasts, window.currentFight);
+                renderStatsOverview('timeline');
+            });
+        }
+
         // Hide loading, show results
         analysisLoading.style.display = 'none';
         resultsSection.style.display = 'block';
@@ -1054,6 +1072,63 @@ function renderPrePullCheck(results) {
 /**
  * Render the cast timeline
  */
+/**
+ * Update boss/add damage stats display
+ */
+function updateBossAddStats(casts, fight) {
+    const statsDiv = document.getElementById('boss-add-stats');
+    if (!statsDiv) return;
+
+    // Only show for boss encounters
+    if (!fight || !fight.encounterID || fight.encounterID === 0) {
+        statsDiv.style.display = 'none';
+        return;
+    }
+
+    // Calculate boss and add damage
+    let bossDamage = 0;
+    let addDamage = 0;
+
+    casts.forEach(cast => {
+        const target = window.allTargets?.find(t => t.id === cast.targetId);
+        const isBoss = target?.isBoss || false;
+        const damage = cast.totalDamage || 0;
+
+        if (isBoss) {
+            bossDamage += damage;
+        } else {
+            addDamage += damage;
+        }
+    });
+
+    const totalDamage = bossDamage + addDamage;
+
+    if (totalDamage === 0) {
+        statsDiv.style.display = 'none';
+        return;
+    }
+
+    const bossPercent = ((bossDamage / totalDamage) * 100).toFixed(1);
+    const addPercent = ((addDamage / totalDamage) * 100).toFixed(1);
+
+    // Format damage numbers with commas
+    const formatDamage = (dmg) => dmg.toLocaleString('en-US');
+
+    statsDiv.innerHTML = `
+        <div class="stat-group">
+            <span class="stat-label">Boss:</span>
+            <span class="stat-value boss-value">${formatDamage(bossDamage)} (${bossPercent}%)</span>
+        </div>
+        <span style="color: #666;">|</span>
+        <div class="stat-group">
+            <span class="stat-label">Adds:</span>
+            <span class="stat-value add-value">${formatDamage(addDamage)} (${addPercent}%)</span>
+        </div>
+    `;
+
+    statsDiv.style.display = 'flex';
+}
+
 function renderCastTimeline(casts, fight) {
     const castList = document.getElementById('cast-list');
     castList.innerHTML = '';
@@ -1075,10 +1150,31 @@ function renderCastTimeline(casts, fight) {
         });
     }
 
-    console.log(`Rendering ${filteredCasts.length} of ${casts.length} casts (filtered by target: ${selectedTarget})`);
+    // Apply boss/add filter
+    const filterBoss = document.getElementById('filter-boss');
+    const filterAdds = document.getElementById('filter-adds');
+    const showBoss = filterBoss ? filterBoss.checked : true;
+    const showAdds = filterAdds ? filterAdds.checked : true;
+
+    // Calculate boss/add damage totals (before boss/add filtering)
+    updateBossAddStats(filteredCasts, fight);
+
+    // Filter by boss/add if needed
+    if (!showBoss || !showAdds) {
+        filteredCasts = filteredCasts.filter(cast => {
+            const target = window.allTargets?.find(t => t.id === cast.targetId);
+            const isBoss = target?.isBoss || false;
+
+            if (isBoss && !showBoss) return false;
+            if (!isBoss && !showAdds) return false;
+            return true;
+        });
+    }
+
+    console.log(`Rendering ${filteredCasts.length} of ${casts.length} casts (filtered by target: ${selectedTarget}, boss: ${showBoss}, adds: ${showAdds})`);
 
     if (filteredCasts.length === 0) {
-        castList.innerHTML = '<p style="color: #9ca3af; text-align: center; padding: 20px;">No casts found for selected target</p>';
+        castList.innerHTML = '<p style="color: #9ca3af; text-align: center; padding: 20px;">No casts found for selected filters</p>';
         return;
     }
 

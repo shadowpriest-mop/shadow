@@ -795,6 +795,41 @@ footer a:hover {
     margin: 0 auto;
 }
 
+.boss-add-stats {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 20px;
+    padding: 8px 20px;
+    background: rgba(25, 25, 35, 0.9);
+    border-bottom: 1px solid #424242;
+    font-size: 0.95em;
+    color: #e0e0e0;
+}
+
+.boss-add-stats .stat-group {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.boss-add-stats .stat-label {
+    font-weight: 500;
+    color: #9ca3af;
+}
+
+.boss-add-stats .stat-value {
+    font-weight: 600;
+}
+
+.boss-add-stats .boss-value {
+    color: #fbbf24;
+}
+
+.boss-add-stats .add-value {
+    color: #60a5fa;
+}
+
 .stat-field {
     display: flex;
     flex-direction: row;
