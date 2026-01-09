@@ -19,13 +19,15 @@ const SPELL_ICONS = {
   49821: 'mindsear.jpg',   // Mind Sear (damage tick)
 
   // AoE Spells
-  120517: 'halo.jpg',      // Halo (Cast)
-  120644: 'halo.jpg',      // Halo (Damage)
-  120696: 'halo.jpg',      // Halo (Heal)
-  121135: 'cascade.jpg',   // Cascade (Cast)
+  120517: 'halo.jpg',      // Halo (old cast ID)
+  120644: 'halo.jpg',      // Halo (Cast)
+  120696: 'halo.jpg',      // Halo (Damage)
+  121135: 'cascade.jpg',   // Cascade (old cast ID)
+  127632: 'cascade.jpg',   // Cascade (Cast)
   127628: 'cascade.jpg',   // Cascade (Damage)
   127627: 'cascade.jpg',   // Cascade (Heal)
-  110744: 'divinestar.jpg', // Divine Star (Cast)
+  110744: 'divinestar.jpg', // Divine Star (old cast ID)
+  122121: 'divinestar.jpg', // Divine Star (Cast)
   122128: 'divinestar.jpg', // Divine Star (Damage)
   110745: 'divinestar.jpg', // Divine Star (Heal)
 

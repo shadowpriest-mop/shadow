@@ -1679,7 +1679,8 @@ function createStatField(label, value, cssClass = '') {
 function normalizeIconName(name) {
     // Special mappings for talents where WCL name differs from icon filename
     const iconNameMap = {
-        'mindcontrol': 'dominatemind'  // WCL returns "Mind Control" but icon is dominatemind.jpg
+        'mindcontrol': 'dominatemind',  // WCL returns "Mind Control" but icon is dominatemind.jpg
+        'surgeoflight': 'fromdarknesscomeslight'  // WCL may return "Surge of Light" but icon is fromdarknesscomeslight.jpg
     };
 
     const normalized = name.toLowerCase().replace(/[^a-z0-9]/g, '');
@@ -1693,7 +1694,8 @@ function normalizeIconName(name) {
 function getTalentDisplayName(name) {
     // Special mappings for talents where WCL name differs from proper talent name
     const displayNameMap = {
-        'Mind Control': 'Dominate Mind'  // WCL returns "Mind Control" but talent is called "Dominate Mind"
+        'Mind Control': 'Dominate Mind',  // WCL returns "Mind Control" but talent is called "Dominate Mind"
+        'Surge of Light': 'From Darkness, Comes Light'  // WCL may return "Surge of Light" but talent is "From Darkness, Comes Light"
     };
 
     return displayNameMap[name] || name;

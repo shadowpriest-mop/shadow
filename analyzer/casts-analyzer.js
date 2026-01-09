@@ -82,6 +82,7 @@ class CastsAnalyzer {
       'Phantasm': 2,
       // Tier 3 (Level 45)
       'From Darkness, Comes Light': 3,
+      'Surge of Light': 3,  // WCL may return this name instead of "From Darkness, Comes Light"
       'Mindbender': 3,
       'Solace and Insanity': 3,
       // Tier 4 (Level 60)
