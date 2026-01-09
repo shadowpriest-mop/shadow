@@ -687,8 +687,20 @@ function identifyBoss(enemyName, fight) {
         return false;
     }
 
+    // Try boss database first (most reliable)
+    if (typeof window.isBossNPC === 'function') {
+        const inDatabase = window.isBossNPC(enemyName, fight.encounterID);
+        if (inDatabase) {
+            return true;
+        }
+        // If encounter is in database but NPC not found, it's an add
+        if (window.BOSS_DATABASE && window.BOSS_DATABASE[fight.encounterID]) {
+            return false;
+        }
+    }
+
+    // Fallback to name matching for unknown encounters
     // Simple name matching: does enemy name match fight name?
-    // This works for most single-boss encounters
     if (enemyName === fight.name) {
         return true;
     }
@@ -1170,6 +1182,25 @@ function renderCastTimeline(casts, fight) {
                 return true;
             }
 
+            // AoE spells (Halo, Cascade, Divine Star) hit multiple targets
+            // Check if ANY damage instance hits a target matching the filter
+            const isAoESpell = [120644, 127632, 122121].includes(cast.spellId);
+
+            if (isAoESpell && cast.instances && cast.instances.length > 0) {
+                // Check each damage instance's target
+                for (const instance of cast.instances) {
+                    const instanceTarget = window.allTargets?.find(t => t.id === instance.targetId);
+                    const instanceIsBoss = instanceTarget?.isBoss || false;
+
+                    // If this instance hit a valid target, show the cast
+                    if (showBoss && instanceIsBoss) return true;
+                    if (showAdds && !instanceIsBoss) return true;
+                }
+                // None of the instances hit valid targets
+                return false;
+            }
+
+            // Non-AoE spells: check primary target
             const target = window.allTargets?.find(t => t.id === cast.targetId);
             const isBoss = target?.isBoss || false;
 
