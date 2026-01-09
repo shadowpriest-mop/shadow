@@ -564,7 +564,7 @@ class CastsAnalyzer {
     const SPELL_DAMAGE_MAPPINGS = {
       120644: 120696, // Halo cast -> Halo damage
       127632: 127628, // Cascade cast -> Cascade damage
-      110744: 122128, // Divine Star cast -> Divine Star damage
+      122121: 122128, // Divine Star cast -> Divine Star damage
     };
 
     // Check if this spell has a different damage spell ID

@@ -1774,7 +1774,7 @@ function addTier6TalentButton(talents) {
     const tier6TalentMap = {
         'Halo': { spellId: 120644, icon: 'halo.jpg', label: 'Halo' },
         'Cascade': { spellId: 127632, icon: 'cascade.jpg', label: 'Cascade' },
-        'Divine Star': { spellId: 110744, icon: 'divinestar.jpg', label: 'DS' }
+        'Divine Star': { spellId: 122121, icon: 'divinestar.jpg', label: 'DS' }
     };
 
     const talentInfo = tier6TalentMap[tier6Talent.name];
