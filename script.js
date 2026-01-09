@@ -748,9 +748,9 @@ function extractTargetsFromEvents(events, reportData, fight) {
             displayName += ` (${instanceCount})`;
         }
 
-        // Add boss/add label if this is a boss encounter
-        if (fight.encounterID > 0) {
-            displayName += isBoss ? ' [BOSS]' : ' [ADD]';
+        // Add boss indicator if this is a boss encounter (💀 for boss, nothing for adds)
+        if (fight.encounterID > 0 && isBoss) {
+            displayName += ' 💀';
         }
 
         targets.set(targetID, {
