@@ -1105,14 +1105,34 @@ function updateBossAddStats(casts, fight) {
     let addDamage = 0;
 
     casts.forEach(cast => {
-        const target = window.allTargets?.find(t => t.id === cast.targetId);
-        const isBoss = target?.isBoss || false;
-        const damage = cast.totalDamage || 0;
+        // AoE spells (Halo, Cascade, Divine Star) hit multiple targets
+        // Need to check each damage instance to properly attribute damage
+        const isAoESpell = [120644, 127632, 122121].includes(cast.spellId);
 
-        if (isBoss) {
-            bossDamage += damage;
+        if (isAoESpell && cast.instances && cast.instances.length > 0) {
+            // For AoE spells, attribute each damage instance to boss or add
+            cast.instances.forEach(instance => {
+                const instanceTarget = window.allTargets?.find(t => t.id === instance.targetId);
+                const instanceIsBoss = instanceTarget?.isBoss || false;
+                const instanceDamage = instance.amount || 0;
+
+                if (instanceIsBoss) {
+                    bossDamage += instanceDamage;
+                } else {
+                    addDamage += instanceDamage;
+                }
+            });
         } else {
-            addDamage += damage;
+            // Non-AoE spells: use primary target
+            const target = window.allTargets?.find(t => t.id === cast.targetId);
+            const isBoss = target?.isBoss || false;
+            const damage = cast.totalDamage || 0;
+
+            if (isBoss) {
+                bossDamage += damage;
+            } else {
+                addDamage += damage;
+            }
         }
     });
 
