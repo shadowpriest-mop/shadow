@@ -1760,20 +1760,37 @@ function toggleView(view) {
     const detailedBtn = document.querySelector('[data-view="detailed"]');
     const quickOverview = document.getElementById('quick-overview');
     const statsOverview = document.getElementById('stats-overview');
+    const spellFilters = document.querySelector('.spell-filters');
+    const castFilters = document.querySelector('.cast-filters');
+    const castList = document.getElementById('cast-list');
 
     if (view === 'summary') {
         summaryBtn.classList.add('active');
         detailedBtn.classList.remove('active');
+
+        // Show summary elements
         quickOverview.style.display = 'block';
+
+        // Hide detailed elements
         statsOverview.style.display = 'none';
+        if (spellFilters) spellFilters.style.display = 'none';
+        if (castFilters) castFilters.style.display = 'none';
+        if (castList) castList.style.display = 'none';
 
         // Render quick overview
         renderQuickOverview();
     } else {
         summaryBtn.classList.remove('active');
         detailedBtn.classList.add('active');
+
+        // Hide summary elements
         quickOverview.style.display = 'none';
+
+        // Show detailed elements
         statsOverview.style.display = 'block';
+        if (spellFilters) spellFilters.style.display = 'flex';
+        if (castFilters) castFilters.style.display = 'flex';
+        if (castList) castList.style.display = 'block';
 
         // Render detailed stats (already rendered, but refresh)
         renderStatsOverview(window.currentSpellFilter || 'timeline');

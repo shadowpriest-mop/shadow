@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Shadow Priest - MoP Classic Helper</title>
     <link rel="icon" type="image/x-icon" href="analyzer/icons/favicon.ico">
-    <link rel="stylesheet" href="style.css?v=2.36.1">
+    <link rel="stylesheet" href="style.css?v=2.37.0">
 </head>
 <body>
     <!-- LANDING PAGE -->
@@ -57,7 +57,7 @@
                     <span class="separator">|</span>
                     <a href="https://github.com/shadowpriest-mop/shadow" target="_blank">Source</a>
                 </div>
-                <div class="version-label">v2.36.1</div>
+                <div class="version-label">v2.37.0</div>
             </div>
         </div>
     </div>
@@ -80,7 +80,7 @@
                     </svg>
                 </a>
             </span>
-            <span class="app-version">v2.36.1</span>
+            <span class="app-version">v2.37.0</span>
         </nav>
 
         <!-- Talents Display & Selectors -->
@@ -122,7 +122,7 @@
 
             <div id="cast-timeline">
                 <!-- Spell Filter Buttons -->
-                <div class="spell-filters">
+                <div class="spell-filters" style="display: none;">
                     <button class="spell-filter-btn active" data-spell="timeline" onclick="filterBySpell('timeline')">
                         <span class="filter-label">Timeline</span>
                     </button>
@@ -168,7 +168,7 @@
                 </div>
 
                 <!-- Quality filters with Target Filter -->
-                <div class="cast-filters">
+                <div class="cast-filters" style="display: none;">
                     <label>
                         <input type="checkbox" id="filter-boss" checked> Boss
                     </label>
@@ -189,7 +189,7 @@
                     </label>
                 </div>
 
-                <div id="cast-list" class="cast-list">
+                <div id="cast-list" class="cast-list" style="display: none;">
                     <!-- Casts will be rendered here -->
                 </div>
             </div>
@@ -227,6 +227,6 @@
     <script src="analyzer/prepull-checker.js?v=2.26.6"></script>
     <script src="analyzer/boss-database.js?v=2.35.0"></script>
     <script src="analyzer/quick-overview.js?v=2.36.0"></script>
-    <script src="script.js?v=2.36.0"></script>
+    <script src="script.js?v=2.37.0"></script>
 </body>
 </html>
