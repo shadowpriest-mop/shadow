@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Shadow Priest - MoP Classic Helper</title>
     <link rel="icon" type="image/x-icon" href="analyzer/icons/favicon.ico">
-    <link rel="stylesheet" href="style.css?v=2.33.1">
+    <link rel="stylesheet" href="style.css?v=2.36.0">
 </head>
 <body>
     <!-- LANDING PAGE -->
@@ -57,7 +57,7 @@
                     <span class="separator">|</span>
                     <a href="https://github.com/shadowpriest-mop/shadow" target="_blank">Source</a>
                 </div>
-                <div class="version-label">v2.35.1</div>
+                <div class="version-label">v2.36.0</div>
             </div>
         </div>
     </div>
@@ -80,7 +80,7 @@
                     </svg>
                 </a>
             </span>
-            <span class="app-version">v2.35.1</span>
+            <span class="app-version">v2.36.0</span>
         </nav>
 
         <!-- Talents Display & Selectors -->
@@ -146,8 +146,19 @@
                     </button>
                 </div>
 
-                <!-- Stats Overview Panel -->
-                <div id="stats-overview" class="stats-overview">
+                <!-- View Toggle Buttons -->
+                <div class="view-toggle-buttons">
+                    <button class="view-toggle-btn active" data-view="summary" onclick="toggleView('summary')">Summary</button>
+                    <button class="view-toggle-btn" data-view="detailed" onclick="toggleView('detailed')">Detailed</button>
+                </div>
+
+                <!-- Quick Overview Panel (Summary View) -->
+                <div id="quick-overview" class="quick-overview">
+                    <!-- Summary will be populated by JavaScript -->
+                </div>
+
+                <!-- Stats Overview Panel (Detailed View) -->
+                <div id="stats-overview" class="stats-overview" style="display: none;">
                     <!-- Stats will be populated by JavaScript -->
                 </div>
 
@@ -215,6 +226,7 @@
     <script src="analyzer/event-analyzer.js?v=2.14"></script>
     <script src="analyzer/prepull-checker.js?v=2.26.6"></script>
     <script src="analyzer/boss-database.js?v=2.35.0"></script>
-    <script src="script.js?v=2.35.1"></script>
+    <script src="analyzer/quick-overview.js?v=2.36.0"></script>
+    <script src="script.js?v=2.36.0"></script>
 </body>
 </html>

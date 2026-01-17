@@ -990,13 +990,26 @@ window.analyzeLog = async function analyzeLog() {
         // Render pre-pull check
         renderPrePullCheck(prePullResults);
 
+        // Initialize current filter
+        window.currentSpellFilter = 'timeline';
+
         // Render cast timeline
         renderCastTimeline(casts, fight);
+
+        // Render quick overview (default to Summary view)
+        renderQuickOverview();
 
         // Add target filter event listener
         targetFilter.addEventListener('change', () => {
             renderCastTimeline(window.allCasts, window.currentFight);
-            renderStatsOverview('timeline');
+
+            // Update current view
+            const summaryBtn = document.querySelector('[data-view="summary"]');
+            if (summaryBtn && summaryBtn.classList.contains('active')) {
+                renderQuickOverview();
+            } else {
+                renderStatsOverview('timeline');
+            }
         });
 
         // Add boss/add filter event listeners
@@ -1006,14 +1019,28 @@ window.analyzeLog = async function analyzeLog() {
         if (filterBoss) {
             filterBoss.addEventListener('change', () => {
                 renderCastTimeline(window.allCasts, window.currentFight);
-                renderStatsOverview('timeline');
+
+                // Update current view
+                const summaryBtn = document.querySelector('[data-view="summary"]');
+                if (summaryBtn && summaryBtn.classList.contains('active')) {
+                    renderQuickOverview();
+                } else {
+                    renderStatsOverview('timeline');
+                }
             });
         }
 
         if (filterAdds) {
             filterAdds.addEventListener('change', () => {
                 renderCastTimeline(window.allCasts, window.currentFight);
-                renderStatsOverview('timeline');
+
+                // Update current view
+                const summaryBtn = document.querySelector('[data-view="summary"]');
+                if (summaryBtn && summaryBtn.classList.contains('active')) {
+                    renderQuickOverview();
+                } else {
+                    renderStatsOverview('timeline');
+                }
             });
         }
 
@@ -1723,6 +1750,114 @@ function createStatField(label, value, cssClass = '') {
     `;
 }
 
+// ============ Quick Overview (Summary View) ============
+
+/**
+ * Toggle between Summary and Detailed view
+ */
+function toggleView(view) {
+    const summaryBtn = document.querySelector('[data-view="summary"]');
+    const detailedBtn = document.querySelector('[data-view="detailed"]');
+    const quickOverview = document.getElementById('quick-overview');
+    const statsOverview = document.getElementById('stats-overview');
+
+    if (view === 'summary') {
+        summaryBtn.classList.add('active');
+        detailedBtn.classList.remove('active');
+        quickOverview.style.display = 'block';
+        statsOverview.style.display = 'none';
+
+        // Render quick overview
+        renderQuickOverview();
+    } else {
+        summaryBtn.classList.remove('active');
+        detailedBtn.classList.add('active');
+        quickOverview.style.display = 'none';
+        statsOverview.style.display = 'block';
+
+        // Render detailed stats (already rendered, but refresh)
+        renderStatsOverview(window.currentSpellFilter || 'timeline');
+    }
+}
+
+/**
+ * Render quick overview/summary
+ */
+function renderQuickOverview() {
+    const quickOverview = document.getElementById('quick-overview');
+
+    if (!window.allCasts || !window.currentFight) {
+        quickOverview.innerHTML = '<p class="overview-empty">No data available</p>';
+        return;
+    }
+
+    // Run the QuickOverviewAnalyzer
+    if (typeof window.QuickOverviewAnalyzer === 'undefined') {
+        quickOverview.innerHTML = '<p class="overview-empty">Quick overview analyzer not loaded</p>';
+        return;
+    }
+
+    const analyzer = new window.QuickOverviewAnalyzer(window.allCasts, window.currentFight);
+    const issues = analyzer.analyze();
+
+    let html = '';
+
+    // Critical Issues Section (Red)
+    if (issues.critical.length > 0) {
+        html += '<div class="overview-section">';
+        html += '<div class="overview-section-title critical">⚠️ Critical Issues</div>';
+        html += '<div class="overview-issues">';
+        issues.critical.forEach(issue => {
+            html += `
+                <div class="overview-issue critical">
+                    <span class="overview-issue-label">${issue.label}</span>
+                    <span class="overview-issue-message">${issue.message}</span>
+                </div>
+            `;
+        });
+        html += '</div></div>';
+    }
+
+    // Could Improve Section (Orange/Yellow)
+    if (issues.couldImprove.length > 0) {
+        html += '<div class="overview-section">';
+        html += '<div class="overview-section-title could-improve">⚡ Could Improve</div>';
+        html += '<div class="overview-issues">';
+        issues.couldImprove.forEach(issue => {
+            html += `
+                <div class="overview-issue could-improve">
+                    <span class="overview-issue-label">${issue.label}</span>
+                    <span class="overview-issue-message">${issue.message}</span>
+                </div>
+            `;
+        });
+        html += '</div></div>';
+    }
+
+    // Well Done Section (Green)
+    if (issues.wellDone.length > 0) {
+        html += '<div class="overview-section">';
+        html += '<div class="overview-section-title well-done">✓ Well Done</div>';
+        html += '<div class="overview-issues">';
+        issues.wellDone.forEach(issue => {
+            html += `
+                <div class="overview-issue well-done">
+                    <span class="overview-issue-label">${issue.label}</span>
+                    <span class="overview-issue-message">${issue.message}</span>
+                </div>
+            `;
+        });
+        html += '</div></div>';
+    }
+
+    // If no issues at all, show empty state
+    if (html === '') {
+        html = '<p class="overview-empty">No issues detected. Great job!</p>';
+    }
+
+    quickOverview.innerHTML = html;
+}
+
 /**
  * Normalize talent name to icon filename
  * E.g., "Void Tendrils" -> "voidtendrils"
@@ -1871,14 +2006,24 @@ function addTier6TalentButton(talents) {
 window.filterBySpell = function(filter) {
     if (!window.allCasts || !window.currentFight) return;
 
+    // Store current filter
+    window.currentSpellFilter = filter;
+
     // Update button states
     document.querySelectorAll('.spell-filter-btn').forEach(btn => {
         btn.classList.remove('active');
     });
     document.querySelector(`[data-spell="${filter}"]`).classList.add('active');
 
-    // Re-render stats for this filter
-    renderStatsOverview(filter);
+    // Re-render stats or overview depending on current view
+    const summaryBtn = document.querySelector('[data-view="summary"]');
+    if (summaryBtn && summaryBtn.classList.contains('active')) {
+        // Summary view is active - update quick overview
+        renderQuickOverview();
+    } else {
+        // Detailed view is active - update stats
+        renderStatsOverview(filter);
+    }
 
     // Re-render timeline with filtered casts
     let filteredCasts = window.allCasts;
