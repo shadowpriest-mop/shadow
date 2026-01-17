@@ -802,24 +802,19 @@ footer a:hover {
     font-weight: 600;
 }
 
-/* View Toggle Buttons */
+/* View Toggle Buttons (inside talents-and-selectors-bar) */
 .view-toggle-buttons {
     display: flex;
-    justify-content: center;
     gap: 0;
-    padding: 12px 20px;
-    background: rgba(25, 25, 35, 0.95);
-    border-bottom: 1px solid #424242;
-    max-width: 1400px;
-    margin: 0 auto;
+    margin-left: auto;
 }
 
 .view-toggle-btn {
-    padding: 8px 24px;
+    padding: 6px 20px;
     background: rgba(50, 50, 70, 0.4);
     border: 1px solid rgba(147, 51, 234, 0.3);
     color: #c4b5fd;
-    font-size: 0.9em;
+    font-size: 0.85em;
     font-weight: 500;
     cursor: pointer;
     transition: all 0.2s ease;

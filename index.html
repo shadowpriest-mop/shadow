@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Shadow Priest - MoP Classic Helper</title>
     <link rel="icon" type="image/x-icon" href="analyzer/icons/favicon.ico">
-    <link rel="stylesheet" href="style.css?v=2.36.0">
+    <link rel="stylesheet" href="style.css?v=2.36.1">
 </head>
 <body>
     <!-- LANDING PAGE -->
@@ -97,6 +97,12 @@
                     <!-- Will be populated by JS -->
                 </select>
             </div>
+
+            <!-- View Toggle Buttons -->
+            <div class="view-toggle-buttons">
+                <button class="view-toggle-btn active" data-view="summary" onclick="toggleView('summary')">Summary</button>
+                <button class="view-toggle-btn" data-view="detailed" onclick="toggleView('detailed')">Detailed</button>
+            </div>
         </div>
 
 
@@ -144,12 +150,6 @@
                         <img src="analyzer/icons/flay.jpg" alt="MF" class="filter-icon">
                         <span class="filter-label">MF</span>
                     </button>
-                </div>
-
-                <!-- View Toggle Buttons -->
-                <div class="view-toggle-buttons">
-                    <button class="view-toggle-btn active" data-view="summary" onclick="toggleView('summary')">Summary</button>
-                    <button class="view-toggle-btn" data-view="detailed" onclick="toggleView('detailed')">Detailed</button>
                 </div>
 
                 <!-- Quick Overview Panel (Summary View) -->
