@@ -1000,7 +1000,7 @@ footer a:hover {
 /* Talents & Selectors Bar */
 .talents-and-selectors-bar {
     display: flex;
-    align-items: center;
+    align-items: flex-start;
     gap: 20px;
     background: rgba(25, 25, 35, 0.95);
     border-bottom: 1px solid #424242;
