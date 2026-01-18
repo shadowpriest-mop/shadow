@@ -905,10 +905,18 @@ footer a:hover {
     border-left: 3px solid #f59e0b;
 }
 
+.overview-issue-icon {
+    width: 20px;
+    height: 20px;
+    border-radius: 3px;
+    margin-right: 8px;
+    flex-shrink: 0;
+}
+
 .overview-issue-label {
     font-weight: 600;
     color: #e0e0e0;
-    min-width: 140px;
+    min-width: 120px;
 }
 
 .overview-issue-message {

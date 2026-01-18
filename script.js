@@ -1753,6 +1753,25 @@ function createStatField(label, value, cssClass = '') {
 // ============ Quick Overview (Summary View) ============
 
 /**
+ * Get icon filename for an issue type
+ */
+function getIssueIcon(issueType) {
+    // Map issue types to icon filenames
+    const iconMap = {
+        'dp-orbs': 'plague.jpg',
+        'mb-delays': 'mb.jpg',
+        'mb-missed': 'mb.jpg',
+        'mb-usage': 'mb.jpg',
+        '34914-uptime': 'vt.jpg',
+        '34914-pandemic': 'vt.jpg',
+        '589-uptime': 'swp.jpg',
+        '589-pandemic': 'swp.jpg'
+    };
+
+    return iconMap[issueType] || 'default.jpg';
+}
+
+/**
  * Toggle between Summary and Detailed view
  */
 function toggleView(view) {
@@ -1825,8 +1844,10 @@ function renderQuickOverview() {
         html += '<div class="overview-section-title critical">⚠️ Critical Issues</div>';
         html += '<div class="overview-issues">';
         issues.critical.forEach(issue => {
+            const icon = getIssueIcon(issue.type);
             html += `
                 <div class="overview-issue critical">
+                    <img src="analyzer/icons/${icon}" alt="${issue.label}" class="overview-issue-icon">
                     <span class="overview-issue-label">${issue.label}</span>
                     <span class="overview-issue-message">${issue.message}</span>
                 </div>
@@ -1841,8 +1862,10 @@ function renderQuickOverview() {
         html += '<div class="overview-section-title could-improve">⚡ Could Improve</div>';
         html += '<div class="overview-issues">';
         issues.couldImprove.forEach(issue => {
+            const icon = getIssueIcon(issue.type);
             html += `
                 <div class="overview-issue could-improve">
+                    <img src="analyzer/icons/${icon}" alt="${issue.label}" class="overview-issue-icon">
                     <span class="overview-issue-label">${issue.label}</span>
                     <span class="overview-issue-message">${issue.message}</span>
                 </div>
@@ -1857,8 +1880,10 @@ function renderQuickOverview() {
         html += '<div class="overview-section-title well-done">✓ Well Done</div>';
         html += '<div class="overview-issues">';
         issues.wellDone.forEach(issue => {
+            const icon = getIssueIcon(issue.type);
             html += `
                 <div class="overview-issue well-done">
+                    <img src="analyzer/icons/${icon}" alt="${issue.label}" class="overview-issue-icon">
                     <span class="overview-issue-label">${issue.label}</span>
                     <span class="overview-issue-message">${issue.message}</span>
                 </div>
