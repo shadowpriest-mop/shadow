@@ -1,0 +1,16 @@
+# Node modules
+node_modules/
+
+# Environment variables
+.env
+.env.local
+
+# API keys
+*.key
+
+# Raw scraped data (don't commit until aggregated)
+raw-data/
+*.json.raw
+
+# Test outputs
+test-output/

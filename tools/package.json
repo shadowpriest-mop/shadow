@@ -1,0 +1,13 @@
+{
+  "name": "shadow-benchmark-scraper",
+  "version": "1.0.0",
+  "description": "WarcraftLogs benchmark scraper for Shadow Priest analyzer",
+  "main": "benchmark-scraper.js",
+  "scripts": {
+    "test": "node benchmark-scraper.js 1504 4 1",
+    "scrape-tortos": "node benchmark-scraper.js 1504 4"
+  },
+  "keywords": ["warcraftlogs", "shadow-priest", "mop", "benchmark"],
+  "author": "Kiwiandapple",
+  "license": "MIT"
+}
