@@ -4,16 +4,7 @@ Tool for fetching encounter-specific performance benchmarks from WarcraftLogs to
 
 ## Setup
 
-1. **Get a WarcraftLogs API key:**
-   - Go to: https://www.warcraftlogs.com/api/clients
-   - Create a new client (public client is fine)
-   - Copy your Client ID
-   - Get an OAuth token: https://www.warcraftlogs.com/api/docs
-
-2. **Set environment variable:**
-   ```bash
-   export WCL_API_KEY="your_api_key_here"
-   ```
+No setup needed! Uses the same WCL API credentials as the main analyzer (from `wcl-v2-service.js`).
 
 ## Testing Phase 1: Single Rank
 

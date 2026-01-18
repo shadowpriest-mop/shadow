@@ -6,7 +6,15 @@
  * Example: node benchmark-scraper.js 1504 4 1
  */
 
-const WARCRAFTLOGS_API_URL = 'https://www.warcraftlogs.com/api/v2/client';
+// Use the same credentials as wcl-v2-service.js
+const WCL_CLIENT_ID = 'a036e79f-2e07-4588-bc67-d46cd2f907f8';
+const WCL_CLIENT_SECRET = '2j26APf8DGSppFDstkqJ8H2hCaC74YWc4GWpapEg';
+const WCL_TOKEN_URL = 'https://classic.warcraftlogs.com/oauth/token';
+const WCL_API_URL = 'https://classic.warcraftlogs.com/api/v2/client';
+
+// Store access token
+let accessToken = null;
+let tokenExpiry = null;
 
 // WCL API v2 GraphQL query to fetch ranking data
 // We'll fetch minimal data first to see the payload size
@@ -71,23 +79,52 @@ query GetReportData($reportID: String!, $fightID: Int!, $sourceID: Int!) {
 `;
 
 /**
+ * Get access token using OAuth2 client credentials flow
+ */
+async function getAccessToken() {
+  // Return existing token if still valid
+  if (accessToken && tokenExpiry && Date.now() < tokenExpiry - 5 * 60 * 1000) {
+    return accessToken;
+  }
+
+  console.log('Fetching new access token...');
+
+  const credentials = Buffer.from(`${WCL_CLIENT_ID}:${WCL_CLIENT_SECRET}`).toString('base64');
+
+  const response = await fetch(WCL_TOKEN_URL, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/x-www-form-urlencoded',
+      'Authorization': `Basic ${credentials}`
+    },
+    body: new URLSearchParams({ grant_type: 'client_credentials' })
+  });
+
+  if (!response.ok) {
+    const text = await response.text();
+    throw new Error(`Failed to get access token: ${response.status} ${text}`);
+  }
+
+  const data = await response.json();
+  accessToken = data.access_token;
+  tokenExpiry = Date.now() + (data.expires_in * 1000);
+
+  console.log('✓ Access token obtained');
+  return accessToken;
+}
+
+/**
  * Fetch rankings from WCL API
  */
 async function fetchRankings(encounterID, difficulty, page = 1) {
-  const API_KEY = process.env.WCL_API_KEY;
-
-  if (!API_KEY) {
-    console.error('ERROR: WCL_API_KEY environment variable not set');
-    console.log('Get your API key from: https://www.warcraftlogs.com/api/clients');
-    process.exit(1);
-  }
+  const token = await getAccessToken();
 
   try {
-    const response = await fetch(WARCRAFTLOGS_API_URL, {
+    const response = await fetch(WCL_API_URL, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${API_KEY}`
+        'Authorization': `Bearer ${token}`
       },
       body: JSON.stringify({
         query: RANKING_QUERY,
@@ -120,14 +157,14 @@ async function fetchRankings(encounterID, difficulty, page = 1) {
  * Fetch detailed report data
  */
 async function fetchReportData(reportID, fightID, sourceID) {
-  const API_KEY = process.env.WCL_API_KEY;
+  const token = await getAccessToken();
 
   try {
-    const response = await fetch(WARCRAFTLOGS_API_URL, {
+    const response = await fetch(WCL_API_URL, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${API_KEY}`
+        'Authorization': `Bearer ${token}`
       },
       body: JSON.stringify({
         query: REPORT_QUERY,
