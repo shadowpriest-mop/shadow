@@ -250,16 +250,18 @@ async function main() {
   if (args.length < 3) {
     console.log('Usage: node benchmark-scraper.js <encounterID> <difficulty> <rank>');
     console.log('');
-    console.log('Example: node benchmark-scraper.js 1504 4 1');
-    console.log('  1504 = Tortos');
+    console.log('Example: node benchmark-scraper.js 1505 4 1');
+    console.log('  1505 = Tortos');
     console.log('  4 = Heroic (3 = Normal)');
     console.log('  1 = Rank #1');
     console.log('');
     console.log('Common Encounter IDs (Throne of Thunder):');
-    console.log('  1502 = Jin\'rokh');
+    console.log('  1502 = Jin\'rokh the Breaker');
     console.log('  1503 = Horridon');
-    console.log('  1504 = Tortos');
-    console.log('  1505 = Council of Elders');
+    console.log('  1504 = Council of Elders');
+    console.log('  1505 = Tortos');
+    console.log('  1506 = Megaera');
+    console.log('  1507 = Ji-Kun');
     process.exit(0);
   }
 

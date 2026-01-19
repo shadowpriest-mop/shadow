@@ -11,11 +11,11 @@ No setup needed! Uses the same WCL API credentials as the main analyzer (from `w
 First, we test with just rank #1 to measure data size:
 
 ```bash
-node benchmark-scraper.js 1504 4 1
+node benchmark-scraper.js 1505 4 1
 ```
 
 This fetches:
-- Encounter: 1504 (Tortos)
+- Encounter: 1505 (Tortos)
 - Difficulty: 4 (Heroic)
 - Rank: 1 (Top performer)
 
