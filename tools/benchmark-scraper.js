@@ -298,12 +298,8 @@ async function main() {
   console.log(`Report: ${targetLog.report.code}, Fight: ${targetLog.report.fightID}`);
   console.log('');
 
-  // Step 2: Fetch detailed report data (COMMENTED OUT FOR NOW)
+  // Step 2: Fetch detailed report data
   console.log('Step 2: Fetching report data...');
-  console.log('NOTE: This would fetch the full log data. Skipping for now to test API response.');
-  console.log('');
-
-  /*
   const reportData = await fetchReportData(
     targetLog.report.code,
     targetLog.report.fightID,
@@ -321,9 +317,9 @@ async function main() {
   console.log('');
   console.log('Raw Data Size:');
   console.log(JSON.stringify(metrics.rawDataSize, null, 2));
-  */
+  console.log('');
 
-  console.log('SUCCESS: API test complete!');
+  console.log('SUCCESS: Full data fetch complete!');
 }
 
 // Run if executed directly
