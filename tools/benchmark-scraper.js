@@ -16,6 +16,11 @@ const WCL_API_URL = 'https://classic.warcraftlogs.com/api/v2/client';
 let accessToken = null;
 let tokenExpiry = null;
 
+// Date range for Throne of Thunder Classic content
+// Classic ToT released December 11, 2025 - SoO not yet released
+const TOT_START_DATE = 1733875200000; // December 11, 2025
+const TOT_END_DATE = null;   // No end date yet (SoO not released)
+
 // WCL API v2 GraphQL query to fetch ranking data
 // We'll fetch minimal data first to see the payload size
 const RANKING_QUERY = `
@@ -314,6 +319,14 @@ async function main() {
     targetLog.report.fightID,
     targetLog.sourceID
   );
+
+  // Verify report is from Classic ToT period (after December 11, 2025)
+  const reportStartTime = reportData.reportData.report.startTime;
+  if (TOT_START_DATE && reportStartTime < TOT_START_DATE) {
+    const reportDate = new Date(reportStartTime).toISOString().split('T')[0];
+    console.error(`Warning: Report is from ${reportDate}, before Classic ToT release (2025-12-11)`);
+    console.error('This may be a test log or from a different game version.');
+  }
 
   // Step 3: Extract metrics
   console.log('Step 3: Extracting metrics...');

@@ -1,6 +1,6 @@
 # Benchmark Scraper
 
-Tool for fetching encounter-specific performance benchmarks from WarcraftLogs top performers (ranks 51-100).
+Tool for fetching encounter-specific performance benchmarks from WarcraftLogs top performers (ranks 51-100) for **Classic MoP** Throne of Thunder (released December 11, 2025).
 
 ## Setup
 
