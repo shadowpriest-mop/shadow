@@ -11,12 +11,12 @@ No setup needed! Uses the same WCL API credentials as the main analyzer (from `w
 First, we test with just rank #1 to measure data size:
 
 ```bash
-node benchmark-scraper.js 1505 4 1
+node benchmark-scraper.js 1565 4 1
 ```
 
 This fetches:
-- Encounter: 1505 (Tortos)
-- Difficulty: 4 (Heroic)
+- Encounter: 1565 (Tortos)
+- Difficulty: 4 (Heroic 10)
 - Rank: 1 (Top performer)
 
 ### What We're Measuring:
@@ -28,19 +28,20 @@ This fetches:
 ## Encounter IDs (Throne of Thunder)
 
 ```
-1502 = Jin'rokh the Breaker
-1503 = Horridon
-1504 = Council of Elders
-1505 = Tortos
-1506 = Megaera
-1507 = Ji-Kun
-1508 = Durumu the Forgotten
-1509 = Primordius
-1510 = Dark Animus
-1511 = Iron Qon
-1512 = Twin Consorts
-1513 = Lei Shen
-1514 = Ra-den
+1559 = Iron Qon
+1560 = Twin Empyreans
+1565 = Tortos
+1570 = Council of Elders
+1572 = Durumu the Forgotten
+1573 = Ji-Kun
+1574 = Primordius
+1575 = Horridon
+1576 = Dark Animus
+1577 = Jin'rokh the Breaker
+1578 = Megaera
+1579 = Lei Shen
+1580 = Ra-den (25N)
+1581 = Ra-den (25H)
 ```
 
 ## Difficulty Codes

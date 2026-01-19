@@ -250,18 +250,25 @@ async function main() {
   if (args.length < 3) {
     console.log('Usage: node benchmark-scraper.js <encounterID> <difficulty> <rank>');
     console.log('');
-    console.log('Example: node benchmark-scraper.js 1505 4 1');
-    console.log('  1505 = Tortos');
-    console.log('  4 = Heroic (3 = Normal)');
+    console.log('Example: node benchmark-scraper.js 1565 4 1');
+    console.log('  1565 = Tortos');
+    console.log('  4 = Heroic 10 (3 = Normal 10, 5 = Normal 25, 6 = Heroic 25)');
     console.log('  1 = Rank #1');
     console.log('');
-    console.log('Common Encounter IDs (Throne of Thunder):');
-    console.log('  1502 = Jin\'rokh the Breaker');
-    console.log('  1503 = Horridon');
-    console.log('  1504 = Council of Elders');
-    console.log('  1505 = Tortos');
-    console.log('  1506 = Megaera');
-    console.log('  1507 = Ji-Kun');
+    console.log('Throne of Thunder Encounter IDs:');
+    console.log('  1577 = Jin\'rokh the Breaker');
+    console.log('  1575 = Horridon');
+    console.log('  1570 = Council of Elders');
+    console.log('  1565 = Tortos');
+    console.log('  1578 = Megaera');
+    console.log('  1573 = Ji-Kun');
+    console.log('  1572 = Durumu the Forgotten');
+    console.log('  1574 = Primordius');
+    console.log('  1576 = Dark Animus');
+    console.log('  1559 = Iron Qon');
+    console.log('  1560 = Twin Empyreans');
+    console.log('  1579 = Lei Shen');
+    console.log('  1580/1581 = Ra-den');
     process.exit(0);
   }
 
