@@ -66,11 +66,79 @@ class BenchmarkLoader {
   }
 
   /**
+   * Unpack WCL encounter ID to get base encounter ID and difficulty
+   * WCL packs encounter IDs as: 50000 + (difficulty * 10) + baseEncounterID
+   * Example: 51565 = 50000 + (4 * 10) + 1525 (Tortos Heroic 10)
+   *          51585 = 50000 + (6 * 10) + 1525 (Tortos Heroic 25)
+   *
+   * Difficulty codes:
+   * 3 = Normal 10, 4 = Heroic 10, 5 = Normal 25, 6 = Heroic 25
+   *
+   * To unpack: We try each difficulty (3-6) and check which gives valid base ID
+   */
+  unpackEncounterID(packedID) {
+    // For packed IDs > 50000, unpack them
+    if (packedID > 50000) {
+      const offset = packedID - 50000;
+
+      // Try each difficulty level to find which one gives a valid base encounter ID
+      // Valid base IDs for Throne of Thunder are 1522-1534
+      for (let diff = 3; diff <= 6; diff++) {
+        const candidateBase = offset - (diff * 10);
+        // Check if this gives a reasonable encounter ID (1500-1600 range for ToT)
+        if (candidateBase >= 1500 && candidateBase <= 1600) {
+          return {
+            baseEncounterID: candidateBase,
+            difficulty: diff
+          };
+        }
+      }
+
+      // Fallback: assume no difficulty encoding
+      return {
+        baseEncounterID: offset,
+        difficulty: null
+      };
+    }
+
+    // Already unpacked - return as-is
+    return {
+      baseEncounterID: packedID,
+      difficulty: null
+    };
+  }
+
+  /**
    * Get benchmark for current fight if available
    * @param {Object} fight - Fight object with encounterID and difficulty
    * @returns {Promise<Object|null>} Benchmark data or null
    */
   async getBenchmarkForFight(fight) {
+    if (!fight?.encounterID) {
+      return null;
+    }
+
+    // Unpack the encounter ID if needed
+    const { baseEncounterID, difficulty: extractedDifficulty } = this.unpackEncounterID(fight.encounterID);
+
+    // Use difficulty from fight object, or fall back to extracted difficulty
+    const difficulty = fight.difficulty || extractedDifficulty;
+
+    if (!difficulty) {
+      console.warn('Could not determine difficulty for benchmark lookup', fight);
+      return null;
+    }
+
+    console.log(`Benchmark lookup: encounterID=${baseEncounterID}, difficulty=${difficulty} (original=${fight.encounterID})`);
+    return await this.loadBenchmark(baseEncounterID, difficulty);
+  }
+
+  /**
+   * Get benchmark for current fight if available (OLD VERSION - DEPRECATED)
+   * @param {Object} fight - Fight object with encounterID and difficulty
+   * @returns {Promise<Object|null>} Benchmark data or null
+   */
+  async getBenchmarkForFight_OLD(fight) {
     if (!fight?.encounterID || !fight?.difficulty) {
       return null;
     }
