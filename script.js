@@ -239,6 +239,40 @@ window.hideAbout = function() {
     document.getElementById('about-overlay').style.display = 'none';
 };
 
+/**
+ * Show benchmark instructions overlay
+ */
+window.showBenchmarkInstructions = function() {
+    document.getElementById('benchmark-instructions-overlay').style.display = 'flex';
+};
+
+/**
+ * Hide benchmark instructions overlay
+ */
+window.hideBenchmarkInstructions = function() {
+    document.getElementById('benchmark-instructions-overlay').style.display = 'none';
+};
+
+/**
+ * Copy text to clipboard
+ */
+window.copyToClipboard = function(text) {
+    navigator.clipboard.writeText(text).then(() => {
+        // Show temporary success message
+        const btn = event.target;
+        const originalText = btn.textContent;
+        btn.textContent = '✓ Copied!';
+        btn.style.background = '#10b981';
+        setTimeout(() => {
+            btn.textContent = originalText;
+            btn.style.background = '';
+        }, 2000);
+    }).catch(err => {
+        console.error('Failed to copy:', err);
+        alert('Failed to copy to clipboard. Please copy manually.');
+    });
+};
+
 // Initialize
 document.addEventListener('DOMContentLoaded', function() {
     // Add event listeners for WCL analyzer

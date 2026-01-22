@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Shadow Priest - MoP Classic Helper</title>
     <link rel="icon" type="image/x-icon" href="analyzer/icons/favicon.ico">
-    <link rel="stylesheet" href="style.css?v=2.37.2">
+    <link rel="stylesheet" href="style.css?v=2.37.4">
 </head>
 <body>
     <!-- LANDING PAGE -->
@@ -59,7 +59,7 @@
                     <span class="separator">|</span>
                     <a href="#" id="benchmark-toggle-landing" onclick="toggleBenchmarkDisplay(); return false;">Show Benchmarks</a>
                 </div>
-                <div class="version-label">v2.37.3</div>
+                <div class="version-label">v2.37.4</div>
             </div>
         </div>
     </div>
@@ -85,7 +85,10 @@
             <button id="benchmark-toggle-analysis" class="benchmark-toggle-btn" onclick="toggleBenchmarkDisplay()" title="Toggle benchmark comparison">
                 Show Benchmarks
             </button>
-            <span class="app-version">v2.37.3</span>
+            <button id="update-benchmarks-btn" class="benchmark-toggle-btn" onclick="showBenchmarkInstructions()" title="Update benchmark data">
+                ⚙️ Update Benchmarks
+            </button>
+            <span class="app-version">v2.37.4</span>
         </nav>
 
         <!-- Talents Display & Selectors -->
@@ -219,6 +222,46 @@
                 <strong>Tip:</strong> Just before Devouring Plague expires, clip your current Mind Flay channel and start
                 a new one to snapshot the Insanity damage bonus one last time. This maximizes your damage by getting an
                 extra empowered Mind Flay before DP falls off.
+            </p>
+        </div>
+    </div>
+
+    <!-- Benchmark Instructions Overlay -->
+    <div id="benchmark-instructions-overlay" class="about-overlay" style="display: none;">
+        <div class="about-content">
+            <button class="about-close" onclick="hideBenchmarkInstructions()">×</button>
+            <h2>⚙️ Update Benchmark Data</h2>
+            <p>
+                Benchmark data is automatically updated weekly via GitHub Actions. To manually update benchmarks now:
+            </p>
+
+            <h3>Option 1: Run Locally (Recommended)</h3>
+            <div class="code-block">
+                <pre>cd /path/to/shadow
+node tools/benchmark-scraper.js --auto</pre>
+                <button class="copy-btn" onclick="copyToClipboard('cd /path/to/shadow\nnode tools/benchmark-scraper.js --auto')">Copy</button>
+            </div>
+            <p class="tip">
+                This will fetch ranks 51-100 for all configured encounters and calculate median values.
+                Takes ~2-3 minutes. Requires Node.js installed.
+            </p>
+
+            <h3>Option 2: Wait for Automatic Update</h3>
+            <p>
+                Next automatic update: <strong>Every Wednesday at 3:00 AM CET</strong>
+            </p>
+
+            <h3>Option 3: Trigger GitHub Action</h3>
+            <p>
+                Go to <a href="https://github.com/shadowpriest-mop/shadow/actions/workflows/update-benchmarks.yml" target="_blank">GitHub Actions</a>
+                and manually trigger the "Update Benchmark Data" workflow.
+            </p>
+
+            <hr style="margin: 20px 0; border: none; border-top: 1px solid #424242;">
+
+            <h3>📝 Configure Benchmarks</h3>
+            <p class="tip">
+                To add more encounters, edit <code>BENCHMARK_CONFIG</code> in <code>tools/benchmark-scraper.js</code>
             </p>
         </div>
     </div>
