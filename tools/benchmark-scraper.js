@@ -53,7 +53,17 @@ query GetRankingData($encounterID: Int!, $difficulty: Int!, $page: Int!) {
         className: "Priest"
         specName: "Shadow"
         metric: dps
-      )
+      ) {
+        rankings {
+          name
+          amount
+          report {
+            code
+            fightID
+          }
+          sourceID
+        }
+      }
     }
   }
 }
