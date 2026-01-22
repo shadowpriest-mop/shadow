@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Shadow Priest - MoP Classic Helper</title>
     <link rel="icon" type="image/x-icon" href="analyzer/icons/favicon.ico">
-    <link rel="stylesheet" href="style.css?v=2.37.1">
+    <link rel="stylesheet" href="style.css?v=2.37.2">
 </head>
 <body>
     <!-- LANDING PAGE -->
@@ -56,8 +56,10 @@
                     <a href="https://discord.gg/classicshadow" target="_blank">Discord</a>
                     <span class="separator">|</span>
                     <a href="https://github.com/shadowpriest-mop/shadow" target="_blank">Source</a>
+                    <span class="separator">|</span>
+                    <a href="#" id="benchmark-toggle-landing" onclick="toggleBenchmarkDisplay(); return false;">Show Benchmarks</a>
                 </div>
-                <div class="version-label">v2.37.1</div>
+                <div class="version-label">v2.37.3</div>
             </div>
         </div>
     </div>
@@ -80,7 +82,10 @@
                     </svg>
                 </a>
             </span>
-            <span class="app-version">v2.37.1</span>
+            <button id="benchmark-toggle-analysis" class="benchmark-toggle-btn" onclick="toggleBenchmarkDisplay()" title="Toggle benchmark comparison">
+                Show Benchmarks
+            </button>
+            <span class="app-version">v2.37.3</span>
         </nav>
 
         <!-- Talents Display & Selectors -->
@@ -117,6 +122,11 @@
         <div id="analysis-results" style="display: none;">
             <!-- Pre-Pull Actions Check -->
             <div id="prepull-check" class="prepull-check">
+                <!-- Will be populated by JavaScript -->
+            </div>
+
+            <!-- Benchmark Comparison -->
+            <div id="benchmark-comparison" class="benchmark-comparison" style="display: none;">
                 <!-- Will be populated by JavaScript -->
             </div>
 
@@ -227,6 +237,7 @@
     <script src="analyzer/prepull-checker.js?v=2.26.6"></script>
     <script src="analyzer/boss-database.js?v=2.35.0"></script>
     <script src="analyzer/quick-overview.js?v=2.36.0"></script>
-    <script src="script.js?v=2.37.1"></script>
+    <script src="analyzer/benchmark-loader.js?v=2.37.3"></script>
+    <script src="script.js?v=2.37.3"></script>
 </body>
 </html>

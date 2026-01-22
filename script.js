@@ -272,6 +272,9 @@ document.addEventListener('DOMContentLoaded', function() {
     if (window.location.hash) {
         loadFromHash();
     }
+
+    // Initialize benchmark toggle state
+    initBenchmarkToggle();
 });
 
 function updateRacialOptions() {
@@ -998,6 +1001,9 @@ window.analyzeLog = async function analyzeLog() {
 
         // Render quick overview (default to Summary view)
         renderQuickOverview();
+
+        // Load and display benchmark comparison if enabled
+        loadAndDisplayBenchmark();
 
         // Add target filter event listener
         targetFilter.addEventListener('change', () => {
@@ -1813,6 +1819,160 @@ function toggleView(view) {
 
         // Render detailed stats (already rendered, but refresh)
         renderStatsOverview(window.currentSpellFilter || 'timeline');
+    }
+}
+
+/**
+ * Toggle benchmark comparison display
+ */
+function toggleBenchmarkDisplay() {
+    // Get current state from localStorage (default: hidden)
+    const isEnabled = localStorage.getItem('benchmarksEnabled') === 'true';
+    const newState = !isEnabled;
+
+    // Save new state
+    localStorage.setItem('benchmarksEnabled', newState.toString());
+
+    // Update button text and active state
+    const landingBtn = document.getElementById('benchmark-toggle-landing');
+    const analysisBtn = document.getElementById('benchmark-toggle-analysis');
+
+    const buttonText = newState ? 'Hide Benchmarks' : 'Show Benchmarks';
+    if (landingBtn) {
+        landingBtn.textContent = buttonText;
+        if (newState) {
+            landingBtn.classList.add('active');
+        } else {
+            landingBtn.classList.remove('active');
+        }
+    }
+    if (analysisBtn) {
+        analysisBtn.textContent = buttonText;
+        if (newState) {
+            analysisBtn.classList.add('active');
+        } else {
+            analysisBtn.classList.remove('active');
+        }
+    }
+
+    // Show/hide benchmark comparison panel
+    const benchmarkPanel = document.getElementById('benchmark-comparison');
+    if (benchmarkPanel) {
+        benchmarkPanel.style.display = newState ? 'block' : 'none';
+    }
+
+    // Reload benchmark data if enabled and we're on analysis page
+    if (newState && window.currentFight) {
+        loadAndDisplayBenchmark();
+    }
+}
+
+/**
+ * Load and display benchmark comparison for current fight
+ */
+async function loadAndDisplayBenchmark() {
+    const benchmarkPanel = document.getElementById('benchmark-comparison');
+    if (!benchmarkPanel || !window.currentFight) return;
+
+    const isEnabled = localStorage.getItem('benchmarksEnabled') === 'true';
+    if (!isEnabled) {
+        benchmarkPanel.style.display = 'none';
+        return;
+    }
+
+    benchmarkPanel.style.display = 'block';
+    benchmarkPanel.innerHTML = '<div class="benchmark-loading">Loading benchmark data...</div>';
+
+    try {
+        // Initialize benchmark loader if not already done
+        if (!window.benchmarkLoader) {
+            window.benchmarkLoader = new BenchmarkLoader();
+        }
+
+        // Load benchmark for current encounter
+        const benchmark = await window.benchmarkLoader.getBenchmarkForFight(window.currentFight);
+
+        if (!benchmark) {
+            benchmarkPanel.innerHTML = `
+                <div class="benchmark-unavailable">
+                    <p>No benchmark data available for this encounter/difficulty.</p>
+                    <p class="benchmark-note">Benchmarks are updated weekly via GitHub Actions.</p>
+                </div>
+            `;
+            return;
+        }
+
+        // Render benchmark comparison
+        renderBenchmarkComparison(benchmark);
+    } catch (error) {
+        console.error('Error loading benchmark:', error);
+        benchmarkPanel.innerHTML = `
+            <div class="benchmark-error">
+                Failed to load benchmark data. Please try again later.
+            </div>
+        `;
+    }
+}
+
+/**
+ * Render benchmark comparison UI
+ */
+function renderBenchmarkComparison(benchmark) {
+    const benchmarkPanel = document.getElementById('benchmark-comparison');
+    if (!benchmarkPanel) return;
+
+    const { encounterName, difficultyName, rankRange, sampleSize, lastUpdated, metrics } = benchmark;
+
+    let html = `
+        <div class="benchmark-header">
+            <h3>📊 Benchmark Comparison</h3>
+            <div class="benchmark-meta">
+                ${encounterName} (${difficultyName}) - Median of Ranks ${rankRange.start}-${rankRange.end}
+                <span class="benchmark-sample">Sample: ${sampleSize} logs</span>
+            </div>
+        </div>
+        <div class="benchmark-metrics">
+            <div class="benchmark-metric">
+                <span class="metric-label">Mind Blast</span>
+                <span class="metric-value">${metrics.mindBlast.casts} casts (${metrics.mindBlast.castsPerMinute} CPM)</span>
+            </div>
+            <div class="benchmark-metric">
+                <span class="metric-label">Devouring Plague</span>
+                <span class="metric-value">${metrics.devouringPlague.casts} casts</span>
+            </div>
+            <div class="benchmark-metric">
+                <span class="metric-label">Vampiric Touch</span>
+                <span class="metric-value">${metrics.vampiricTouch.casts} casts</span>
+            </div>
+            <div class="benchmark-metric">
+                <span class="metric-label">Shadow Word: Pain</span>
+                <span class="metric-value">${metrics.shadowWordPain.casts} casts</span>
+            </div>
+        </div>
+        <div class="benchmark-footer">
+            Last updated: ${new Date(lastUpdated).toLocaleDateString()}
+        </div>
+    `;
+
+    benchmarkPanel.innerHTML = html;
+}
+
+/**
+ * Initialize benchmark toggle state on page load
+ */
+function initBenchmarkToggle() {
+    const isEnabled = localStorage.getItem('benchmarksEnabled') === 'true';
+    const landingBtn = document.getElementById('benchmark-toggle-landing');
+    const analysisBtn = document.getElementById('benchmark-toggle-analysis');
+
+    const buttonText = isEnabled ? 'Hide Benchmarks' : 'Show Benchmarks';
+    if (landingBtn) {
+        landingBtn.textContent = buttonText;
+        if (isEnabled) landingBtn.classList.add('active');
+    }
+    if (analysisBtn) {
+        analysisBtn.textContent = buttonText;
+        if (isEnabled) analysisBtn.classList.add('active');
     }
 }
 

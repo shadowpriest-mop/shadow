@@ -2,9 +2,28 @@
  * WarcraftLogs Benchmark Scraper
  * Fetches top performer data for encounter-specific benchmarks
  *
- * Usage: node benchmark-scraper.js <encounterID> <difficulty> <rank>
- * Example: node benchmark-scraper.js 1504 4 1
+ * Usage:
+ *   node benchmark-scraper.js <encounterID> <difficulty> <rank>  - Fetch single benchmark
+ *   node benchmark-scraper.js --auto                             - Fetch all configured benchmarks
+ *
+ * Example: node benchmark-scraper.js 1525 6 1
  */
+
+const fs = require('fs');
+const path = require('path');
+
+// Benchmark configuration - these will be auto-scraped weekly
+// Uses median of ranks 51-100 for realistic comparison
+const BENCHMARK_CONFIG = [
+  {
+    encounterID: 1525,    // Tortos
+    encounterName: 'Tortos',
+    difficulty: 6,        // Heroic 25
+    difficultyName: 'Heroic 25',
+    rankStart: 51,
+    rankEnd: 100
+  }
+];
 
 // Use the same credentials as wcl-v2-service.js
 const WCL_CLIENT_ID = 'a036e79f-2e07-4588-bc67-d46cd2f907f8';
@@ -199,6 +218,52 @@ async function fetchReportData(reportID, fightID, sourceID) {
 }
 
 /**
+ * Calculate median value from array of numbers
+ */
+function calculateMedian(values) {
+  if (values.length === 0) return 0;
+  const sorted = values.slice().sort((a, b) => a - b);
+  const mid = Math.floor(sorted.length / 2);
+  if (sorted.length % 2 === 0) {
+    return (sorted[mid - 1] + sorted[mid]) / 2;
+  }
+  return sorted[mid];
+}
+
+/**
+ * Calculate median metrics from multiple reports
+ */
+function calculateMedianMetrics(allMetrics) {
+  const mbCasts = allMetrics.map(m => m.metrics.mindBlast.casts);
+  const dpCasts = allMetrics.map(m => m.metrics.devouringPlague.casts);
+  const vtCasts = allMetrics.map(m => m.metrics.vampiricTouch.casts);
+  const swpCasts = allMetrics.map(m => m.metrics.shadowWordPain.casts);
+  const durations = allMetrics.map(m => m.fightDuration);
+
+  const medianDuration = calculateMedian(durations);
+
+  return {
+    fightDuration: medianDuration,
+    metrics: {
+      mindBlast: {
+        casts: Math.round(calculateMedian(mbCasts)),
+        castsPerMinute: ((calculateMedian(mbCasts) / medianDuration) * 60).toFixed(2)
+      },
+      devouringPlague: {
+        casts: Math.round(calculateMedian(dpCasts))
+      },
+      vampiricTouch: {
+        casts: Math.round(calculateMedian(vtCasts))
+      },
+      shadowWordPain: {
+        casts: Math.round(calculateMedian(swpCasts))
+      }
+    },
+    sampleSize: allMetrics.length
+  };
+}
+
+/**
  * Extract key metrics from report data
  */
 function extractMetrics(reportData) {
@@ -247,101 +312,304 @@ function extractMetrics(reportData) {
 }
 
 /**
+ * Save benchmark data to JSON file
+ */
+function saveBenchmarkData(benchmarkData, encounterID, difficulty) {
+  const benchmarksDir = path.join(__dirname, '..', 'analyzer', 'benchmarks');
+
+  // Create directory if it doesn't exist
+  if (!fs.existsSync(benchmarksDir)) {
+    fs.mkdirSync(benchmarksDir, { recursive: true });
+  }
+
+  // Save individual benchmark file
+  const filename = `${encounterID}-${difficulty}.json`;
+  const filepath = path.join(benchmarksDir, filename);
+  fs.writeFileSync(filepath, JSON.stringify(benchmarkData, null, 2));
+  console.log(`✓ Saved to ${filepath}`);
+
+  // Update index file
+  updateBenchmarkIndex(benchmarksDir, benchmarkData, encounterID, difficulty);
+}
+
+/**
+ * Update benchmark index file with metadata
+ */
+function updateBenchmarkIndex(benchmarksDir, benchmarkData, encounterID, difficulty) {
+  const indexPath = path.join(benchmarksDir, 'index.json');
+
+  // Load existing index or create new one
+  let index = { lastUpdated: null, benchmarks: [] };
+  if (fs.existsSync(indexPath)) {
+    index = JSON.parse(fs.readFileSync(indexPath, 'utf8'));
+  }
+
+  // Remove old entry for this encounter/difficulty if it exists
+  index.benchmarks = index.benchmarks.filter(
+    b => !(b.encounterID === encounterID && b.difficulty === difficulty)
+  );
+
+  // Add new entry
+  index.benchmarks.push({
+    encounterID,
+    encounterName: benchmarkData.encounterName,
+    difficulty,
+    difficultyName: benchmarkData.difficultyName,
+    type: benchmarkData.type || 'median',
+    rankRange: benchmarkData.rankRange,
+    sampleSize: benchmarkData.sampleSize,
+    lastUpdated: benchmarkData.lastUpdated,
+    filename: `${encounterID}-${difficulty}.json`
+  });
+
+  index.lastUpdated = new Date().toISOString();
+  fs.writeFileSync(indexPath, JSON.stringify(index, null, 2));
+  console.log(`✓ Updated index.json`);
+}
+
+/**
+ * Fetch and save benchmark (median of ranks 51-100)
+ */
+async function fetchAndSaveBenchmark(encounterID, encounterName, difficulty, difficultyName, rankStart, rankEnd) {
+  console.log(`\n${'='.repeat(60)}`);
+  console.log(`Fetching: ${encounterName} (${difficultyName})`);
+  console.log(`Ranks: ${rankStart}-${rankEnd} (calculating median)`);
+  console.log('='.repeat(60));
+
+  // Step 1: Fetch rankings
+  console.log('Step 1: Fetching rankings...');
+
+  // WCL returns 50 rankings per page, so we need to fetch the right pages
+  const startPage = Math.ceil(rankStart / 50);
+  const endPage = Math.ceil(rankEnd / 50);
+
+  let allRankings = [];
+  for (let page = startPage; page <= endPage; page++) {
+    const rankingsData = await fetchRankings(encounterID, difficulty, page);
+
+    if (!rankingsData?.worldData?.encounter?.characterRankings) {
+      console.error(`❌ No ranking data found for page ${page}!`);
+      return null;
+    }
+
+    const rankings = rankingsData.worldData.encounter.characterRankings.rankings;
+    allRankings.push(...rankings);
+
+    // Small delay between page requests
+    if (page < endPage) {
+      await new Promise(resolve => setTimeout(resolve, 1000));
+    }
+  }
+
+  // Extract only the ranks we want (e.g., 51-100 from the fetched data)
+  const startIndex = (rankStart - 1) % 50;
+  const endIndex = startIndex + (rankEnd - rankStart);
+  const targetRankings = allRankings.slice(startIndex, endIndex + 1);
+
+  if (targetRankings.length === 0) {
+    console.error(`❌ No rankings found in range ${rankStart}-${rankEnd}!`);
+    return null;
+  }
+
+  console.log(`✓ Found ${targetRankings.length} rankings`);
+
+  // Step 2: Fetch detailed report data for each ranking
+  console.log('Step 2: Fetching report data for all rankings...');
+  const allMetrics = [];
+  let fetchedCount = 0;
+  let failedCount = 0;
+
+  for (let i = 0; i < targetRankings.length; i++) {
+    const ranking = targetRankings[i];
+    const currentRank = rankStart + i;
+
+    try {
+      process.stdout.write(`  Fetching rank #${currentRank} (${i + 1}/${targetRankings.length})...`);
+
+      const reportData = await fetchReportData(
+        ranking.report.code,
+        ranking.report.fightID,
+        ranking.sourceID
+      );
+
+      const metrics = extractMetrics(reportData);
+      allMetrics.push(metrics);
+      fetchedCount++;
+      console.log(' ✓');
+
+      // Small delay between requests to be polite to WCL API
+      if (i < targetRankings.length - 1) {
+        await new Promise(resolve => setTimeout(resolve, 500));
+      }
+    } catch (error) {
+      console.log(` ❌ Failed: ${error.message}`);
+      failedCount++;
+      // Continue with other rankings even if one fails
+    }
+  }
+
+  if (allMetrics.length === 0) {
+    console.error('❌ Failed to fetch any report data!');
+    return null;
+  }
+
+  console.log(`✓ Successfully fetched ${fetchedCount} reports (${failedCount} failed)`);
+
+  // Step 3: Calculate median metrics
+  console.log('Step 3: Calculating median metrics...');
+  const medianMetrics = calculateMedianMetrics(allMetrics);
+
+  // Step 4: Build benchmark data structure
+  const benchmarkData = {
+    encounterID,
+    encounterName,
+    difficulty,
+    difficultyName,
+    rankRange: { start: rankStart, end: rankEnd },
+    type: 'median',
+    lastUpdated: new Date().toISOString(),
+    sampleSize: allMetrics.length,
+    fightDuration: medianMetrics.fightDuration,
+    metrics: medianMetrics.metrics
+  };
+
+  console.log('✓ Median metrics calculated');
+  console.log(`  Sample size: ${allMetrics.length} logs`);
+  console.log(`  Median fight duration: ${medianMetrics.fightDuration.toFixed(1)}s`);
+
+  return benchmarkData;
+}
+
+/**
+ * Auto mode - fetch all configured benchmarks
+ */
+async function autoFetchAll() {
+  console.log('🤖 AUTO MODE: Fetching all configured benchmarks');
+  console.log(`Found ${BENCHMARK_CONFIG.length} benchmark(s) to fetch\n`);
+
+  const results = [];
+
+  for (const config of BENCHMARK_CONFIG) {
+    try {
+      const benchmarkData = await fetchAndSaveBenchmark(
+        config.encounterID,
+        config.encounterName,
+        config.difficulty,
+        config.difficultyName,
+        config.rankStart,
+        config.rankEnd
+      );
+
+      if (benchmarkData) {
+        saveBenchmarkData(benchmarkData, config.encounterID, config.difficulty);
+        results.push({ success: true, config });
+      } else {
+        results.push({ success: false, config, error: 'Failed to fetch data' });
+      }
+
+      // Small delay between requests to be polite to WCL API
+      await new Promise(resolve => setTimeout(resolve, 2000));
+    } catch (error) {
+      console.error(`❌ Error fetching ${config.encounterName}:`, error.message);
+      results.push({ success: false, config, error: error.message });
+    }
+  }
+
+  // Summary
+  console.log('\n' + '='.repeat(60));
+  console.log('SUMMARY');
+  console.log('='.repeat(60));
+  const successful = results.filter(r => r.success).length;
+  console.log(`✓ ${successful}/${results.length} benchmarks fetched successfully`);
+
+  if (successful < results.length) {
+    console.log('\n❌ Failed:');
+    results.filter(r => !r.success).forEach(r => {
+      console.log(`  - ${r.config.encounterName} (${r.config.difficultyName}): ${r.error}`);
+    });
+  }
+}
+
+/**
  * Main execution
  */
 async function main() {
   const args = process.argv.slice(2);
 
-  if (args.length < 3) {
-    console.log('Usage: node benchmark-scraper.js <encounterID> <difficulty> <rank>');
+  // Auto mode - fetch all configured benchmarks
+  if (args[0] === '--auto') {
+    await autoFetchAll();
+    return;
+  }
+
+  // Manual mode - fetch rank range
+  if (args.length < 4) {
+    console.log('Usage:');
+    console.log('  node benchmark-scraper.js <encounterID> <difficulty> <rankStart> <rankEnd>  - Manual mode');
+    console.log('  node benchmark-scraper.js --auto                                            - Auto fetch all');
     console.log('');
-    console.log('Example: node benchmark-scraper.js 1565 4 1');
-    console.log('  1565 = Tortos');
-    console.log('  4 = Heroic 10 (3 = Normal 10, 5 = Normal 25, 6 = Heroic 25)');
-    console.log('  1 = Rank #1');
+    console.log('Example: node benchmark-scraper.js 1525 6 51 100');
+    console.log('  1525 = Tortos');
+    console.log('  6 = Heroic 25 (3 = Normal 10, 4 = Heroic 10, 5 = Normal 25, 6 = Heroic 25)');
+    console.log('  51 100 = Ranks 51-100 (for median calculation)');
     console.log('');
     console.log('Throne of Thunder Encounter IDs:');
-    console.log('  1577 = Jin\'rokh the Breaker');
-    console.log('  1575 = Horridon');
-    console.log('  1570 = Council of Elders');
-    console.log('  1565 = Tortos');
-    console.log('  1578 = Megaera');
-    console.log('  1573 = Ji-Kun');
-    console.log('  1572 = Durumu the Forgotten');
-    console.log('  1574 = Primordius');
-    console.log('  1576 = Dark Animus');
-    console.log('  1559 = Iron Qon');
-    console.log('  1560 = Twin Empyreans');
-    console.log('  1579 = Lei Shen');
-    console.log('  1580/1581 = Ra-den');
+    console.log('  1522 = Jin\'rokh the Breaker');
+    console.log('  1523 = Horridon');
+    console.log('  1524 = Council of Elders');
+    console.log('  1525 = Tortos');
+    console.log('  1526 = Megaera');
+    console.log('  1527 = Ji-Kun');
+    console.log('  1528 = Durumu the Forgotten');
+    console.log('  1529 = Primordius');
+    console.log('  1530 = Dark Animus');
+    console.log('  1531 = Iron Qon');
+    console.log('  1532 = Twin Empyreans');
+    console.log('  1533 = Lei Shen');
+    console.log('  1534 = Ra-den');
     process.exit(0);
   }
 
   const encounterID = parseInt(args[0]);
   const difficulty = parseInt(args[1]);
-  const targetRank = parseInt(args[2]);
+  const rankStart = parseInt(args[2]);
+  const rankEnd = parseInt(args[3]);
 
-  console.log(`Fetching rank #${targetRank} for encounter ${encounterID} (difficulty ${difficulty})...`);
-  console.log('');
-
-  // Step 1: Fetch rankings
-  console.log('Step 1: Fetching rankings...');
-  const rankingsData = await fetchRankings(encounterID, difficulty, 1);
-
-  if (!rankingsData?.worldData?.encounter?.characterRankings) {
-    console.error('No ranking data found!');
-    process.exit(1);
-  }
-
-  const rankings = rankingsData.worldData.encounter.characterRankings.rankings;
-
-  if (rankings.length === 0) {
-    console.error('No rankings found!');
-    process.exit(1);
-  }
-
-  // Get the target rank
-  const targetLog = rankings[targetRank - 1];
-
-  if (!targetLog) {
-    console.error(`Rank #${targetRank} not found!`);
-    process.exit(1);
-  }
-
-  console.log(`Found: ${targetLog.name} - ${targetLog.amount.toFixed(0)} DPS`);
-  console.log(`Report: ${targetLog.report.code}, Fight: ${targetLog.report.fightID}`);
-  console.log('');
-
-  // Step 2: Fetch detailed report data
-  console.log('Step 2: Fetching report data...');
-  const reportData = await fetchReportData(
-    targetLog.report.code,
-    targetLog.report.fightID,
-    targetLog.sourceID
+  const benchmarkData = await fetchAndSaveBenchmark(
+    encounterID,
+    'Custom',
+    difficulty,
+    `Difficulty ${difficulty}`,
+    rankStart,
+    rankEnd
   );
 
-  // Verify report is from Classic ToT period (after December 11, 2025)
-  const reportStartTime = reportData.reportData.report.startTime;
-  if (TOT_START_DATE && reportStartTime < TOT_START_DATE) {
-    const reportDate = new Date(reportStartTime).toISOString().split('T')[0];
-    console.error(`Warning: Report is from ${reportDate}, before Classic ToT release (2025-12-11)`);
-    console.error('This may be a test log or from a different game version.');
+  if (!benchmarkData) {
+    console.error('❌ Failed to fetch benchmark data');
+    process.exit(1);
   }
 
-  // Step 3: Extract metrics
-  console.log('Step 3: Extracting metrics...');
-  const metrics = extractMetrics(reportData);
-
-  console.log('Fight Duration:', metrics.fightDuration.toFixed(1), 'seconds');
-  console.log('');
-  console.log('Metrics:');
-  console.log(JSON.stringify(metrics.metrics, null, 2));
-  console.log('');
-  console.log('Raw Data Size:');
-  console.log(JSON.stringify(metrics.rawDataSize, null, 2));
+  console.log('\n' + '='.repeat(60));
+  console.log('Benchmark Data:');
+  console.log('='.repeat(60));
+  console.log(JSON.stringify(benchmarkData, null, 2));
   console.log('');
 
-  console.log('SUCCESS: Full data fetch complete!');
+  // Optionally save
+  const readline = require('readline').createInterface({
+    input: process.stdin,
+    output: process.stdout
+  });
+
+  readline.question('Save this benchmark? (y/n): ', (answer) => {
+    if (answer.toLowerCase() === 'y') {
+      saveBenchmarkData(benchmarkData, encounterID, difficulty);
+      console.log('✓ Saved!');
+    } else {
+      console.log('Not saved.');
+    }
+    readline.close();
+  });
 }
 
 // Run if executed directly
