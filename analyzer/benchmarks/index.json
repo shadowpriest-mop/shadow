@@ -1,4 +1,19 @@
 {
-  "lastUpdated": null,
-  "benchmarks": []
+  "lastUpdated": "2026-01-22T15:00:00.000Z",
+  "benchmarks": [
+    {
+      "encounterID": 1525,
+      "encounterName": "Tortos",
+      "difficulty": 6,
+      "difficultyName": "Heroic 25",
+      "type": "median",
+      "rankRange": {
+        "start": 51,
+        "end": 100
+      },
+      "sampleSize": 50,
+      "lastUpdated": "2026-01-22T15:00:00.000Z",
+      "filename": "1525-6.json"
+    }
+  ]
 }
