@@ -14,9 +14,10 @@ const path = require('path');
 
 // Benchmark configuration - these will be auto-scraped weekly
 // Uses median of ranks 51-100 for realistic comparison
+// NOTE: WCL Classic uses different encounter IDs than original MoP
 const BENCHMARK_CONFIG = [
   {
-    encounterID: 1525,    // Tortos
+    encounterID: 1505,    // Tortos (WCL Classic ID)
     encounterName: 'Tortos',
     difficulty: 6,        // Heroic 25
     difficultyName: 'Heroic 25',
@@ -548,25 +549,25 @@ async function main() {
     console.log('  node benchmark-scraper.js <encounterID> <difficulty> <rankStart> <rankEnd>  - Manual mode');
     console.log('  node benchmark-scraper.js --auto                                            - Auto fetch all');
     console.log('');
-    console.log('Example: node benchmark-scraper.js 1525 6 51 100');
-    console.log('  1525 = Tortos');
+    console.log('Example: node benchmark-scraper.js 1505 6 51 100');
+    console.log('  1505 = Tortos (WCL Classic ID)');
     console.log('  6 = Heroic 25 (3 = Normal 10, 4 = Heroic 10, 5 = Normal 25, 6 = Heroic 25)');
     console.log('  51 100 = Ranks 51-100 (for median calculation)');
     console.log('');
-    console.log('Throne of Thunder Encounter IDs:');
-    console.log('  1522 = Jin\'rokh the Breaker');
-    console.log('  1523 = Horridon');
-    console.log('  1524 = Council of Elders');
-    console.log('  1525 = Tortos');
-    console.log('  1526 = Megaera');
-    console.log('  1527 = Ji-Kun');
-    console.log('  1528 = Durumu the Forgotten');
-    console.log('  1529 = Primordius');
-    console.log('  1530 = Dark Animus');
-    console.log('  1531 = Iron Qon');
-    console.log('  1532 = Twin Empyreans');
-    console.log('  1533 = Lei Shen');
-    console.log('  1534 = Ra-den');
+    console.log('Throne of Thunder Encounter IDs (WCL Classic):');
+    console.log('  1517 = Jin\'rokh the Breaker');
+    console.log('  1515 = Horridon');
+    console.log('  1510 = Council of Elders');
+    console.log('  1505 = Tortos');
+    console.log('  1518 = Megaera');
+    console.log('  1513 = Ji-Kun');
+    console.log('  1512 = Durumu the Forgotten');
+    console.log('  1514 = Primordius');
+    console.log('  1516 = Dark Animus');
+    console.log('  1499 = Iron Qon');
+    console.log('  1500 = Twin Empyreans');
+    console.log('  1519 = Lei Shen');
+    console.log('  1520 = Ra-den');
     process.exit(0);
   }
 

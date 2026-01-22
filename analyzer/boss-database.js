@@ -56,44 +56,44 @@ const BOSS_DATABASE = {
     bossNames: ['Sha of Fear']
   },
 
-  // Throne of Thunder
-  1522: { // Jin'rokh the Breaker
-    bossNames: ['Jin\'rokh the Breaker']
-  },
-  1523: { // Horridon
-    bossNames: ['Horridon']
-  },
-  1524: { // Council of Elders
-    bossNames: ['Frost King Malakk', 'Kazra\'jin', 'Sul the Sandcrawler', 'High Priestess Mar\'li']
-  },
-  1525: { // Tortos
-    bossNames: ['Tortos']
-  },
-  1526: { // Megaera
-    bossNames: ['Megaera']
-  },
-  1527: { // Ji-Kun
-    bossNames: ['Ji-Kun']
-  },
-  1528: { // Durumu the Forgotten
-    bossNames: ['Durumu the Forgotten']
-  },
-  1529: { // Primordius
-    bossNames: ['Primordius']
-  },
-  1530: { // Dark Animus
-    bossNames: ['Dark Animus']
-  },
-  1531: { // Iron Qon
+  // Throne of Thunder (WCL Classic IDs - different from original MoP)
+  1499: { // Iron Qon
     bossNames: ['Iron Qon']
   },
-  1532: { // Twin Consorts
+  1500: { // Twin Consorts
     bossNames: ['Suen', 'Lu\'lin']
   },
-  1533: { // Lei Shen
+  1505: { // Tortos
+    bossNames: ['Tortos']
+  },
+  1510: { // Council of Elders
+    bossNames: ['Frost King Malakk', 'Kazra\'jin', 'Sul the Sandcrawler', 'High Priestess Mar\'li']
+  },
+  1512: { // Durumu the Forgotten
+    bossNames: ['Durumu the Forgotten']
+  },
+  1513: { // Ji-Kun
+    bossNames: ['Ji-Kun']
+  },
+  1514: { // Primordius
+    bossNames: ['Primordius']
+  },
+  1515: { // Horridon
+    bossNames: ['Horridon']
+  },
+  1516: { // Dark Animus
+    bossNames: ['Dark Animus']
+  },
+  1517: { // Jin'rokh the Breaker
+    bossNames: ['Jin\'rokh the Breaker']
+  },
+  1518: { // Megaera
+    bossNames: ['Megaera']
+  },
+  1519: { // Lei Shen
     bossNames: ['Lei Shen']
   },
-  1534: { // Ra-den (Heroic only)
+  1520: { // Ra-den (Heroic only)
     bossNames: ['Ra-den']
   },
 

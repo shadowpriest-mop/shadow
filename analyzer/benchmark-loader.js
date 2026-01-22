@@ -68,25 +68,26 @@ class BenchmarkLoader {
   /**
    * Unpack WCL encounter ID to get base encounter ID and difficulty
    * WCL packs encounter IDs as: 50000 + (difficulty * 10) + baseEncounterID
-   * Example: 51565 = 50000 + (4 * 10) + 1525 (Tortos Heroic 10)
-   *          51585 = 50000 + (6 * 10) + 1525 (Tortos Heroic 25)
+   * Example: 51565 = 50000 + (6 * 10) + 1505 (Tortos Heroic 25)
    *
    * Difficulty codes:
    * 3 = Normal 10, 4 = Heroic 10, 5 = Normal 25, 6 = Heroic 25
    *
-   * To unpack: We try each difficulty (3-6) and check which gives valid base ID
+   * To unpack: We try each difficulty from highest to lowest (6, 5, 4, 3)
+   * This ensures we prefer Heroic 25 over lower difficulties when ambiguous
    */
   unpackEncounterID(packedID) {
     // For packed IDs > 50000, unpack them
     if (packedID > 50000) {
       const offset = packedID - 50000;
 
-      // Try each difficulty level to find which one gives a valid base encounter ID
-      // Valid base IDs for Throne of Thunder are 1522-1534
-      for (let diff = 3; diff <= 6; diff++) {
+      // Try each difficulty level from highest to lowest
+      // This ensures we prefer Heroic 25 when multiple difficulties give valid IDs
+      for (let diff = 6; diff >= 3; diff--) {
         const candidateBase = offset - (diff * 10);
-        // Check if this gives a reasonable encounter ID (1500-1600 range for ToT)
-        if (candidateBase >= 1500 && candidateBase <= 1600) {
+        // Check if this gives a reasonable encounter ID
+        // ToT Classic IDs are in 1499-1520 range
+        if (candidateBase >= 1490 && candidateBase <= 1600) {
           return {
             baseEncounterID: candidateBase,
             difficulty: diff
