@@ -404,37 +404,24 @@ async function fetchAndSaveBenchmark(encounterID, encounterName, difficulty, dif
   // Step 1: Fetch rankings
   console.log('Step 1: Fetching rankings...');
 
-  // WCL returns 50 rankings per page, so we need to fetch the right pages
-  const startPage = Math.ceil(rankStart / 50);
-  const endPage = Math.ceil(rankEnd / 50);
+  // Fetch page 1 (WCL returns 100+ rankings per page)
+  const rankingsData = await fetchRankings(encounterID, difficulty, 1);
 
-  let allRankings = [];
-  for (let page = startPage; page <= endPage; page++) {
-    const rankingsData = await fetchRankings(encounterID, difficulty, page);
-
-    if (!rankingsData?.worldData?.encounter?.characterRankings) {
-      console.error(`❌ No ranking data found for page ${page}!`);
-      return null;
-    }
-
-    // characterRankings returns raw JSON, so we parse it
-    const rankingsJson = rankingsData.worldData.encounter.characterRankings;
-    const rankings = rankingsJson.rankings || [];
-    console.log(`✓ Page ${page}: Found ${rankings.length} rankings`);
-    allRankings.push(...rankings);
-
-    // Small delay between page requests
-    if (page < endPage) {
-      await new Promise(resolve => setTimeout(resolve, 1000));
-    }
+  if (!rankingsData?.worldData?.encounter?.characterRankings) {
+    console.error(`❌ No ranking data found!`);
+    return null;
   }
 
-  console.log(`✓ Total rankings fetched: ${allRankings.length}`);
+  // characterRankings returns raw JSON, so we parse it
+  const rankingsJson = rankingsData.worldData.encounter.characterRankings;
+  const allRankings = rankingsJson.rankings || [];
+  console.log(`✓ Found ${allRankings.length} total rankings`);
 
-  // Extract only the ranks we want (e.g., 51-100 from the fetched data)
-  const startIndex = (rankStart - 1) % 50;
-  const endIndex = startIndex + (rankEnd - rankStart);
-  const targetRankings = allRankings.slice(startIndex, endIndex + 1);
+  // Extract only the ranks we want (e.g., 51-100)
+  // Array is 0-indexed, so rank 51 is at index 50
+  const startIndex = rankStart - 1;
+  const endIndex = rankEnd;
+  const targetRankings = allRankings.slice(startIndex, endIndex);
 
   if (targetRankings.length === 0) {
     console.error(`❌ No rankings found in range ${rankStart}-${rankEnd}!`);
