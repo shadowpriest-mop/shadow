@@ -43,6 +43,7 @@ const TOT_END_DATE = null;   // No end date yet (SoO not released)
 
 // WCL API v2 GraphQL query to fetch ranking data
 // characterRankings returns raw JSON, not structured GraphQL types
+// partition 1 = current content (Classic MoP)
 const RANKING_QUERY = `
 query GetRankingData($encounterID: Int!, $difficulty: Int!, $page: Int!) {
   worldData {
@@ -50,6 +51,7 @@ query GetRankingData($encounterID: Int!, $difficulty: Int!, $page: Int!) {
       characterRankings(
         difficulty: $difficulty
         page: $page
+        partition: 1
         className: "Priest"
         specName: "Shadow"
         metric: dps
