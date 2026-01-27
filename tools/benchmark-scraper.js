@@ -45,7 +45,7 @@ const TOT_END_DATE = null;   // No end date yet (SoO not released)
 // Based on official API: zone → encounters → characterRankings
 // Zone 1046 = Throne of Thunder
 const RANKING_QUERY = `
-query GetRankingData($encounterID: Int!, $difficulty: Int!, $page: Int!) {
+query GetRankingData($difficulty: Int!, $page: Int!) {
   worldData {
     zone(id: 1046) {
       encounters {
@@ -159,7 +159,6 @@ async function fetchRankings(encounterID, difficulty, page = 1) {
       body: JSON.stringify({
         query: RANKING_QUERY,
         variables: {
-          encounterID,
           difficulty,
           page
         }
