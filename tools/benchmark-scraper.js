@@ -42,21 +42,23 @@ const TOT_START_DATE = 1733875200000; // December 11, 2025
 const TOT_END_DATE = null;   // No end date yet (SoO not released)
 
 // WCL API v2 GraphQL query to fetch ranking data
-// Query through zone rankings instead of encounter
+// Based on official API: zone → encounters → characterRankings
 // Zone 1046 = Throne of Thunder
 const RANKING_QUERY = `
 query GetRankingData($encounterID: Int!, $difficulty: Int!, $page: Int!) {
   worldData {
     zone(id: 1046) {
-      rankings(
-        encounterID: $encounterID
-        difficulty: $difficulty
-        page: $page
-        partition: 1
-        className: "Priest"
-        specName: "Shadow"
-        metric: dps
-      )
+      encounters {
+        id
+        characterRankings(
+          difficulty: $difficulty
+          page: $page
+          partition: 1
+          className: "Priest"
+          specName: "Shadow"
+          metric: dps
+        )
+      }
     }
   }
 }
@@ -410,16 +412,26 @@ async function fetchAndSaveBenchmark(encounterID, encounterName, difficulty, dif
   // Fetch page 1 (WCL returns 100+ rankings per page)
   const rankingsData = await fetchRankings(encounterID, difficulty, 1);
 
-  if (!rankingsData?.worldData?.zone?.rankings) {
-    console.error(`❌ No ranking data found!`);
+  if (!rankingsData?.worldData?.zone?.encounters) {
+    console.error(`❌ No encounter data found!`);
     console.log('DEBUG: Response structure:', JSON.stringify(rankingsData).substring(0, 500));
     return null;
   }
 
-  // rankings returns raw JSON, so we parse it
-  const rankingsJson = rankingsData.worldData.zone.rankings;
-  console.log('DEBUG: Type of rankings:', typeof rankingsJson);
-  console.log('DEBUG: Raw rankings (first 500 chars):', JSON.stringify(rankingsJson).substring(0, 500));
+  // Find our specific encounter from the list
+  const encounters = rankingsData.worldData.zone.encounters;
+  const ourEncounter = encounters.find(enc => enc.id === encounterID);
+
+  if (!ourEncounter || !ourEncounter.characterRankings) {
+    console.error(`❌ No rankings found for encounter ${encounterID}!`);
+    console.log('DEBUG: Available encounters:', encounters.map(e => e.id));
+    return null;
+  }
+
+  // characterRankings returns raw JSON, so we parse it
+  const rankingsJson = ourEncounter.characterRankings;
+  console.log('DEBUG: Type of characterRankings:', typeof rankingsJson);
+  console.log('DEBUG: Raw characterRankings (first 500 chars):', JSON.stringify(rankingsJson).substring(0, 500));
   const allRankings = rankingsJson.rankings || [];
   console.log(`✓ Found ${allRankings.length} total rankings`);
 
