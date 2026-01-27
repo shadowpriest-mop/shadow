@@ -14,10 +14,10 @@ const path = require('path');
 
 // Benchmark configuration - these will be auto-scraped weekly
 // Uses median of ranks 51-100 for realistic comparison
-// NOTE: WCL Classic uses different encounter IDs than original MoP
+// NOTE: Use PACKED encounter IDs (50000 + difficulty*10 + base)
 const BENCHMARK_CONFIG = [
   {
-    encounterID: 1505,    // Tortos (WCL Classic ID)
+    encounterID: 51565,   // Tortos Heroic 25 (packed: 50000 + 60 + 1505)
     encounterName: 'Tortos',
     difficulty: 6,        // Heroic 25
     difficultyName: 'Heroic 25',
@@ -313,6 +313,27 @@ function extractMetrics(reportData) {
 }
 
 /**
+ * Unpack encounter ID to get base ID
+ * Packed format: 50000 + (difficulty * 10) + baseEncounterID
+ */
+function unpackEncounterID(packedID) {
+  if (packedID > 50000) {
+    const offset = packedID - 50000;
+    const difficulty = Math.floor(offset / 10);
+    const baseID = offset % 10;
+    // Actually the formula should be reversed
+    // Try each difficulty from 6 down to 3
+    for (let diff = 6; diff >= 3; diff--) {
+      const candidateBase = offset - (diff * 10);
+      if (candidateBase >= 1490 && candidateBase <= 1600) {
+        return candidateBase;
+      }
+    }
+  }
+  return packedID;
+}
+
+/**
  * Save benchmark data to JSON file
  */
 function saveBenchmarkData(benchmarkData, encounterID, difficulty) {
@@ -323,14 +344,17 @@ function saveBenchmarkData(benchmarkData, encounterID, difficulty) {
     fs.mkdirSync(benchmarksDir, { recursive: true });
   }
 
+  // Unpack encounter ID if needed (use base ID for filename)
+  const baseEncounterID = unpackEncounterID(encounterID);
+
   // Save individual benchmark file
-  const filename = `${encounterID}-${difficulty}.json`;
+  const filename = `${baseEncounterID}-${difficulty}.json`;
   const filepath = path.join(benchmarksDir, filename);
   fs.writeFileSync(filepath, JSON.stringify(benchmarkData, null, 2));
   console.log(`✓ Saved to ${filepath}`);
 
-  // Update index file
-  updateBenchmarkIndex(benchmarksDir, benchmarkData, encounterID, difficulty);
+  // Update index file (use base ID)
+  updateBenchmarkIndex(benchmarksDir, benchmarkData, baseEncounterID, difficulty);
 }
 
 /**
@@ -466,8 +490,10 @@ async function fetchAndSaveBenchmark(encounterID, encounterName, difficulty, dif
   const medianMetrics = calculateMedianMetrics(allMetrics);
 
   // Step 4: Build benchmark data structure
+  // Use base encounter ID (unpacked) for consistency with loader
+  const baseEncounterID = unpackEncounterID(encounterID);
   const benchmarkData = {
-    encounterID,
+    encounterID: baseEncounterID,
     encounterName,
     difficulty,
     difficultyName,
