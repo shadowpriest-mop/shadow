@@ -396,6 +396,7 @@ async function fetchAndSaveBenchmark(encounterID, encounterName, difficulty, dif
     // characterRankings returns raw JSON, so we parse it
     const rankingsJson = rankingsData.worldData.encounter.characterRankings;
     const rankings = rankingsJson.rankings || [];
+    console.log(`✓ Page ${page}: Found ${rankings.length} rankings`);
     allRankings.push(...rankings);
 
     // Small delay between page requests
@@ -403,6 +404,8 @@ async function fetchAndSaveBenchmark(encounterID, encounterName, difficulty, dif
       await new Promise(resolve => setTimeout(resolve, 1000));
     }
   }
+
+  console.log(`✓ Total rankings fetched: ${allRankings.length}`);
 
   // Extract only the ranks we want (e.g., 51-100 from the fetched data)
   const startIndex = (rankStart - 1) % 50;
