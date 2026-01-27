@@ -42,7 +42,7 @@ const TOT_START_DATE = 1733875200000; // December 11, 2025
 const TOT_END_DATE = null;   // No end date yet (SoO not released)
 
 // WCL API v2 GraphQL query to fetch ranking data
-// We'll fetch minimal data first to see the payload size
+// characterRankings returns raw JSON, not structured GraphQL types
 const RANKING_QUERY = `
 query GetRankingData($encounterID: Int!, $difficulty: Int!, $page: Int!) {
   worldData {
@@ -53,17 +53,7 @@ query GetRankingData($encounterID: Int!, $difficulty: Int!, $page: Int!) {
         className: "Priest"
         specName: "Shadow"
         metric: dps
-      ) {
-        rankings {
-          name
-          amount
-          report {
-            code
-            fightID
-          }
-          sourceID
-        }
-      }
+      )
     }
   }
 }
@@ -403,7 +393,9 @@ async function fetchAndSaveBenchmark(encounterID, encounterName, difficulty, dif
       return null;
     }
 
-    const rankings = rankingsData.worldData.encounter.characterRankings.rankings;
+    // characterRankings returns raw JSON, so we parse it
+    const rankingsJson = rankingsData.worldData.encounter.characterRankings;
+    const rankings = rankingsJson.rankings || [];
     allRankings.push(...rankings);
 
     // Small delay between page requests
