@@ -42,13 +42,14 @@ const TOT_START_DATE = 1733875200000; // December 11, 2025
 const TOT_END_DATE = null;   // No end date yet (SoO not released)
 
 // WCL API v2 GraphQL query to fetch ranking data
-// characterRankings returns raw JSON, not structured GraphQL types
-// partition 1 = current content (Classic MoP)
+// Query through zone rankings instead of encounter
+// Zone 1046 = Throne of Thunder
 const RANKING_QUERY = `
 query GetRankingData($encounterID: Int!, $difficulty: Int!, $page: Int!) {
   worldData {
-    encounter(id: $encounterID) {
-      characterRankings(
+    zone(id: 1046) {
+      rankings(
+        encounterID: $encounterID
         difficulty: $difficulty
         page: $page
         partition: 1
@@ -409,15 +410,16 @@ async function fetchAndSaveBenchmark(encounterID, encounterName, difficulty, dif
   // Fetch page 1 (WCL returns 100+ rankings per page)
   const rankingsData = await fetchRankings(encounterID, difficulty, 1);
 
-  if (!rankingsData?.worldData?.encounter?.characterRankings) {
+  if (!rankingsData?.worldData?.zone?.rankings) {
     console.error(`❌ No ranking data found!`);
+    console.log('DEBUG: Response structure:', JSON.stringify(rankingsData).substring(0, 500));
     return null;
   }
 
-  // characterRankings returns raw JSON, so we parse it
-  const rankingsJson = rankingsData.worldData.encounter.characterRankings;
-  console.log('DEBUG: Type of characterRankings:', typeof rankingsJson);
-  console.log('DEBUG: Raw characterRankings (first 500 chars):', JSON.stringify(rankingsJson).substring(0, 500));
+  // rankings returns raw JSON, so we parse it
+  const rankingsJson = rankingsData.worldData.zone.rankings;
+  console.log('DEBUG: Type of rankings:', typeof rankingsJson);
+  console.log('DEBUG: Raw rankings (first 500 chars):', JSON.stringify(rankingsJson).substring(0, 500));
   const allRankings = rankingsJson.rankings || [];
   console.log(`✓ Found ${allRankings.length} total rankings`);
 
