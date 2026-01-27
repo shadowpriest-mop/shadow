@@ -414,6 +414,8 @@ async function fetchAndSaveBenchmark(encounterID, encounterName, difficulty, dif
 
   // characterRankings returns raw JSON, so we parse it
   const rankingsJson = rankingsData.worldData.encounter.characterRankings;
+  console.log('DEBUG: Type of characterRankings:', typeof rankingsJson);
+  console.log('DEBUG: Raw characterRankings (first 500 chars):', JSON.stringify(rankingsJson).substring(0, 500));
   const allRankings = rankingsJson.rankings || [];
   console.log(`✓ Found ${allRankings.length} total rankings`);
 
