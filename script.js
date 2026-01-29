@@ -1965,7 +1965,7 @@ function calculatePlayerCpm(spellId) {
 /**
  * Generate comparison HTML for a single spell metric
  */
-function renderMetricComparison(label, benchmarkCpm, spellId) {
+function renderMetricComparison(label, benchmarkCpm, spellId, iconPath) {
     const playerCpm = parseFloat(calculatePlayerCpm(spellId));
     const benchmark = parseFloat(benchmarkCpm);
     const diff = playerCpm - benchmark;
@@ -1986,7 +1986,10 @@ function renderMetricComparison(label, benchmarkCpm, spellId) {
 
     return `
         <div class="benchmark-metric">
-            <span class="metric-label">${label}</span>
+            <div class="metric-header">
+                <span class="metric-label">${label}</span>
+                <img src="${iconPath}" alt="${label}" class="metric-icon">
+            </div>
             <div class="metric-comparison">
                 <div class="metric-row">
                     <span class="metric-sublabel">Benchmark:</span>
@@ -2034,13 +2037,13 @@ function renderBenchmarkComparison(benchmark) {
             </div>
         </div>
         <div class="benchmark-metrics">
-            ${renderMetricComparison('Mind Blast', metrics.mindBlast.cpm, SPELL_IDS.mindBlast)}
-            ${renderMetricComparison('Devouring Plague', metrics.devouringPlague.cpm, SPELL_IDS.devouringPlague)}
-            ${renderMetricComparison('Vampiric Touch', metrics.vampiricTouch.cpm, SPELL_IDS.vampiricTouch)}
-            ${renderMetricComparison('Shadow Word: Pain', metrics.shadowWordPain.cpm, SPELL_IDS.shadowWordPain)}
-            ${renderMetricComparison('Shadow Word: Death', metrics.shadowWordDeath.cpm, SPELL_IDS.shadowWordDeath)}
-            ${renderMetricComparison('Mind Flay', metrics.mindFlay.cpm, SPELL_IDS.mindFlay)}
-            ${renderMetricComparison('Mind Flay: Insanity', metrics.mindFlayInsanity.cpm, SPELL_IDS.mindFlayInsanity)}
+            ${renderMetricComparison('Mind Blast', metrics.mindBlast.cpm, SPELL_IDS.mindBlast, 'analyzer/icons/mb.jpg')}
+            ${renderMetricComparison('Devouring Plague', metrics.devouringPlague.cpm, SPELL_IDS.devouringPlague, 'analyzer/icons/dp.jpg')}
+            ${renderMetricComparison('Vampiric Touch', metrics.vampiricTouch.cpm, SPELL_IDS.vampiricTouch, 'analyzer/icons/vt.jpg')}
+            ${renderMetricComparison('Shadow Word: Pain', metrics.shadowWordPain.cpm, SPELL_IDS.shadowWordPain, 'analyzer/icons/swp.jpg')}
+            ${renderMetricComparison('Shadow Word: Death', metrics.shadowWordDeath.cpm, SPELL_IDS.shadowWordDeath, 'analyzer/icons/swd.jpg')}
+            ${renderMetricComparison('Mind Flay', metrics.mindFlay.cpm, SPELL_IDS.mindFlay, 'analyzer/icons/flay.jpg')}
+            ${renderMetricComparison('Mind Flay: Insanity', metrics.mindFlayInsanity.cpm, SPELL_IDS.mindFlayInsanity, 'analyzer/icons/mfinsanity.jpg')}
         </div>
         <div class="benchmark-footer">
             Last updated: ${new Date(lastUpdated).toLocaleDateString()}

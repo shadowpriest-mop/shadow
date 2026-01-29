@@ -799,11 +799,24 @@ footer a:hover {
     border-radius: 4px;
 }
 
+.metric-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 6px;
+}
+
 .metric-label {
     font-weight: 500;
     color: #c4b5fd;
     font-size: 0.9em;
-    margin-bottom: 6px;
+}
+
+.metric-icon {
+    width: 24px;
+    height: 24px;
+    border-radius: 3px;
+    border: 1px solid rgba(147, 51, 234, 0.3);
 }
 
 .metric-comparison {
