@@ -2037,7 +2037,7 @@ function renderBenchmarkComparison(benchmark) {
         </div>
         <div class="benchmark-metrics">
             ${renderMetricComparison('Mind Blast', metrics.mindBlast.cpm, SPELL_IDS.mindBlast, 'analyzer/icons/mb.jpg')}
-            ${renderMetricComparison('Devouring Plague', metrics.devouringPlague.cpm, SPELL_IDS.devouringPlague, 'analyzer/icons/dp.jpg')}
+            ${renderMetricComparison('Devouring Plague', metrics.devouringPlague.cpm, SPELL_IDS.devouringPlague, 'analyzer/icons/plague.jpg')}
             ${renderMetricComparison('Vampiric Touch', metrics.vampiricTouch.cpm, SPELL_IDS.vampiricTouch, 'analyzer/icons/vt.jpg')}
             ${renderMetricComparison('Shadow Word: Pain', metrics.shadowWordPain.cpm, SPELL_IDS.shadowWordPain, 'analyzer/icons/swp.jpg')}
             ${renderMetricComparison('Shadow Word: Death', metrics.shadowWordDeath.cpm, SPELL_IDS.shadowWordDeath, 'analyzer/icons/swd.jpg')}
