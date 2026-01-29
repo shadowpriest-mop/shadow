@@ -2,7 +2,7 @@
 // For MoP Classic Shadow Priest Analyzer
 // Uses client credentials flow - no user login required (like v1 API)
 
-console.log('===  WCL-V2-SERVICE.JS LOADING (v2.19.1) ===');
+console.log('===  WCL-V2-SERVICE.JS LOADING (v2.38.0) ===');
 
 // Note: BUFF_DATA is loaded from buff-data.js and available as window.BUFF_DATA
 

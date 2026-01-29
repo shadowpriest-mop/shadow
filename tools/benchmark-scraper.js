@@ -335,6 +335,25 @@ function extractMetrics(reportData) {
 }
 
 /**
+ * Unpack encounter ID to get base ID (remove packed format)
+ * Packed format: 50000 + (difficulty * 10) + baseEncounterID
+ * Example: 51565 → 1505
+ */
+function unpackEncounterID(packedID) {
+  if (packedID > 50000) {
+    const offset = packedID - 50000;
+    // Try each difficulty from highest to lowest (6, 5, 4, 3)
+    for (let diff = 6; diff >= 3; diff--) {
+      const candidateBase = offset - (diff * 10);
+      if (candidateBase >= 1490 && candidateBase <= 1600) {
+        return candidateBase;
+      }
+    }
+  }
+  return packedID; // Already unpacked or unknown format
+}
+
+/**
  * Save benchmark data to JSON file
  */
 function saveBenchmarkData(benchmarkData, encounterID, difficulty, size) {
@@ -344,14 +363,17 @@ function saveBenchmarkData(benchmarkData, encounterID, difficulty, size) {
     fs.mkdirSync(benchmarksDir, { recursive: true });
   }
 
-  // Save individual benchmark file
-  const filename = `${encounterID}-${difficulty}-${size}.json`;
+  // Unpack encounter ID to base ID for consistent filename
+  const baseEncounterID = unpackEncounterID(encounterID);
+
+  // Save individual benchmark file with format: baseID-difficulty-size.json
+  const filename = `${baseEncounterID}-${difficulty}-${size}.json`;
   const filepath = path.join(benchmarksDir, filename);
   fs.writeFileSync(filepath, JSON.stringify(benchmarkData, null, 2));
   console.log(`✓ Saved to ${filepath}`);
 
-  // Update index file
-  updateBenchmarkIndex(benchmarksDir, benchmarkData, encounterID, difficulty, size);
+  // Update index file (also use base ID)
+  updateBenchmarkIndex(benchmarksDir, benchmarkData, baseEncounterID, difficulty, size);
 }
 
 /**
@@ -472,8 +494,11 @@ async function fetchAndSaveBenchmark(encounterID, encounterName, difficulty, siz
   console.log('\nStep 3: Calculating median metrics...');
   const medianMetrics = calculateMedianMetrics(allMetrics);
 
+  // Unpack encounter ID for consistent storage (1505 instead of 51565)
+  const baseEncounterID = unpackEncounterID(encounterID);
+
   const benchmarkData = {
-    encounterID,
+    encounterID: baseEncounterID,
     encounterName,
     difficulty,
     size,
