@@ -1,0 +1,49 @@
+{
+  "encounterID": 51565,
+  "encounterName": "Tortos",
+  "difficulty": 4,
+  "difficultyName": "Heroic 25",
+  "rankRange": {
+    "start": 51,
+    "end": 100
+  },
+  "type": "median",
+  "lastUpdated": "2026-01-29T14:30:49.772Z",
+  "sampleSize": 50,
+  "medianFightDuration": 206.41500000000002,
+  "metrics": {
+    "mindBlast": {
+      "cpm": "5.46"
+    },
+    "devouringPlague": {
+      "cpm": "2.69"
+    },
+    "vampiricTouch": {
+      "cpm": "4.90"
+    },
+    "shadowWordPain": {
+      "cpm": "6.63"
+    },
+    "halo": {
+      "cpm": "1.24"
+    },
+    "mindFlay": {
+      "cpm": "9.63"
+    },
+    "mindFlayInsanity": {
+      "cpm": "6.21"
+    },
+    "mindSear": {
+      "cpm": "0.00"
+    },
+    "mindSpike": {
+      "cpm": "0.29"
+    },
+    "shadowWordDeath": {
+      "cpm": "3.55"
+    },
+    "shadowfiend": {
+      "cpm": "0.44"
+    }
+  }
+}

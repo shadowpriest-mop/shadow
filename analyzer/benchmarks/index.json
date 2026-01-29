@@ -1,5 +1,5 @@
 {
-  "lastUpdated": "2026-01-28T17:28:29.064Z",
+  "lastUpdated": "2026-01-29T15:06:00.716Z",
   "benchmarks": [
     {
       "encounterID": 1505,
@@ -28,6 +28,35 @@
       "sampleSize": 50,
       "lastUpdated": "2026-01-28T17:28:29.060Z",
       "filename": "1505-4.json"
+    },
+    {
+      "encounterID": 51565,
+      "encounterName": "Tortos",
+      "difficulty": 4,
+      "difficultyName": "Heroic 25",
+      "type": "median",
+      "rankRange": {
+        "start": 51,
+        "end": 100
+      },
+      "sampleSize": 50,
+      "lastUpdated": "2026-01-29T14:30:49.772Z",
+      "filename": "51565-4.json"
+    },
+    {
+      "encounterID": 1505,
+      "encounterName": "Tortos",
+      "difficulty": 4,
+      "size": 25,
+      "difficultyName": "Heroic 25",
+      "type": "median",
+      "rankRange": {
+        "start": 51,
+        "end": 100
+      },
+      "sampleSize": 50,
+      "lastUpdated": "2026-01-29T15:06:00.713Z",
+      "filename": "1505-4-25.json"
     }
   ]
 }

@@ -12,18 +12,17 @@ Benchmark data is automatically updated weekly via GitHub Actions:
 ## File Structure
 
 - `index.json` - Index of all available benchmarks with metadata
-- `{encounterID}-{difficulty}.json` - Individual benchmark data files
+- `{encounterID}-{difficulty}-{size}.json` - Individual benchmark data files
 
-### Example: `1525-6.json`
+### Example: `1525-4-25.json`
 - Encounter ID: 1525 (Tortos)
-- Difficulty: 6 (Heroic 25)
+- Difficulty: 4 
+- Size: 25
 
 ## Difficulty Codes
 
-- 3 = Normal 10
-- 4 = Heroic 10
-- 5 = Normal 25
-- 6 = Heroic 25
+- 3 = Normal 10 & 25
+- 4 = Heroic 10 & 25
 
 ## Data Format
 
@@ -32,18 +31,6 @@ Each benchmark file contains:
 - Fight duration
 - Spell cast counts and metrics
 - Last updated timestamp
-
-## Manual Updates
-
-To manually update benchmarks:
-
-```bash
-# Update all configured benchmarks
-node tools/benchmark-scraper.js --auto
-
-# Update specific encounter
-node tools/benchmark-scraper.js <encounterID> <difficulty> <rank>
-```
 
 ## Configuration
 
