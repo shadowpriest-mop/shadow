@@ -34,13 +34,14 @@ class BenchmarkLoader {
   }
 
   /**
-   * Load a specific benchmark by encounter and difficulty
+   * Load a specific benchmark by encounter, difficulty, and raid size
    * @param {number} encounterID - WCL encounter ID
-   * @param {number} difficulty - Difficulty level (3-6)
+   * @param {number} difficulty - Difficulty level (3 = Normal, 4 = Heroic)
+   * @param {number} size - Raid size (10 or 25)
    * @returns {Promise<Object|null>} Benchmark data or null if not found
    */
-  async loadBenchmark(encounterID, difficulty) {
-    const cacheKey = `${encounterID}-${difficulty}`;
+  async loadBenchmark(encounterID, difficulty, size) {
+    const cacheKey = `${encounterID}-${difficulty}-${size}`;
 
     // Check cache first
     if (this.benchmarkCache.has(cacheKey)) {
@@ -48,7 +49,7 @@ class BenchmarkLoader {
     }
 
     try {
-      const filename = `${encounterID}-${difficulty}.json`;
+      const filename = `${encounterID}-${difficulty}-${size}.json`;
       const response = await fetch(this.baseUrl + filename);
 
       if (!response.ok) {
@@ -111,7 +112,7 @@ class BenchmarkLoader {
 
   /**
    * Get benchmark for current fight if available
-   * @param {Object} fight - Fight object with encounterID and difficulty
+   * @param {Object} fight - Fight object with encounterID, difficulty, and size
    * @returns {Promise<Object|null>} Benchmark data or null
    */
   async getBenchmarkForFight(fight) {
@@ -130,8 +131,11 @@ class BenchmarkLoader {
       return null;
     }
 
-    console.log(`Benchmark lookup: encounterID=${baseEncounterID}, difficulty=${difficulty} (original=${fight.encounterID})`);
-    return await this.loadBenchmark(baseEncounterID, difficulty);
+    // Get raid size from fight object (defaults to 25 if not specified)
+    const size = fight.size || 25;
+
+    console.log(`Benchmark lookup: encounterID=${baseEncounterID}, difficulty=${difficulty}, size=${size} (original=${fight.encounterID})`);
+    return await this.loadBenchmark(baseEncounterID, difficulty, size);
   }
 
   /**

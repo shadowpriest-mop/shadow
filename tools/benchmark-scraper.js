@@ -19,6 +19,7 @@ const BENCHMARK_CONFIG = [
     encounterID: 51565,   // Tortos
     encounterName: 'Tortos',
     difficulty: 4,        // 3 = Normal, 4 = Heroic
+    size: 25,             // Raid size: 10 or 25
     difficultyName: 'Heroic 25',
     rankStart: 51,
     rankEnd: 100
@@ -38,14 +39,14 @@ let tokenExpiry = null;
 
 // GraphQL query to fetch Shadow Priest rankings
 const RANKING_QUERY = `
-query GetRankingData($encounterID: Int!, $difficulty: Int!, $page: Int!) {
+query GetRankingData($encounterID: Int!, $difficulty: Int!, $size: Int!, $page: Int!) {
   worldData {
     encounter(id: $encounterID) {
       id
       name
       characterRankings(
         difficulty: $difficulty
-        size: 25
+        size: $size
         page: $page
         partition: 3
         className: "Priest"
@@ -132,7 +133,7 @@ async function getAccessToken() {
 /**
  * Fetch rankings from WCL API
  */
-async function fetchRankings(encounterID, difficulty, page = 1) {
+async function fetchRankings(encounterID, difficulty, size, page = 1) {
   const token = await getAccessToken();
 
   const response = await fetch(WCL_API_URL, {
@@ -143,7 +144,7 @@ async function fetchRankings(encounterID, difficulty, page = 1) {
     },
     body: JSON.stringify({
       query: RANKING_QUERY,
-      variables: { encounterID, difficulty, page }
+      variables: { encounterID, difficulty, size, page }
     })
   });
 
@@ -336,7 +337,7 @@ function extractMetrics(reportData) {
 /**
  * Save benchmark data to JSON file
  */
-function saveBenchmarkData(benchmarkData, encounterID, difficulty) {
+function saveBenchmarkData(benchmarkData, encounterID, difficulty, size) {
   const benchmarksDir = path.join(__dirname, '..', 'analyzer', 'benchmarks');
 
   if (!fs.existsSync(benchmarksDir)) {
@@ -344,19 +345,19 @@ function saveBenchmarkData(benchmarkData, encounterID, difficulty) {
   }
 
   // Save individual benchmark file
-  const filename = `${encounterID}-${difficulty}.json`;
+  const filename = `${encounterID}-${difficulty}-${size}.json`;
   const filepath = path.join(benchmarksDir, filename);
   fs.writeFileSync(filepath, JSON.stringify(benchmarkData, null, 2));
   console.log(`✓ Saved to ${filepath}`);
 
   // Update index file
-  updateBenchmarkIndex(benchmarksDir, benchmarkData, encounterID, difficulty);
+  updateBenchmarkIndex(benchmarksDir, benchmarkData, encounterID, difficulty, size);
 }
 
 /**
  * Update benchmark index file with metadata
  */
-function updateBenchmarkIndex(benchmarksDir, benchmarkData, encounterID, difficulty) {
+function updateBenchmarkIndex(benchmarksDir, benchmarkData, encounterID, difficulty, size) {
   const indexPath = path.join(benchmarksDir, 'index.json');
 
   let index = { lastUpdated: null, benchmarks: [] };
@@ -364,9 +365,9 @@ function updateBenchmarkIndex(benchmarksDir, benchmarkData, encounterID, difficu
     index = JSON.parse(fs.readFileSync(indexPath, 'utf8'));
   }
 
-  // Remove old entry for this encounter/difficulty if it exists
+  // Remove old entry for this encounter/difficulty/size if it exists
   index.benchmarks = index.benchmarks.filter(
-    b => !(b.encounterID === encounterID && b.difficulty === difficulty)
+    b => !(b.encounterID === encounterID && b.difficulty === difficulty && b.size === size)
   );
 
   // Add new entry
@@ -374,12 +375,13 @@ function updateBenchmarkIndex(benchmarksDir, benchmarkData, encounterID, difficu
     encounterID,
     encounterName: benchmarkData.encounterName,
     difficulty,
+    size,
     difficultyName: benchmarkData.difficultyName,
     type: benchmarkData.type,
     rankRange: benchmarkData.rankRange,
     sampleSize: benchmarkData.sampleSize,
     lastUpdated: benchmarkData.lastUpdated,
-    filename: `${encounterID}-${difficulty}.json`
+    filename: `${encounterID}-${difficulty}-${size}.json`
   });
 
   index.lastUpdated = new Date().toISOString();
@@ -390,7 +392,7 @@ function updateBenchmarkIndex(benchmarksDir, benchmarkData, encounterID, difficu
 /**
  * Fetch and save benchmark (median of ranks 51-100)
  */
-async function fetchAndSaveBenchmark(encounterID, encounterName, difficulty, difficultyName, rankStart, rankEnd) {
+async function fetchAndSaveBenchmark(encounterID, encounterName, difficulty, size, difficultyName, rankStart, rankEnd) {
   console.log(`\n${'='.repeat(60)}`);
   console.log(`Fetching: ${encounterName} (${difficultyName})`);
   console.log(`Ranks: ${rankStart}-${rankEnd} (calculating median)`);
@@ -398,7 +400,7 @@ async function fetchAndSaveBenchmark(encounterID, encounterName, difficulty, dif
 
   // Step 1: Fetch rankings
   console.log('Step 1: Fetching rankings...');
-  const rankingsData = await fetchRankings(encounterID, difficulty, 1);
+  const rankingsData = await fetchRankings(encounterID, difficulty, size, 1);
 
   if (!rankingsData?.worldData?.encounter) {
     console.error(`❌ No encounter data found!`);
@@ -474,6 +476,7 @@ async function fetchAndSaveBenchmark(encounterID, encounterName, difficulty, dif
     encounterID,
     encounterName,
     difficulty,
+    size,
     difficultyName,
     rankRange: { start: rankStart, end: rankEnd },
     type: 'median',
@@ -505,13 +508,14 @@ async function autoFetchAll() {
         config.encounterID,
         config.encounterName,
         config.difficulty,
+        config.size,
         config.difficultyName,
         config.rankStart,
         config.rankEnd
       );
 
       if (benchmarkData) {
-        saveBenchmarkData(benchmarkData, config.encounterID, config.difficulty);
+        saveBenchmarkData(benchmarkData, config.encounterID, config.difficulty, config.size);
         results.push({ success: true, config });
       } else {
         results.push({ success: false, config, error: 'Failed to fetch data' });
