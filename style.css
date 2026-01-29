@@ -773,6 +773,12 @@ footer a:hover {
     margin: 0 0 6px 0;
 }
 
+.benchmark-note {
+    font-size: 0.85em;
+    color: #9ca3af;
+    font-style: italic;
+}
+
 .benchmark-meta {
     font-size: 0.85em;
     color: #9ca3af;

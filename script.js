@@ -2031,9 +2031,8 @@ function renderBenchmarkComparison(benchmark) {
     let html = `
         <div class="benchmark-header">
             <h3>📊 Benchmark Comparison</h3>
-            <div class="benchmark-meta">
-                ${encounterName} (${difficultyName}) - Median of Ranks ${rankRange.start}-${rankRange.end}
-                <span class="benchmark-sample">Sample: ${sampleSize} logs</span>
+            <div class="benchmark-note">
+                This is reference data from similar logs, not an indicator of perfect play.
             </div>
         </div>
         <div class="benchmark-metrics">
@@ -2044,9 +2043,6 @@ function renderBenchmarkComparison(benchmark) {
             ${renderMetricComparison('Shadow Word: Death', metrics.shadowWordDeath.cpm, SPELL_IDS.shadowWordDeath, 'analyzer/icons/swd.jpg')}
             ${renderMetricComparison('Mind Flay', metrics.mindFlay.cpm, SPELL_IDS.mindFlay, 'analyzer/icons/flay.jpg')}
             ${renderMetricComparison('Mind Flay: Insanity', metrics.mindFlayInsanity.cpm, SPELL_IDS.mindFlayInsanity, 'analyzer/icons/mfinsanity.jpg')}
-        </div>
-        <div class="benchmark-footer">
-            Last updated: ${new Date(lastUpdated).toLocaleDateString()}
         </div>
     `;
 
