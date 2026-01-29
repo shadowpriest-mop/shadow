@@ -27,8 +27,8 @@ const BENCHMARK_CONFIG = [
 ];
 
 // WarcraftLogs API credentials
-const WCL_CLIENT_ID = 'a036e79f-2e07-4588-bc67-d46cd2f907f8';
-const WCL_CLIENT_SECRET = '2j26APf8DGSppFDstkqJ8H2hCaC74YWc4GWpapEg';
+const WCL_CLIENT_ID = process.env.WCL_CLIENT_ID || 'a036e79f-2e07-4588-bc67-d46cd2f907f8';
+const WCL_CLIENT_SECRET = process.env.WCL_CLIENT_SECRET || '2j26APf8DGSppFDstkqJ8H2hCaC74YWc4GWpapEg';
 const WCL_TOKEN_URL = 'https://classic.warcraftlogs.com/oauth/token';
 const WCL_API_URL = 'https://classic.warcraftlogs.com/api/v2/client';
 
