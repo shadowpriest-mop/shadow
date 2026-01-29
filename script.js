@@ -1949,6 +1949,63 @@ async function loadAndDisplayBenchmark() {
 }
 
 /**
+ * Calculate player's actual CPM for a specific spell
+ */
+function calculatePlayerCpm(spellId) {
+    if (!window.allCasts || !window.currentFight) return 0;
+
+    const fightDurationMs = window.currentFight.endTime - window.currentFight.startTime;
+    const fightDurationMinutes = fightDurationMs / 1000 / 60;
+
+    const castCount = window.allCasts.filter(cast => cast.spellId === spellId).length;
+
+    return (castCount / fightDurationMinutes).toFixed(1);
+}
+
+/**
+ * Generate comparison HTML for a single spell metric
+ */
+function renderMetricComparison(label, benchmarkCpm, spellId) {
+    const playerCpm = parseFloat(calculatePlayerCpm(spellId));
+    const benchmark = parseFloat(benchmarkCpm);
+    const diff = playerCpm - benchmark;
+    const diffPercent = ((diff / benchmark) * 100).toFixed(1);
+
+    // Color code based on performance
+    // Green if within 5% or better, yellow if 5-15% behind, red if >15% behind
+    let diffClass = 'neutral';
+    if (diff >= 0 || Math.abs(diffPercent) <= 5) {
+        diffClass = 'good'; // Green
+    } else if (Math.abs(diffPercent) <= 15) {
+        diffClass = 'medium'; // Yellow
+    } else {
+        diffClass = 'bad'; // Red
+    }
+
+    const diffSign = diff >= 0 ? '+' : '';
+
+    return `
+        <div class="benchmark-metric">
+            <span class="metric-label">${label}</span>
+            <div class="metric-comparison">
+                <div class="metric-row">
+                    <span class="metric-sublabel">Benchmark:</span>
+                    <span class="metric-value">${benchmarkCpm} CPM</span>
+                </div>
+                <div class="metric-row">
+                    <span class="metric-sublabel">Your CPM:</span>
+                    <span class="metric-value player-value">${playerCpm} CPM</span>
+                </div>
+                <div class="metric-row">
+                    <span class="metric-sublabel">Difference:</span>
+                    <span class="metric-diff ${diffClass}">${diffSign}${diff.toFixed(1)} (${diffSign}${diffPercent}%)</span>
+                </div>
+            </div>
+        </div>
+    `;
+}
+
+/**
  * Render benchmark comparison UI
  */
 function renderBenchmarkComparison(benchmark) {
@@ -1956,6 +2013,17 @@ function renderBenchmarkComparison(benchmark) {
     if (!benchmarkPanel) return;
 
     const { encounterName, difficultyName, rankRange, sampleSize, lastUpdated, metrics } = benchmark;
+
+    // Spell ID mappings
+    const SPELL_IDS = {
+        mindBlast: 8092,
+        devouringPlague: 2944,
+        vampiricTouch: 34914,
+        shadowWordPain: 589,
+        shadowWordDeath: 32379,
+        mindFlay: 15407,
+        mindFlayInsanity: 129197
+    };
 
     let html = `
         <div class="benchmark-header">
@@ -1966,34 +2034,13 @@ function renderBenchmarkComparison(benchmark) {
             </div>
         </div>
         <div class="benchmark-metrics">
-            <div class="benchmark-metric">
-                <span class="metric-label">Mind Blast</span>
-                <span class="metric-value">${metrics.mindBlast.cpm} CPM</span>
-            </div>
-            <div class="benchmark-metric">
-                <span class="metric-label">Devouring Plague</span>
-                <span class="metric-value">${metrics.devouringPlague.cpm} CPM</span>
-            </div>
-            <div class="benchmark-metric">
-                <span class="metric-label">Vampiric Touch</span>
-                <span class="metric-value">${metrics.vampiricTouch.cpm} CPM</span>
-            </div>
-            <div class="benchmark-metric">
-                <span class="metric-label">Shadow Word: Pain</span>
-                <span class="metric-value">${metrics.shadowWordPain.cpm} CPM</span>
-            </div>
-            <div class="benchmark-metric">
-                <span class="metric-label">Shadow Word: Death</span>
-                <span class="metric-value">${metrics.shadowWordDeath.cpm} CPM</span>
-            </div>
-            <div class="benchmark-metric">
-                <span class="metric-label">Mind Flay</span>
-                <span class="metric-value">${metrics.mindFlay.cpm} CPM</span>
-            </div>
-            <div class="benchmark-metric">
-                <span class="metric-label">Mind Flay: Insanity</span>
-                <span class="metric-value">${metrics.mindFlayInsanity.cpm} CPM</span>
-            </div>
+            ${renderMetricComparison('Mind Blast', metrics.mindBlast.cpm, SPELL_IDS.mindBlast)}
+            ${renderMetricComparison('Devouring Plague', metrics.devouringPlague.cpm, SPELL_IDS.devouringPlague)}
+            ${renderMetricComparison('Vampiric Touch', metrics.vampiricTouch.cpm, SPELL_IDS.vampiricTouch)}
+            ${renderMetricComparison('Shadow Word: Pain', metrics.shadowWordPain.cpm, SPELL_IDS.shadowWordPain)}
+            ${renderMetricComparison('Shadow Word: Death', metrics.shadowWordDeath.cpm, SPELL_IDS.shadowWordDeath)}
+            ${renderMetricComparison('Mind Flay', metrics.mindFlay.cpm, SPELL_IDS.mindFlay)}
+            ${renderMetricComparison('Mind Flay: Insanity', metrics.mindFlayInsanity.cpm, SPELL_IDS.mindFlayInsanity)}
         </div>
         <div class="benchmark-footer">
             Last updated: ${new Date(lastUpdated).toLocaleDateString()}

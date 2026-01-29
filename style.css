@@ -785,16 +785,15 @@ footer a:hover {
 
 .benchmark-metrics {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
     gap: 12px;
     margin: 12px 0;
 }
 
 .benchmark-metric {
     display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 8px 12px;
+    flex-direction: column;
+    padding: 10px 12px;
     background: rgba(50, 50, 70, 0.4);
     border: 1px solid rgba(147, 51, 234, 0.2);
     border-radius: 4px;
@@ -804,11 +803,51 @@ footer a:hover {
     font-weight: 500;
     color: #c4b5fd;
     font-size: 0.9em;
+    margin-bottom: 6px;
+}
+
+.metric-comparison {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.metric-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 0.85em;
+}
+
+.metric-sublabel {
+    color: #9ca3af;
+    font-size: 0.9em;
 }
 
 .metric-value {
-    color: #9ca3af;
+    color: #d1d5db;
+    font-weight: 500;
     font-size: 0.85em;
+}
+
+.player-value {
+    color: #e0e7ff;
+}
+
+.metric-diff {
+    font-weight: 600;
+}
+
+.metric-diff.good {
+    color: #10b981;
+}
+
+.metric-diff.medium {
+    color: #f59e0b;
+}
+
+.metric-diff.bad {
+    color: #ef4444;
 }
 
 .benchmark-footer {
