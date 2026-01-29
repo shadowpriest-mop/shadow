@@ -166,6 +166,8 @@ class WCLv2Service {
               startTime
               endTime
               encounterID
+              difficulty
+              size
               kill
             }
             masterData {

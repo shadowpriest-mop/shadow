@@ -28,8 +28,8 @@ jobs:
           cd tools
           node benchmark-scraper.js --auto
         env:
-          # WCL credentials are embedded in the script
-          # In production, these should be moved to GitHub Secrets
+          WCL_CLIENT_ID: ${{ secrets.WCL_CLIENT_ID }}
+          WCL_CLIENT_SECRET: ${{ secrets.WCL_CLIENT_SECRET }}
           NODE_ENV: production
 
       - name: Configure git
