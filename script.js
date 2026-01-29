@@ -1968,19 +1968,31 @@ function renderBenchmarkComparison(benchmark) {
         <div class="benchmark-metrics">
             <div class="benchmark-metric">
                 <span class="metric-label">Mind Blast</span>
-                <span class="metric-value">${metrics.mindBlast.casts} casts (${metrics.mindBlast.castsPerMinute} CPM)</span>
+                <span class="metric-value">${metrics.mindBlast.cpm} CPM</span>
             </div>
             <div class="benchmark-metric">
                 <span class="metric-label">Devouring Plague</span>
-                <span class="metric-value">${metrics.devouringPlague.casts} casts</span>
+                <span class="metric-value">${metrics.devouringPlague.cpm} CPM</span>
             </div>
             <div class="benchmark-metric">
                 <span class="metric-label">Vampiric Touch</span>
-                <span class="metric-value">${metrics.vampiricTouch.casts} casts</span>
+                <span class="metric-value">${metrics.vampiricTouch.cpm} CPM</span>
             </div>
             <div class="benchmark-metric">
                 <span class="metric-label">Shadow Word: Pain</span>
-                <span class="metric-value">${metrics.shadowWordPain.casts} casts</span>
+                <span class="metric-value">${metrics.shadowWordPain.cpm} CPM</span>
+            </div>
+            <div class="benchmark-metric">
+                <span class="metric-label">Shadow Word: Death</span>
+                <span class="metric-value">${metrics.shadowWordDeath.cpm} CPM</span>
+            </div>
+            <div class="benchmark-metric">
+                <span class="metric-label">Mind Flay</span>
+                <span class="metric-value">${metrics.mindFlay.cpm} CPM</span>
+            </div>
+            <div class="benchmark-metric">
+                <span class="metric-label">Mind Flay: Insanity</span>
+                <span class="metric-value">${metrics.mindFlayInsanity.cpm} CPM</span>
             </div>
         </div>
         <div class="benchmark-footer">
