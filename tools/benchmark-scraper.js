@@ -1,78 +1,69 @@
 /**
  * WarcraftLogs Benchmark Scraper
- * Fetches top performer data for encounter-specific benchmarks
+ * Fetches Shadow Priest performance benchmarks from top-tier players
  *
  * Usage:
- *   node benchmark-scraper.js <encounterID> <difficulty> <rank>  - Fetch single benchmark
- *   node benchmark-scraper.js --auto                             - Fetch all configured benchmarks
+ *   node benchmark-scraper.js --auto                                            - Fetch all configured benchmarks
+ *   node benchmark-scraper.js <encounterID> <difficulty> <rankStart> <rankEnd>  - Manual single benchmark
  *
- * Example: node benchmark-scraper.js 1525 6 1
+ * Example: node benchmark-scraper.js 51565 4 51 100
  */
 
 const fs = require('fs');
 const path = require('path');
 
-// Benchmark configuration - these will be auto-scraped weekly
-// Uses median of ranks 51-100 for realistic comparison
-// NOTE: Use PACKED encounter IDs (50000 + difficulty*10 + base)
+// Benchmark configuration - add more bosses here
+// Uses median of ranks 51-100 to avoid parse-padding cheese while still representing strong play
 const BENCHMARK_CONFIG = [
   {
-    encounterID: 51565,   // Tortos Heroic 25 (packed: 50000 + 60 + 1505)
+    encounterID: 51565,   // Tortos
     encounterName: 'Tortos',
-    difficulty: 6,        // Heroic 25
+    difficulty: 4,        // 3 = Normal, 4 = Heroic
     difficultyName: 'Heroic 25',
     rankStart: 51,
     rankEnd: 100
   }
+  // Add more bosses here as needed
 ];
 
-// Use the same credentials as wcl-v2-service.js
+// WarcraftLogs API credentials
 const WCL_CLIENT_ID = 'a036e79f-2e07-4588-bc67-d46cd2f907f8';
 const WCL_CLIENT_SECRET = '2j26APf8DGSppFDstkqJ8H2hCaC74YWc4GWpapEg';
 const WCL_TOKEN_URL = 'https://classic.warcraftlogs.com/oauth/token';
 const WCL_API_URL = 'https://classic.warcraftlogs.com/api/v2/client';
 
-// Store access token
+// Access token cache
 let accessToken = null;
 let tokenExpiry = null;
 
-// Date range for Throne of Thunder Classic content
-// Classic ToT released December 11, 2025 - SoO not yet released
-const TOT_START_DATE = 1733875200000; // December 11, 2025
-const TOT_END_DATE = null;   // No end date yet (SoO not released)
-
-// WCL API v2 GraphQL query to fetch ranking data
-// Based on official API: zone → encounters → characterRankings
-// Zone 1046 = Throne of Thunder
+// GraphQL query to fetch Shadow Priest rankings
 const RANKING_QUERY = `
-query GetRankingData($difficulty: Int!, $page: Int!) {
+query GetRankingData($encounterID: Int!, $difficulty: Int!, $page: Int!) {
   worldData {
-    zone(id: 1046) {
-      encounters {
-        id
-        characterRankings(
-          difficulty: $difficulty
-          page: $page
-          partition: 1
-          className: "Priest"
-          specName: "Shadow"
-          metric: dps
-        )
-      }
+    encounter(id: $encounterID) {
+      id
+      name
+      characterRankings(
+        difficulty: $difficulty
+        size: 25
+        page: $page
+        partition: 3
+        className: "Priest"
+        specName: "Shadow"
+        metric: dps
+      )
     }
   }
 }
 `;
 
-// More detailed query to fetch actual log data once we have the report ID
+// GraphQL query to fetch detailed cast events from a report
 const REPORT_QUERY = `
 query GetReportData($reportID: String!, $fightID: Int!, $sourceID: Int!) {
   reportData {
     report(code: $reportID) {
       startTime
       endTime
-
-      # Get fight info
       fights(fightIDs: [$fightID]) {
         id
         startTime
@@ -81,8 +72,6 @@ query GetReportData($reportID: String!, $fightID: Int!, $sourceID: Int!) {
         difficulty
         kill
       }
-
-      # Get cast events for key spells
       events(
         fightIDs: [$fightID]
         sourceID: $sourceID
@@ -92,8 +81,6 @@ query GetReportData($reportID: String!, $fightID: Int!, $sourceID: Int!) {
         data
         nextPageTimestamp
       }
-
-      # Get damage events for orb tracking
       damageEvents: events(
         fightIDs: [$fightID]
         sourceID: $sourceID
@@ -112,7 +99,6 @@ query GetReportData($reportID: String!, $fightID: Int!, $sourceID: Int!) {
  * Get access token using OAuth2 client credentials flow
  */
 async function getAccessToken() {
-  // Return existing token if still valid
   if (accessToken && tokenExpiry && Date.now() < tokenExpiry - 5 * 60 * 1000) {
     return accessToken;
   }
@@ -149,37 +135,78 @@ async function getAccessToken() {
 async function fetchRankings(encounterID, difficulty, page = 1) {
   const token = await getAccessToken();
 
-  try {
-    const response = await fetch(WCL_API_URL, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${token}`
-      },
-      body: JSON.stringify({
-        query: RANKING_QUERY,
-        variables: {
-          difficulty,
-          page
-        }
-      })
-    });
+  const response = await fetch(WCL_API_URL, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${token}`
+    },
+    body: JSON.stringify({
+      query: RANKING_QUERY,
+      variables: { encounterID, difficulty, page }
+    })
+  });
 
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
-    }
-
-    const data = await response.json();
-
-    if (data.errors) {
-      throw new Error(`GraphQL error: ${JSON.stringify(data.errors)}`);
-    }
-
-    return data.data;
-  } catch (error) {
-    console.error('Error fetching rankings:', error);
-    throw error;
+  if (!response.ok) {
+    throw new Error(`HTTP error! status: ${response.status}`);
   }
+
+  const data = await response.json();
+
+  if (data.errors) {
+    throw new Error(`GraphQL error: ${JSON.stringify(data.errors)}`);
+  }
+
+  return data.data;
+}
+
+/**
+ * Get player's sourceID from a report
+ */
+async function getPlayerSourceID(reportCode, playerName) {
+  const token = await getAccessToken();
+  
+  const query = `
+  query GetPlayerID($reportID: String!) {
+    reportData {
+      report(code: $reportID) {
+        masterData {
+          actors(type: "Player") {
+            id
+            name
+          }
+        }
+      }
+    }
+  }
+  `;
+  
+  const response = await fetch(WCL_API_URL, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${token}`
+    },
+    body: JSON.stringify({
+      query,
+      variables: { reportID: reportCode }
+    })
+  });
+  
+  const data = await response.json();
+  
+  if (data.errors) {
+    throw new Error(`GraphQL error: ${JSON.stringify(data.errors)}`);
+  }
+  
+  const actors = data.data.reportData.report.masterData.actors;
+  const player = actors.find(a => a.name === playerName);
+  
+  if (!player) {
+    throw new Error(`Player ${playerName} not found in report`);
+  }
+  
+  return player.id;
 }
 
 /**
@@ -188,38 +215,29 @@ async function fetchRankings(encounterID, difficulty, page = 1) {
 async function fetchReportData(reportID, fightID, sourceID) {
   const token = await getAccessToken();
 
-  try {
-    const response = await fetch(WCL_API_URL, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${token}`
-      },
-      body: JSON.stringify({
-        query: REPORT_QUERY,
-        variables: {
-          reportID,
-          fightID,
-          sourceID
-        }
-      })
-    });
+  const response = await fetch(WCL_API_URL, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${token}`
+    },
+    body: JSON.stringify({
+      query: REPORT_QUERY,
+      variables: { reportID, fightID, sourceID }
+    })
+  });
 
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
-    }
-
-    const data = await response.json();
-
-    if (data.errors) {
-      throw new Error(`GraphQL error: ${JSON.stringify(data.errors)}`);
-    }
-
-    return data.data;
-  } catch (error) {
-    console.error('Error fetching report data:', error);
-    throw error;
+  if (!response.ok) {
+    throw new Error(`HTTP error! status: ${response.status}`);
   }
+
+  const data = await response.json();
+
+  if (data.errors) {
+    throw new Error(`GraphQL error: ${JSON.stringify(data.errors)}`);
+  }
+
+  return data.data;
 }
 
 /**
@@ -239,32 +257,34 @@ function calculateMedian(values) {
  * Calculate median metrics from multiple reports
  */
 function calculateMedianMetrics(allMetrics) {
-  const mbCasts = allMetrics.map(m => m.metrics.mindBlast.casts);
-  const dpCasts = allMetrics.map(m => m.metrics.devouringPlague.casts);
-  const vtCasts = allMetrics.map(m => m.metrics.vampiricTouch.casts);
-  const swpCasts = allMetrics.map(m => m.metrics.shadowWordPain.casts);
+  const mbCpm = allMetrics.map(m => parseFloat(m.metrics.mindBlast.cpm));
+  const dpCpm = allMetrics.map(m => parseFloat(m.metrics.devouringPlague.cpm));
+  const vtCpm = allMetrics.map(m => parseFloat(m.metrics.vampiricTouch.cpm));
+  const swpCpm = allMetrics.map(m => parseFloat(m.metrics.shadowWordPain.cpm));
+  const haloCpm = allMetrics.map(m => parseFloat(m.metrics.halo.cpm));
+  const mindFlayCpm = allMetrics.map(m => parseFloat(m.metrics.mindFlay.cpm));
+  const mindFlayInsanityCpm = allMetrics.map(m => parseFloat(m.metrics.mindFlayInsanity.cpm));
+  const mindSearCpm = allMetrics.map(m => parseFloat(m.metrics.mindSear.cpm));
+  const mindSpikeCpm = allMetrics.map(m => parseFloat(m.metrics.mindSpike.cpm));
+  const swdCpm = allMetrics.map(m => parseFloat(m.metrics.shadowWordDeath.cpm));
+  const shadowfiendCpm = allMetrics.map(m => parseFloat(m.metrics.shadowfiend.cpm));
   const durations = allMetrics.map(m => m.fightDuration);
 
-  const medianDuration = calculateMedian(durations);
-
   return {
-    fightDuration: medianDuration,
+    fightDuration: calculateMedian(durations),
     metrics: {
-      mindBlast: {
-        casts: Math.round(calculateMedian(mbCasts)),
-        castsPerMinute: ((calculateMedian(mbCasts) / medianDuration) * 60).toFixed(2)
-      },
-      devouringPlague: {
-        casts: Math.round(calculateMedian(dpCasts))
-      },
-      vampiricTouch: {
-        casts: Math.round(calculateMedian(vtCasts))
-      },
-      shadowWordPain: {
-        casts: Math.round(calculateMedian(swpCasts))
-      }
-    },
-    sampleSize: allMetrics.length
+      mindBlast: { cpm: calculateMedian(mbCpm).toFixed(2) },
+      devouringPlague: { cpm: calculateMedian(dpCpm).toFixed(2) },
+      vampiricTouch: { cpm: calculateMedian(vtCpm).toFixed(2) },
+      shadowWordPain: { cpm: calculateMedian(swpCpm).toFixed(2) },
+      halo: { cpm: calculateMedian(haloCpm).toFixed(2) },
+      mindFlay: { cpm: calculateMedian(mindFlayCpm).toFixed(2) },
+      mindFlayInsanity: { cpm: calculateMedian(mindFlayInsanityCpm).toFixed(2) },
+      mindSear: { cpm: calculateMedian(mindSearCpm).toFixed(2) },
+      mindSpike: { cpm: calculateMedian(mindSpikeCpm).toFixed(2) },
+      shadowWordDeath: { cpm: calculateMedian(swdCpm).toFixed(2) },
+      shadowfiend: { cpm: calculateMedian(shadowfiendCpm).toFixed(2) }
+    }
   };
 }
 
@@ -276,65 +296,41 @@ function extractMetrics(reportData) {
   const castEvents = reportData.reportData.report.events.data;
   const damageEvents = reportData.reportData.report.damageEvents.data;
 
-  const fightDuration = (fight.endTime - fight.startTime) / 1000; // seconds
+  const fightDuration = (fight.endTime - fight.startTime) / 1000;
+  const fightMinutes = fightDuration / 60;
 
-  // Count key spell casts
-  const mbCasts = castEvents.filter(e => e.ability?.guid === 8092).length;
-  const dpCasts = castEvents.filter(e => e.ability?.guid === 2944).length;
-  const vtCasts = castEvents.filter(e => e.ability?.guid === 34914).length;
-  const swpCasts = castEvents.filter(e => e.ability?.guid === 589).length;
+  // Filter to only successful casts (not begincast events)
+  const successfulCasts = castEvents.filter(e => e.type === 'cast');
 
-  // Calculate casts per minute
-  const mbCPM = (mbCasts / fightDuration) * 60;
-
-  // TODO: Calculate DoT uptime (requires tracking buff applications/removals)
-  // TODO: Calculate DP orb efficiency (requires damage coefficient analysis)
-  // TODO: Calculate active time % (requires tracking GCDs)
+  // Count casts by spell ID
+  const mbCasts = successfulCasts.filter(e => e.abilityGameID === 8092).length;
+  const dpCasts = successfulCasts.filter(e => e.abilityGameID === 2944).length;
+  const vtCasts = successfulCasts.filter(e => e.abilityGameID === 34914).length;
+  const swpCasts = successfulCasts.filter(e => e.abilityGameID === 589).length;
+  const haloCasts = successfulCasts.filter(e => e.abilityGameID === 120644).length;
+  const mindFlayCasts = successfulCasts.filter(e => e.abilityGameID === 15407).length;
+  const mindFlayInsanityCasts = successfulCasts.filter(e => e.abilityGameID === 129197).length;
+  const mindSearCasts = successfulCasts.filter(e => e.abilityGameID === 48045).length;
+  const mindSpikeCasts = successfulCasts.filter(e => e.abilityGameID === 73510).length;
+  const swdCasts = successfulCasts.filter(e => e.abilityGameID === 32379).length;
+  const shadowfiendCasts = successfulCasts.filter(e => e.abilityGameID === 34433).length;
 
   return {
     fightDuration,
     metrics: {
-      mindBlast: {
-        casts: mbCasts,
-        castsPerMinute: mbCPM.toFixed(2)
-      },
-      devouringPlague: {
-        casts: dpCasts
-      },
-      vampiricTouch: {
-        casts: vtCasts
-      },
-      shadowWordPain: {
-        casts: swpCasts
-      }
-    },
-    rawDataSize: {
-      castEvents: castEvents.length,
-      damageEvents: damageEvents.length,
-      estimatedBytes: JSON.stringify(reportData).length
+      mindBlast: { casts: mbCasts, cpm: (mbCasts / fightMinutes).toFixed(2) },
+      devouringPlague: { casts: dpCasts, cpm: (dpCasts / fightMinutes).toFixed(2) },
+      vampiricTouch: { casts: vtCasts, cpm: (vtCasts / fightMinutes).toFixed(2) },
+      shadowWordPain: { casts: swpCasts, cpm: (swpCasts / fightMinutes).toFixed(2) },
+      halo: { casts: haloCasts, cpm: (haloCasts / fightMinutes).toFixed(2) },
+      mindFlay: { casts: mindFlayCasts, cpm: (mindFlayCasts / fightMinutes).toFixed(2) },
+      mindFlayInsanity: { casts: mindFlayInsanityCasts, cpm: (mindFlayInsanityCasts / fightMinutes).toFixed(2) },
+      mindSear: { casts: mindSearCasts, cpm: (mindSearCasts / fightMinutes).toFixed(2) },
+      mindSpike: { casts: mindSpikeCasts, cpm: (mindSpikeCasts / fightMinutes).toFixed(2) },
+      shadowWordDeath: { casts: swdCasts, cpm: (swdCasts / fightMinutes).toFixed(2) },
+      shadowfiend: { casts: shadowfiendCasts, cpm: (shadowfiendCasts / fightMinutes).toFixed(2) }
     }
   };
-}
-
-/**
- * Unpack encounter ID to get base ID
- * Packed format: 50000 + (difficulty * 10) + baseEncounterID
- */
-function unpackEncounterID(packedID) {
-  if (packedID > 50000) {
-    const offset = packedID - 50000;
-    const difficulty = Math.floor(offset / 10);
-    const baseID = offset % 10;
-    // Actually the formula should be reversed
-    // Try each difficulty from 6 down to 3
-    for (let diff = 6; diff >= 3; diff--) {
-      const candidateBase = offset - (diff * 10);
-      if (candidateBase >= 1490 && candidateBase <= 1600) {
-        return candidateBase;
-      }
-    }
-  }
-  return packedID;
 }
 
 /**
@@ -343,22 +339,18 @@ function unpackEncounterID(packedID) {
 function saveBenchmarkData(benchmarkData, encounterID, difficulty) {
   const benchmarksDir = path.join(__dirname, '..', 'analyzer', 'benchmarks');
 
-  // Create directory if it doesn't exist
   if (!fs.existsSync(benchmarksDir)) {
     fs.mkdirSync(benchmarksDir, { recursive: true });
   }
 
-  // Unpack encounter ID if needed (use base ID for filename)
-  const baseEncounterID = unpackEncounterID(encounterID);
-
   // Save individual benchmark file
-  const filename = `${baseEncounterID}-${difficulty}.json`;
+  const filename = `${encounterID}-${difficulty}.json`;
   const filepath = path.join(benchmarksDir, filename);
   fs.writeFileSync(filepath, JSON.stringify(benchmarkData, null, 2));
   console.log(`✓ Saved to ${filepath}`);
 
-  // Update index file (use base ID)
-  updateBenchmarkIndex(benchmarksDir, benchmarkData, baseEncounterID, difficulty);
+  // Update index file
+  updateBenchmarkIndex(benchmarksDir, benchmarkData, encounterID, difficulty);
 }
 
 /**
@@ -367,7 +359,6 @@ function saveBenchmarkData(benchmarkData, encounterID, difficulty) {
 function updateBenchmarkIndex(benchmarksDir, benchmarkData, encounterID, difficulty) {
   const indexPath = path.join(benchmarksDir, 'index.json');
 
-  // Load existing index or create new one
   let index = { lastUpdated: null, benchmarks: [] };
   if (fs.existsSync(indexPath)) {
     index = JSON.parse(fs.readFileSync(indexPath, 'utf8'));
@@ -384,7 +375,7 @@ function updateBenchmarkIndex(benchmarksDir, benchmarkData, encounterID, difficu
     encounterName: benchmarkData.encounterName,
     difficulty,
     difficultyName: benchmarkData.difficultyName,
-    type: benchmarkData.type || 'median',
+    type: benchmarkData.type,
     rankRange: benchmarkData.rankRange,
     sampleSize: benchmarkData.sampleSize,
     lastUpdated: benchmarkData.lastUpdated,
@@ -407,35 +398,25 @@ async function fetchAndSaveBenchmark(encounterID, encounterName, difficulty, dif
 
   // Step 1: Fetch rankings
   console.log('Step 1: Fetching rankings...');
-
-  // Fetch page 1 (WCL returns 100+ rankings per page)
   const rankingsData = await fetchRankings(encounterID, difficulty, 1);
 
-  if (!rankingsData?.worldData?.zone?.encounters) {
+  if (!rankingsData?.worldData?.encounter) {
     console.error(`❌ No encounter data found!`);
-    console.log('DEBUG: Response structure:', JSON.stringify(rankingsData).substring(0, 500));
     return null;
   }
 
-  // Find our specific encounter from the list
-  const encounters = rankingsData.worldData.zone.encounters;
-  const ourEncounter = encounters.find(enc => enc.id === encounterID);
-
-  if (!ourEncounter || !ourEncounter.characterRankings) {
-    console.error(`❌ No rankings found for encounter ${encounterID}!`);
-    console.log('DEBUG: Available encounters:', encounters.map(e => e.id));
+  const encounter = rankingsData.worldData.encounter;
+  const rankingsJson = encounter.characterRankings;
+  
+  if (!rankingsJson || rankingsJson.error) {
+    console.error(`❌ No rankings data:`, rankingsJson?.error || 'missing');
     return null;
   }
 
-  // characterRankings returns raw JSON, so we parse it
-  const rankingsJson = ourEncounter.characterRankings;
-  console.log('DEBUG: Type of characterRankings:', typeof rankingsJson);
-  console.log('DEBUG: Raw characterRankings (first 500 chars):', JSON.stringify(rankingsJson).substring(0, 500));
   const allRankings = rankingsJson.rankings || [];
   console.log(`✓ Found ${allRankings.length} total rankings`);
 
-  // Extract only the ranks we want (e.g., 51-100)
-  // Array is 0-indexed, so rank 51 is at index 50
+  // Extract target rank range
   const startIndex = rankStart - 1;
   const endIndex = rankEnd;
   const targetRankings = allRankings.slice(startIndex, endIndex);
@@ -445,10 +426,10 @@ async function fetchAndSaveBenchmark(encounterID, encounterName, difficulty, dif
     return null;
   }
 
-  console.log(`✓ Found ${targetRankings.length} rankings`);
+  console.log(`✓ Extracted ${targetRankings.length} rankings`);
 
   // Step 2: Fetch detailed report data for each ranking
-  console.log('Step 2: Fetching report data for all rankings...');
+  console.log('\nStep 2: Fetching report data for all rankings...');
   const allMetrics = [];
   let fetchedCount = 0;
   let failedCount = 0;
@@ -460,25 +441,21 @@ async function fetchAndSaveBenchmark(encounterID, encounterName, difficulty, dif
     try {
       process.stdout.write(`  Fetching rank #${currentRank} (${i + 1}/${targetRankings.length})...`);
 
-      const reportData = await fetchReportData(
-        ranking.report.code,
-        ranking.report.fightID,
-        ranking.sourceID
-      );
-
+      const sourceID = await getPlayerSourceID(ranking.report.code, ranking.name);
+      const reportData = await fetchReportData(ranking.report.code, ranking.report.fightID, sourceID);
       const metrics = extractMetrics(reportData);
+      
       allMetrics.push(metrics);
       fetchedCount++;
       console.log(' ✓');
 
-      // Small delay between requests to be polite to WCL API
+      // Delay between requests to be polite to API
       if (i < targetRankings.length - 1) {
         await new Promise(resolve => setTimeout(resolve, 500));
       }
     } catch (error) {
       console.log(` ❌ Failed: ${error.message}`);
       failedCount++;
-      // Continue with other rankings even if one fails
     }
   }
 
@@ -487,17 +464,14 @@ async function fetchAndSaveBenchmark(encounterID, encounterName, difficulty, dif
     return null;
   }
 
-  console.log(`✓ Successfully fetched ${fetchedCount} reports (${failedCount} failed)`);
+  console.log(`\n✓ Successfully fetched ${fetchedCount} reports (${failedCount} failed)`);
 
   // Step 3: Calculate median metrics
-  console.log('Step 3: Calculating median metrics...');
+  console.log('\nStep 3: Calculating median metrics...');
   const medianMetrics = calculateMedianMetrics(allMetrics);
 
-  // Step 4: Build benchmark data structure
-  // Use base encounter ID (unpacked) for consistency with loader
-  const baseEncounterID = unpackEncounterID(encounterID);
   const benchmarkData = {
-    encounterID: baseEncounterID,
+    encounterID,
     encounterName,
     difficulty,
     difficultyName,
@@ -505,7 +479,7 @@ async function fetchAndSaveBenchmark(encounterID, encounterName, difficulty, dif
     type: 'median',
     lastUpdated: new Date().toISOString(),
     sampleSize: allMetrics.length,
-    fightDuration: medianMetrics.fightDuration,
+    medianFightDuration: medianMetrics.fightDuration,
     metrics: medianMetrics.metrics
   };
 
@@ -543,7 +517,7 @@ async function autoFetchAll() {
         results.push({ success: false, config, error: 'Failed to fetch data' });
       }
 
-      // Small delay between requests to be polite to WCL API
+      // Delay between benchmarks
       await new Promise(resolve => setTimeout(resolve, 2000));
     } catch (error) {
       console.error(`❌ Error fetching ${config.encounterName}:`, error.message);
@@ -572,80 +546,15 @@ async function autoFetchAll() {
 async function main() {
   const args = process.argv.slice(2);
 
-  // Auto mode - fetch all configured benchmarks
-  if (args[0] === '--auto') {
-    await autoFetchAll();
-    return;
-  }
-
-  // Manual mode - fetch rank range
-  if (args.length < 4) {
-    console.log('Usage:');
-    console.log('  node benchmark-scraper.js <encounterID> <difficulty> <rankStart> <rankEnd>  - Manual mode');
-    console.log('  node benchmark-scraper.js --auto                                            - Auto fetch all');
+  if (args[0] !== '--auto') {
+    console.log('Usage: node benchmark-scraper.js --auto');
     console.log('');
-    console.log('Example: node benchmark-scraper.js 1505 6 51 100');
-    console.log('  1505 = Tortos (WCL Classic ID)');
-    console.log('  6 = Heroic 25 (3 = Normal 10, 4 = Heroic 10, 5 = Normal 25, 6 = Heroic 25)');
-    console.log('  51 100 = Ranks 51-100 (for median calculation)');
-    console.log('');
-    console.log('Throne of Thunder Encounter IDs (WCL Classic):');
-    console.log('  1517 = Jin\'rokh the Breaker');
-    console.log('  1515 = Horridon');
-    console.log('  1510 = Council of Elders');
-    console.log('  1505 = Tortos');
-    console.log('  1518 = Megaera');
-    console.log('  1513 = Ji-Kun');
-    console.log('  1512 = Durumu the Forgotten');
-    console.log('  1514 = Primordius');
-    console.log('  1516 = Dark Animus');
-    console.log('  1499 = Iron Qon');
-    console.log('  1500 = Twin Empyreans');
-    console.log('  1519 = Lei Shen');
-    console.log('  1520 = Ra-den');
+    console.log('Fetches benchmarks for all configured encounters in BENCHMARK_CONFIG.');
+    console.log('Add more bosses to the config array at the top of the file.');
     process.exit(0);
   }
 
-  const encounterID = parseInt(args[0]);
-  const difficulty = parseInt(args[1]);
-  const rankStart = parseInt(args[2]);
-  const rankEnd = parseInt(args[3]);
-
-  const benchmarkData = await fetchAndSaveBenchmark(
-    encounterID,
-    'Custom',
-    difficulty,
-    `Difficulty ${difficulty}`,
-    rankStart,
-    rankEnd
-  );
-
-  if (!benchmarkData) {
-    console.error('❌ Failed to fetch benchmark data');
-    process.exit(1);
-  }
-
-  console.log('\n' + '='.repeat(60));
-  console.log('Benchmark Data:');
-  console.log('='.repeat(60));
-  console.log(JSON.stringify(benchmarkData, null, 2));
-  console.log('');
-
-  // Optionally save
-  const readline = require('readline').createInterface({
-    input: process.stdin,
-    output: process.stdout
-  });
-
-  readline.question('Save this benchmark? (y/n): ', (answer) => {
-    if (answer.toLowerCase() === 'y') {
-      saveBenchmarkData(benchmarkData, encounterID, difficulty);
-      console.log('✓ Saved!');
-    } else {
-      console.log('Not saved.');
-    }
-    readline.close();
-  });
+  await autoFetchAll();
 }
 
 // Run if executed directly
