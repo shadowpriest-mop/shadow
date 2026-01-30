@@ -1110,14 +1110,15 @@ function renderPrePullCheck(results) {
     let html = '<div class="prepull-check-label">Pre-Pull:</div>';
     html += '<div class="prepull-check-items">';
 
-    // Halo check
-    const haloStatus = results.halo.status;
+    // Tier-90 talent check (Halo/Cascade/Divine Star)
+    const tier90Status = results.tier90Talent.status;
     html += `<div class="prepull-item">`;
-    html += `<span class="prepull-icon ${haloStatus}"></span>`;
-    if (results.halo.found) {
-        html += `<span class="prepull-item-text ${haloStatus}">Halo (+${results.halo.timing.toFixed(1)}s)</span>`;
+    html += `<span class="prepull-icon ${tier90Status}"></span>`;
+    if (results.tier90Talent.found) {
+        const spellName = results.tier90Talent.spellName || 'Tier-90';
+        html += `<span class="prepull-item-text ${tier90Status}">${spellName} (+${results.tier90Talent.timing.toFixed(1)}s)</span>`;
     } else {
-        html += `<span class="prepull-item-text ${haloStatus}">Halo (missing)</span>`;
+        html += `<span class="prepull-item-text ${tier90Status}">Tier-90 (missing)</span>`;
     }
     html += `</div>`;
 

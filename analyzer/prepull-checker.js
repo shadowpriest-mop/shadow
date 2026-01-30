@@ -4,6 +4,10 @@
 const PrePullSpells = {
   HALO: 120644,
   HALO_DAMAGE: 120696,
+  CASCADE: 127632,
+  CASCADE_DAMAGE: 127628,
+  DIVINE_STAR: 122121,
+  DIVINE_STAR_DAMAGE: 122128,
   MIND_SPIKE: 73510,
   POTION_OF_JADE_SERPENT: 105702, // Cast/Buff ID (same for both)
   POTION_BUFF: 105702 // Buff uses same ID as cast
@@ -24,7 +28,7 @@ class PrePullChecker {
     this.playerID = playerID; // Add player ID to filter events
     this.playerName = playerName || 'Unknown'; // Add player name for debugging
     this.results = {
-      halo: { found: false, timing: null, status: 'missing' },
+      tier90Talent: { found: false, timing: null, status: 'missing', spellName: null },
       mindSpike: { found: false, timing: null, status: 'missing' },
       potion: { found: false, timing: null, status: 'missing', buffActive: false }
     };
@@ -34,7 +38,7 @@ class PrePullChecker {
    * Main analysis function - check for pre-pull actions
    */
   analyze() {
-    this.checkHalo();
+    this.checkTier90Talent();
     this.checkMindSpike();
     this.checkPotion();
 
@@ -42,45 +46,62 @@ class PrePullChecker {
   }
 
   /**
-   * Check if Halo was cast in pre-pull
+   * Check if tier-90 talent (Halo/Cascade/Divine Star) was cast in pre-pull
    * Since logs only record from combat start, we can only detect the damage event.
-   * Pre-pull Halo cast at ~-2.5s can hit much later due to travel time and hitbox issues.
+   * All three spells have travel time and can hit late due to travel/hitbox issues.
    */
-  checkHalo() {
-    // Look for Halo damage events in the first 10 seconds after combat starts
+  checkTier90Talent() {
+    // Look for damage events from any tier-90 talent in the first 10 seconds after combat starts
     // Extended window to account for travel time and hitbox issues
-    const haloDamageEvents = this.events.filter(e =>
+    const tier90DamageEvents = this.events.filter(e =>
       e.type === 'damage' &&
-      e.abilityGameID === PrePullSpells.HALO_DAMAGE &&
+      (e.abilityGameID === PrePullSpells.HALO_DAMAGE ||
+       e.abilityGameID === PrePullSpells.CASCADE_DAMAGE ||
+       e.abilityGameID === PrePullSpells.DIVINE_STAR_DAMAGE) &&
       e.timestamp >= this.fightStart &&
       e.timestamp <= this.fightStart + 10000 // Within 10s of pull
     );
 
-    console.log('=== Checking Halo ===');
-    console.log('Total Halo damage events found (0-10s):', haloDamageEvents.length);
-    if (haloDamageEvents.length > 0) {
-      haloDamageEvents.forEach((e, i) => {
+    console.log('=== Checking Tier-90 Talent (Halo/Cascade/Divine Star) ===');
+    console.log('Total tier-90 damage events found (0-10s):', tier90DamageEvents.length);
+    if (tier90DamageEvents.length > 0) {
+      tier90DamageEvents.forEach((e, i) => {
         const timing = (e.timestamp - this.fightStart) / 1000;
-        console.log(`  Halo damage ${i}: +${timing.toFixed(3)}s, sourceID=${e.sourceID}, targetID=${e.targetID}`);
+        const spellName = e.abilityGameID === PrePullSpells.HALO_DAMAGE ? 'Halo' :
+                         e.abilityGameID === PrePullSpells.CASCADE_DAMAGE ? 'Cascade' :
+                         'Divine Star';
+        console.log(`  ${spellName} damage ${i}: +${timing.toFixed(3)}s, sourceID=${e.sourceID}, targetID=${e.targetID}`);
       });
     }
 
-    if (haloDamageEvents.length > 0) {
-      // Find the earliest halo damage (should be the pre-pull one)
-      const earliestHalo = haloDamageEvents.reduce((earliest, current) =>
+    if (tier90DamageEvents.length > 0) {
+      // Find the earliest tier-90 damage (should be the pre-pull one)
+      const earliestTier90 = tier90DamageEvents.reduce((earliest, current) =>
         current.timestamp < earliest.timestamp ? current : earliest
       );
 
-      const timingSeconds = (earliestHalo.timestamp - this.fightStart) / 1000;
-      this.results.halo.found = true;
-      this.results.halo.timing = timingSeconds;
+      const timingSeconds = (earliestTier90.timestamp - this.fightStart) / 1000;
+
+      // Determine which spell was used
+      let spellName = 'Unknown';
+      if (earliestTier90.abilityGameID === PrePullSpells.HALO_DAMAGE) {
+        spellName = 'Halo';
+      } else if (earliestTier90.abilityGameID === PrePullSpells.CASCADE_DAMAGE) {
+        spellName = 'Cascade';
+      } else if (earliestTier90.abilityGameID === PrePullSpells.DIVINE_STAR_DAMAGE) {
+        spellName = 'Divine Star';
+      }
+
+      this.results.tier90Talent.found = true;
+      this.results.tier90Talent.timing = timingSeconds;
+      this.results.tier90Talent.spellName = spellName;
 
       // Mark as good if hit within first 8 seconds (accounts for extreme travel/hitbox cases)
       // Anything later is probably an in-combat cast
       if (timingSeconds <= 8.0) {
-        this.results.halo.status = 'good';
+        this.results.tier90Talent.status = 'good';
       } else {
-        this.results.halo.status = 'notice'; // Probably cast in-combat
+        this.results.tier90Talent.status = 'notice'; // Probably cast in-combat
       }
     }
   }
@@ -193,7 +214,7 @@ class PrePullChecker {
    */
   getOverallStatus() {
     const statuses = [
-      this.results.halo.status,
+      this.results.tier90Talent.status,
       this.results.mindSpike.status,
       this.results.potion.status
     ];
@@ -213,10 +234,11 @@ class PrePullChecker {
   getSummary() {
     const items = [];
 
-    if (!this.results.halo.found) {
-      items.push('Missing Halo pre-pull (damage should land 0-1.5s after pull)');
-    } else if (this.results.halo.status === 'notice') {
-      items.push(`Halo timing off (landed at +${this.results.halo.timing.toFixed(1)}s, expected 0-1.5s)`);
+    if (!this.results.tier90Talent.found) {
+      items.push('Missing tier-90 talent pre-pull (Halo/Cascade/Divine Star)');
+    } else if (this.results.tier90Talent.status === 'notice') {
+      const spellName = this.results.tier90Talent.spellName || 'Tier-90 talent';
+      items.push(`${spellName} timing off (landed at +${this.results.tier90Talent.timing.toFixed(1)}s, expected within 8s)`);
     }
 
     if (!this.results.mindSpike.found) {
