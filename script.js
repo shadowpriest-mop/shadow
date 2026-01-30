@@ -2028,14 +2028,21 @@ function renderBenchmarkComparison(benchmark) {
         mindFlayInsanity: 129197
     };
 
+    // Check if benchmark should be collapsed (default: expanded)
+    const isCollapsed = localStorage.getItem('benchmarkCollapsed') === 'true';
+    const collapsedClass = isCollapsed ? 'collapsed' : '';
+    const chevron = isCollapsed ? '▶' : '▼';
+
     let html = `
         <div class="benchmark-header">
-            <h3>📊 Benchmark Comparison</h3>
-            <div class="benchmark-note">
+            <div class="benchmark-title-row" onclick="toggleBenchmarkCollapse()">
+                <h3><span class="benchmark-chevron">${chevron}</span> 📊 Benchmark Comparison</h3>
+            </div>
+            <div class="benchmark-note ${collapsedClass}">
                 This is reference data from similar logs, not an indicator of perfect play.
             </div>
         </div>
-        <div class="benchmark-metrics">
+        <div class="benchmark-metrics ${collapsedClass}">
             ${renderMetricComparison('Mind Blast', metrics.mindBlast.cpm, SPELL_IDS.mindBlast, 'analyzer/icons/mb.jpg')}
             ${renderMetricComparison('Devouring Plague', metrics.devouringPlague.cpm, SPELL_IDS.devouringPlague, 'analyzer/icons/plague.jpg')}
             ${renderMetricComparison('Vampiric Touch', metrics.vampiricTouch.cpm, SPELL_IDS.vampiricTouch, 'analyzer/icons/vt.jpg')}
@@ -2047,6 +2054,34 @@ function renderBenchmarkComparison(benchmark) {
     `;
 
     benchmarkPanel.innerHTML = html;
+}
+
+/**
+ * Toggle benchmark comparison collapse state
+ */
+function toggleBenchmarkCollapse() {
+    const benchmarkPanel = document.getElementById('benchmark-comparison');
+    if (!benchmarkPanel) return;
+
+    const metrics = benchmarkPanel.querySelector('.benchmark-metrics');
+    const note = benchmarkPanel.querySelector('.benchmark-note');
+    const chevron = benchmarkPanel.querySelector('.benchmark-chevron');
+
+    if (metrics && note && chevron) {
+        const isCurrentlyCollapsed = metrics.classList.contains('collapsed');
+
+        if (isCurrentlyCollapsed) {
+            metrics.classList.remove('collapsed');
+            note.classList.remove('collapsed');
+            chevron.textContent = '▼';
+            localStorage.setItem('benchmarkCollapsed', 'false');
+        } else {
+            metrics.classList.add('collapsed');
+            note.classList.add('collapsed');
+            chevron.textContent = '▶';
+            localStorage.setItem('benchmarkCollapsed', 'true');
+        }
+    }
 }
 
 /**

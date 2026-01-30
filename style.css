@@ -767,16 +767,43 @@ footer a:hover {
     margin-bottom: 12px;
 }
 
+.benchmark-title-row {
+    cursor: pointer;
+    user-select: none;
+}
+
+.benchmark-title-row:hover h3 {
+    color: #a855f7;
+}
+
 .benchmark-header h3 {
     color: #9333ea;
     font-size: 1.1em;
     margin: 0 0 6px 0;
+    transition: color 0.2s;
+}
+
+.benchmark-chevron {
+    display: inline-block;
+    font-size: 0.8em;
+    margin-right: 4px;
+    transition: transform 0.2s;
 }
 
 .benchmark-note {
     font-size: 0.85em;
     color: #9ca3af;
     font-style: italic;
+    max-height: 100px;
+    overflow: hidden;
+    opacity: 1;
+    transition: max-height 0.3s ease, opacity 0.3s ease, margin 0.3s ease;
+}
+
+.benchmark-note.collapsed {
+    max-height: 0;
+    opacity: 0;
+    margin: 0;
 }
 
 .benchmark-meta {
@@ -794,6 +821,16 @@ footer a:hover {
     grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
     gap: 12px;
     margin: 12px 0;
+    max-height: 2000px;
+    overflow: hidden;
+    opacity: 1;
+    transition: max-height 0.3s ease, opacity 0.3s ease, margin 0.3s ease;
+}
+
+.benchmark-metrics.collapsed {
+    max-height: 0;
+    opacity: 0;
+    margin: 0;
 }
 
 .benchmark-metric {
