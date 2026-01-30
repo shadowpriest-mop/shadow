@@ -43,21 +43,21 @@ class PrePullChecker {
 
   /**
    * Check if Halo was cast in pre-pull
-   * Halo has ~1.5s cast + travel time, so if cast at -2.5s, damage lands ~0-1s after pull
-   * However, due to hitbox issues and travel time, can hit much later (up to 5s)
+   * Since logs only record from combat start, we can only detect the damage event.
+   * Pre-pull Halo cast at ~-2.5s can hit much later due to travel time and hitbox issues.
    */
   checkHalo() {
-    // Look for Halo damage events in the first 6 seconds after combat starts
-    // Pre-pull Halo can hit late due to travel time and hitbox issues
+    // Look for Halo damage events in the first 10 seconds after combat starts
+    // Extended window to account for travel time and hitbox issues
     const haloDamageEvents = this.events.filter(e =>
       e.type === 'damage' &&
       e.abilityGameID === PrePullSpells.HALO_DAMAGE &&
       e.timestamp >= this.fightStart &&
-      e.timestamp <= this.fightStart + 6000 // Within 6s of pull (extended for hitbox/travel time)
+      e.timestamp <= this.fightStart + 10000 // Within 10s of pull
     );
 
     console.log('=== Checking Halo ===');
-    console.log('Total Halo damage events found (0-6s):', haloDamageEvents.length);
+    console.log('Total Halo damage events found (0-10s):', haloDamageEvents.length);
     if (haloDamageEvents.length > 0) {
       haloDamageEvents.forEach((e, i) => {
         const timing = (e.timestamp - this.fightStart) / 1000;
@@ -75,12 +75,10 @@ class PrePullChecker {
       this.results.halo.found = true;
       this.results.halo.timing = timingSeconds;
 
-      // Check if timing is reasonable
-      // 0-1.5s = perfect, 1.5-5s = acceptable (late due to travel/hitbox), >5s = likely in-combat cast
-      if (timingSeconds >= 0 && timingSeconds <= 1.5) {
+      // Mark as good if hit within first 8 seconds (accounts for extreme travel/hitbox cases)
+      // Anything later is probably an in-combat cast
+      if (timingSeconds <= 8.0) {
         this.results.halo.status = 'good';
-      } else if (timingSeconds <= 5.0) {
-        this.results.halo.status = 'good'; // Still good, just late hit due to travel/hitbox
       } else {
         this.results.halo.status = 'notice'; // Probably cast in-combat
       }
