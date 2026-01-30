@@ -44,19 +44,20 @@ class PrePullChecker {
   /**
    * Check if Halo was cast in pre-pull
    * Halo has ~1.5s cast + travel time, so if cast at -2.5s, damage lands ~0-1s after pull
+   * However, due to hitbox issues and travel time, can hit much later (up to 5s)
    */
   checkHalo() {
-    // Look for Halo damage events in the first 3 seconds after combat starts
-    // Pre-pull Halo (-2.5s) should land between 0-1.5s after pull due to cast + travel time
+    // Look for Halo damage events in the first 6 seconds after combat starts
+    // Pre-pull Halo can hit late due to travel time and hitbox issues
     const haloDamageEvents = this.events.filter(e =>
       e.type === 'damage' &&
       e.abilityGameID === PrePullSpells.HALO_DAMAGE &&
       e.timestamp >= this.fightStart &&
-      e.timestamp <= this.fightStart + 3000 // Within 3s of pull
+      e.timestamp <= this.fightStart + 6000 // Within 6s of pull (extended for hitbox/travel time)
     );
 
     console.log('=== Checking Halo ===');
-    console.log('Total Halo damage events found (0-3s):', haloDamageEvents.length);
+    console.log('Total Halo damage events found (0-6s):', haloDamageEvents.length);
     if (haloDamageEvents.length > 0) {
       haloDamageEvents.forEach((e, i) => {
         const timing = (e.timestamp - this.fightStart) / 1000;
@@ -74,13 +75,14 @@ class PrePullChecker {
       this.results.halo.found = true;
       this.results.halo.timing = timingSeconds;
 
-      // Check if timing is reasonable (0 to 1.5 seconds after pull = good pre-pull)
+      // Check if timing is reasonable
+      // 0-1.5s = perfect, 1.5-5s = acceptable (late due to travel/hitbox), >5s = likely in-combat cast
       if (timingSeconds >= 0 && timingSeconds <= 1.5) {
         this.results.halo.status = 'good';
-      } else if (timingSeconds <= 3.0) {
-        this.results.halo.status = 'notice'; // Found but timing suggests late pre-pull or in-combat cast
+      } else if (timingSeconds <= 5.0) {
+        this.results.halo.status = 'good'; // Still good, just late hit due to travel/hitbox
       } else {
-        this.results.halo.status = 'notice';
+        this.results.halo.status = 'notice'; // Probably cast in-combat
       }
     }
   }
