@@ -978,14 +978,7 @@ window.analyzeLog = async function analyzeLog() {
 
         // ❌ Removed all UI updates for mfTicks and DoT uptimes
 
-        // Run pre-pull checker
-        // Get player ID from the first event with a sourceID
-        // All events are filtered for this player, so any sourceID is the player's ID
-        const playerID = events.find(e => e.sourceID)?.sourceID || null;
-        const prePullChecker = new PrePullChecker(events, buffEvents, fight.startTime, playerID, playerName);
-        const prePullResults = prePullChecker.analyze();
-
-        // Analyze casts with quality metrics
+        // Analyze casts with quality metrics (need to get talents first)
         const castsAnalyzer = new CastsAnalyzer(events, buffEvents, {
             playerDetails: eventsData.playerDetails,
             playerName: playerName,
@@ -995,6 +988,13 @@ window.analyzeLog = async function analyzeLog() {
         const analysisResult = castsAnalyzer.analyze();
         const casts = analysisResult.casts;
         const talents = analysisResult.talents;
+
+        // Run pre-pull checker
+        // Get player ID from the first event with a sourceID
+        // All events are filtered for this player, so any sourceID is the player's ID
+        const playerID = events.find(e => e.sourceID)?.sourceID || null;
+        const prePullChecker = new PrePullChecker(events, buffEvents, fight.startTime, playerID, playerName, talents);
+        const prePullResults = prePullChecker.analyze();
 
         // Add target names to casts
         const enemyNames = new Map();
@@ -1112,13 +1112,14 @@ function renderPrePullCheck(results) {
 
     // Tier-90 talent check (Halo/Cascade/Divine Star)
     const tier90Status = results.tier90Talent.status;
+    const tier90Name = results.tier90TalentName || 'Tier-90';
     html += `<div class="prepull-item">`;
     html += `<span class="prepull-icon ${tier90Status}"></span>`;
     if (results.tier90Talent.found) {
-        const spellName = results.tier90Talent.spellName || 'Tier-90';
+        const spellName = results.tier90Talent.spellName || tier90Name;
         html += `<span class="prepull-item-text ${tier90Status}">${spellName} (+${results.tier90Talent.timing.toFixed(1)}s)</span>`;
     } else {
-        html += `<span class="prepull-item-text ${tier90Status}">Tier-90 (missing)</span>`;
+        html += `<span class="prepull-item-text ${tier90Status}">${tier90Name} (missing)</span>`;
     }
     html += `</div>`;
 

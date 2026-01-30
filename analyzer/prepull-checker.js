@@ -21,17 +21,38 @@ const PREPULL_TIMING = {
 };
 
 class PrePullChecker {
-  constructor(events, buffEvents, fightStart, playerID, playerName) {
+  constructor(events, buffEvents, fightStart, playerID, playerName, talents) {
     this.events = events || [];
     this.buffEvents = buffEvents || [];
     this.fightStart = fightStart;
     this.playerID = playerID; // Add player ID to filter events
     this.playerName = playerName || 'Unknown'; // Add player name for debugging
+    this.talents = talents || [];
+
+    // Extract tier 6 (level 90) talent name
+    this.tier90TalentName = this.getTier90TalentName();
+
     this.results = {
       tier90Talent: { found: false, timing: null, status: 'missing', spellName: null },
       mindSpike: { found: false, timing: null, status: 'missing' },
       potion: { found: false, timing: null, status: 'missing', buffActive: false }
     };
+  }
+
+  /**
+   * Get the name of the tier 90 talent selected by the player
+   */
+  getTier90TalentName() {
+    if (!this.talents || this.talents.length === 0) {
+      return 'Tier-90';
+    }
+
+    const tier90Talent = this.talents.find(t => t.type === 6);
+    if (tier90Talent) {
+      return tier90Talent.name;
+    }
+
+    return 'Tier-90';
   }
 
   /**
@@ -41,6 +62,9 @@ class PrePullChecker {
     this.checkTier90Talent();
     this.checkMindSpike();
     this.checkPotion();
+
+    // Add the tier90 talent name to results for display
+    this.results.tier90TalentName = this.tier90TalentName;
 
     return this.results;
   }
