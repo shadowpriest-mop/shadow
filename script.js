@@ -2122,8 +2122,8 @@ function updateQuotaDisplay() {
         quotaDisplay.classList.add('low');
     }
 
-    quotaDisplay.textContent = `API: ${remaining}/${limit} points`;
-    quotaDisplay.title = `${pointsUsed} points used this hour`;
+    quotaDisplay.textContent = `API: ${remaining.toFixed(1)}/${limit} points`;
+    quotaDisplay.title = `${pointsUsed.toFixed(1)} points used this hour`;
     quotaDisplay.style.display = 'inline-block';
 }
 
