@@ -2093,13 +2093,22 @@ function toggleBenchmarkCollapse() {
  * Update API quota display
  */
 function updateQuotaDisplay() {
+    console.log('=== updateQuotaDisplay called ===');
     const quotaDisplay = document.getElementById('api-quota-display');
-    if (!quotaDisplay || !window.wclV2Service) return;
+    console.log('quotaDisplay element:', quotaDisplay);
+    console.log('window.wclV2Service:', window.wclV2Service);
+
+    if (!quotaDisplay || !window.wclV2Service) {
+        console.log('Missing element or service, returning');
+        return;
+    }
 
     const rateLimit = window.wclV2Service.getRateLimit();
+    console.log('Rate limit data:', rateLimit);
 
     // Only show if we have rate limit data
     if (rateLimit.limit === null || rateLimit.remaining === null) {
+        console.log('No rate limit data available, hiding display');
         quotaDisplay.style.display = 'none';
         return;
     }
@@ -2122,6 +2131,7 @@ function updateQuotaDisplay() {
     quotaDisplay.textContent = `API: ${remaining}/${limit} points`;
     quotaDisplay.title = `${pointsUsed} points used this request`;
     quotaDisplay.style.display = 'inline-block';
+    console.log('Quota display updated and shown');
 }
 
 /**

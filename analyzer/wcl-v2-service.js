@@ -2,7 +2,7 @@
 // For MoP Classic Shadow Priest Analyzer
 // Uses client credentials flow - no user login required (like v1 API)
 
-console.log('===  WCL-V2-SERVICE.JS LOADING (v2.41.0) ===');
+console.log('===  WCL-V2-SERVICE.JS LOADING (v2.41.1) ===');
 
 // Note: BUFF_DATA is loaded from buff-data.js and available as window.BUFF_DATA
 
@@ -168,10 +168,17 @@ class WCLv2Service {
       const remaining = headers.get('x-rate-limit-remaining');
       const reset = headers.get('x-rate-limit-reset');
 
+      console.log('=== Rate Limit Headers ===');
+      console.log('x-rate-limit-limit:', limit);
+      console.log('x-rate-limit-remaining:', remaining);
+      console.log('x-rate-limit-reset:', reset);
+
       if (limit !== null) this.rateLimit.limit = parseInt(limit, 10);
       if (remaining !== null) this.rateLimit.remaining = parseInt(remaining, 10);
       if (reset !== null) this.rateLimit.reset = parseInt(reset, 10);
       this.rateLimit.lastUpdated = Date.now();
+
+      console.log('Rate limit state:', this.rateLimit);
     } catch (error) {
       // Silently fail if headers aren't available
       console.debug('Could not parse rate limit headers:', error);
