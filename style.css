@@ -1542,6 +1542,28 @@ footer a:hover {
     font-weight: 500;
 }
 
+.api-quota {
+    margin-left: 12px;
+    margin-right: 12px;
+    font-size: 0.8em;
+    color: #888;
+    font-weight: 400;
+    padding: 4px 10px;
+    background: rgba(50, 50, 70, 0.3);
+    border-radius: 4px;
+    border: 1px solid rgba(147, 51, 234, 0.2);
+}
+
+.api-quota.low {
+    color: #f59e0b;
+    border-color: rgba(245, 158, 11, 0.3);
+}
+
+.api-quota.critical {
+    color: #ef4444;
+    border-color: rgba(239, 68, 68, 0.3);
+}
+
 .app-version {
     margin-left: 12px;
     font-size: 0.85em;

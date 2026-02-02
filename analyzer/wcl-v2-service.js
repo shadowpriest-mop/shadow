@@ -2,7 +2,7 @@
 // For MoP Classic Shadow Priest Analyzer
 // Uses client credentials flow - no user login required (like v1 API)
 
-console.log('===  WCL-V2-SERVICE.JS LOADING (v2.38.1) ===');
+console.log('===  WCL-V2-SERVICE.JS LOADING (v2.41.0) ===');
 
 // Note: BUFF_DATA is loaded from buff-data.js and available as window.BUFF_DATA
 
@@ -16,6 +16,14 @@ class WCLv2Service {
     this.accessToken = null;
     this.tokenExpiry = null;
     this.tokenPromise = null; // Track ongoing token requests
+
+    // Rate limit tracking
+    this.rateLimit = {
+      limit: null,
+      remaining: null,
+      reset: null,
+      lastUpdated: null
+    };
   }
 
   /**
@@ -132,6 +140,9 @@ class WCLv2Service {
       body: JSON.stringify({ query, variables })
     });
 
+    // Extract rate limit headers
+    this.updateRateLimit(response.headers);
+
     if (!response.ok) {
       const text = await response.text();
       console.error('GraphQL error:', text);
@@ -146,6 +157,37 @@ class WCLv2Service {
     }
 
     return data.data;
+  }
+
+  /**
+   * Update rate limit info from response headers
+   */
+  updateRateLimit(headers) {
+    try {
+      const limit = headers.get('x-rate-limit-limit');
+      const remaining = headers.get('x-rate-limit-remaining');
+      const reset = headers.get('x-rate-limit-reset');
+
+      if (limit !== null) this.rateLimit.limit = parseInt(limit, 10);
+      if (remaining !== null) this.rateLimit.remaining = parseInt(remaining, 10);
+      if (reset !== null) this.rateLimit.reset = parseInt(reset, 10);
+      this.rateLimit.lastUpdated = Date.now();
+    } catch (error) {
+      // Silently fail if headers aren't available
+      console.debug('Could not parse rate limit headers:', error);
+    }
+  }
+
+  /**
+   * Get current rate limit status
+   */
+  getRateLimit() {
+    return {
+      ...this.rateLimit,
+      pointsUsed: this.rateLimit.limit && this.rateLimit.remaining !== null
+        ? this.rateLimit.limit - this.rateLimit.remaining
+        : null
+    };
   }
 
   /**

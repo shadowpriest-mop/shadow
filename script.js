@@ -1039,6 +1039,9 @@ window.analyzeLog = async function analyzeLog() {
         // Load and display benchmark comparison if enabled
         loadAndDisplayBenchmark();
 
+        // Update API quota display
+        updateQuotaDisplay();
+
         // Add target filter event listener
         targetFilter.addEventListener('change', () => {
             renderCastTimeline(window.allCasts, window.currentFight);
@@ -2084,6 +2087,41 @@ function toggleBenchmarkCollapse() {
             localStorage.setItem('benchmarkCollapsed', 'true');
         }
     }
+}
+
+/**
+ * Update API quota display
+ */
+function updateQuotaDisplay() {
+    const quotaDisplay = document.getElementById('api-quota-display');
+    if (!quotaDisplay || !window.wclV2Service) return;
+
+    const rateLimit = window.wclV2Service.getRateLimit();
+
+    // Only show if we have rate limit data
+    if (rateLimit.limit === null || rateLimit.remaining === null) {
+        quotaDisplay.style.display = 'none';
+        return;
+    }
+
+    const pointsUsed = rateLimit.pointsUsed || 0;
+    const remaining = rateLimit.remaining;
+    const limit = rateLimit.limit;
+
+    // Calculate percentage remaining
+    const percentRemaining = (remaining / limit) * 100;
+
+    // Set color class based on remaining quota
+    quotaDisplay.classList.remove('low', 'critical');
+    if (percentRemaining < 10) {
+        quotaDisplay.classList.add('critical');
+    } else if (percentRemaining < 25) {
+        quotaDisplay.classList.add('low');
+    }
+
+    quotaDisplay.textContent = `API: ${remaining}/${limit} points`;
+    quotaDisplay.title = `${pointsUsed} points used this request`;
+    quotaDisplay.style.display = 'inline-block';
 }
 
 /**
