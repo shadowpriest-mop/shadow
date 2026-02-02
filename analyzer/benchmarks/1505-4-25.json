@@ -9,30 +9,30 @@
     "end": 100
   },
   "type": "median",
-  "lastUpdated": "2026-01-29T15:06:00.713Z",
+  "lastUpdated": "2026-01-30T13:33:12.837Z",
   "sampleSize": 50,
-  "medianFightDuration": 206.41500000000002,
+  "medianFightDuration": 196.2005,
   "metrics": {
     "mindBlast": {
-      "cpm": "5.46"
+      "cpm": "5.43"
     },
     "devouringPlague": {
-      "cpm": "2.69"
+      "cpm": "2.67"
     },
     "vampiricTouch": {
-      "cpm": "4.90"
+      "cpm": "4.89"
     },
     "shadowWordPain": {
-      "cpm": "6.63"
+      "cpm": "6.75"
     },
     "halo": {
-      "cpm": "1.24"
+      "cpm": "1.25"
     },
     "mindFlay": {
-      "cpm": "9.63"
+      "cpm": "10.00"
     },
     "mindFlayInsanity": {
-      "cpm": "6.21"
+      "cpm": "6.20"
     },
     "mindSear": {
       "cpm": "0.00"
@@ -41,10 +41,10 @@
       "cpm": "0.29"
     },
     "shadowWordDeath": {
-      "cpm": "3.55"
+      "cpm": "3.44"
     },
     "shadowfiend": {
-      "cpm": "0.44"
+      "cpm": "0.38"
     }
   }
 }
