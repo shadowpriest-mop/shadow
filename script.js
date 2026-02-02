@@ -2128,6 +2128,19 @@ function updateQuotaDisplay() {
 }
 
 /**
+ * Clear cached fight data
+ */
+function clearFightCache() {
+    if (!window.wclV2Service) {
+        alert('WCL service not available');
+        return;
+    }
+
+    const count = window.wclV2Service.clearCache();
+    alert(`Cleared ${count} cached fight${count !== 1 ? 's' : ''} from local storage.\n\nNext fight analysis will use fresh data from WCL.`);
+}
+
+/**
  * Initialize benchmark toggle state on page load
  */
 function initBenchmarkToggle() {

@@ -2,7 +2,7 @@
 // For MoP Classic Shadow Priest Analyzer
 // Uses client credentials flow - no user login required (like v1 API)
 
-console.log('===  WCL-V2-SERVICE.JS LOADING (v2.41.2) ===');
+console.log('===  WCL-V2-SERVICE.JS LOADING (v2.42.0) ===');
 
 // Note: BUFF_DATA is loaded from buff-data.js and available as window.BUFF_DATA
 
@@ -24,6 +24,10 @@ class WCLv2Service {
       reset: null,
       lastUpdated: null
     };
+
+    // Cache settings
+    this.cachePrefix = 'wcl_cache_';
+    this.maxCacheItems = 30; // Keep last 30 fights
   }
 
   /**
@@ -201,6 +205,119 @@ class WCLv2Service {
   }
 
   /**
+   * Generate cache key for a fight
+   */
+  getCacheKey(reportCode, fightID, playerName) {
+    return `${this.cachePrefix}${reportCode}_${fightID}_${playerName}`;
+  }
+
+  /**
+   * Get fight data from cache
+   */
+  getFromCache(reportCode, fightID, playerName) {
+    try {
+      const key = this.getCacheKey(reportCode, fightID, playerName);
+      const cached = localStorage.getItem(key);
+
+      if (!cached) return null;
+
+      const data = JSON.parse(cached);
+
+      // Check if cache is still valid (optional: could add expiry here)
+      console.log(`Cache HIT for ${reportCode}:${fightID}:${playerName}`);
+      return data;
+    } catch (error) {
+      console.error('Error reading from cache:', error);
+      return null;
+    }
+  }
+
+  /**
+   * Store fight data in cache
+   */
+  storeInCache(reportCode, fightID, playerName, data) {
+    try {
+      const key = this.getCacheKey(reportCode, fightID, playerName);
+      const cacheData = {
+        timestamp: Date.now(),
+        data: data
+      };
+
+      localStorage.setItem(key, JSON.stringify(cacheData));
+      console.log(`Cached fight data: ${reportCode}:${fightID}:${playerName}`);
+
+      // Manage cache size
+      this.manageCacheSize();
+    } catch (error) {
+      // localStorage might be full or disabled
+      console.warn('Could not cache fight data:', error);
+    }
+  }
+
+  /**
+   * Manage cache size - remove oldest items if we have too many
+   */
+  manageCacheSize() {
+    try {
+      // Get all cache keys
+      const cacheKeys = [];
+      for (let i = 0; i < localStorage.length; i++) {
+        const key = localStorage.key(i);
+        if (key && key.startsWith(this.cachePrefix)) {
+          cacheKeys.push(key);
+        }
+      }
+
+      // If we're over the limit, remove oldest items
+      if (cacheKeys.length > this.maxCacheItems) {
+        // Get items with timestamps
+        const items = cacheKeys.map(key => {
+          try {
+            const data = JSON.parse(localStorage.getItem(key));
+            return { key, timestamp: data.timestamp || 0 };
+          } catch {
+            return { key, timestamp: 0 };
+          }
+        });
+
+        // Sort by timestamp (oldest first)
+        items.sort((a, b) => a.timestamp - b.timestamp);
+
+        // Remove oldest items until we're under the limit
+        const toRemove = items.length - this.maxCacheItems;
+        for (let i = 0; i < toRemove; i++) {
+          localStorage.removeItem(items[i].key);
+          console.log(`Removed old cache entry: ${items[i].key}`);
+        }
+      }
+    } catch (error) {
+      console.error('Error managing cache size:', error);
+    }
+  }
+
+  /**
+   * Clear all cached fight data
+   */
+  clearCache() {
+    try {
+      const keysToRemove = [];
+      for (let i = 0; i < localStorage.length; i++) {
+        const key = localStorage.key(i);
+        if (key && key.startsWith(this.cachePrefix)) {
+          keysToRemove.push(key);
+        }
+      }
+
+      keysToRemove.forEach(key => localStorage.removeItem(key));
+      console.log(`Cleared ${keysToRemove.length} cached fights`);
+      return keysToRemove.length;
+    } catch (error) {
+      console.error('Error clearing cache:', error);
+      return 0;
+    }
+  }
+
+  /**
    * Fetch report summary
    */
   async fetchReport(reportCode) {
@@ -273,8 +390,18 @@ class WCLv2Service {
   /**
    * Fetch events for a fight (with pagination support)
    * Now also fetches playerDetails for combatantInfo
+   * Uses client-side caching to reduce API quota usage
    */
   async fetchEvents(reportCode, fightID, playerName, startTime, endTime) {
+    // Check cache first
+    const cached = this.getFromCache(reportCode, fightID, playerName);
+    if (cached && cached.data) {
+      console.log('Using cached fight data - no API points used!');
+      return cached.data;
+    }
+
+    console.log('No cache found - fetching from WCL API');
+
     const query = `
       query($code: String!, $fightIDs: [Int]!, $startTime: Float!, $endTime: Float!, $filterExpression: String) {
         reportData {
@@ -386,11 +513,16 @@ class WCLv2Service {
 
     console.log(`Total events fetched: ${allEvents.length} across ${pageCount} pages`);
 
-    return {
+    const result = {
       data: allEvents,
       playerDetails: playerDetails,
       pageCount: pageCount
     };
+
+    // Store in cache for future use
+    this.storeInCache(reportCode, fightID, playerName, result);
+
+    return result;
   }
 
   /**
