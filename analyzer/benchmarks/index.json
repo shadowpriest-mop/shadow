@@ -1,5 +1,5 @@
 {
-  "lastUpdated": "2026-01-29T15:06:00.716Z",
+  "lastUpdated": "2026-01-30T13:33:12.844Z",
   "benchmarks": [
     {
       "encounterID": 1505,
@@ -55,7 +55,7 @@
         "end": 100
       },
       "sampleSize": 50,
-      "lastUpdated": "2026-01-29T15:06:00.713Z",
+      "lastUpdated": "2026-01-30T13:33:12.837Z",
       "filename": "1505-4-25.json"
     }
   ]
