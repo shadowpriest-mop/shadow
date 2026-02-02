@@ -2,7 +2,7 @@
 // For MoP Classic Shadow Priest Analyzer
 // Uses client credentials flow - no user login required (like v1 API)
 
-console.log('===  WCL-V2-SERVICE.JS LOADING (v2.41.1) ===');
+console.log('===  WCL-V2-SERVICE.JS LOADING (v2.41.2) ===');
 
 // Note: BUFF_DATA is loaded from buff-data.js and available as window.BUFF_DATA
 
@@ -140,9 +140,6 @@ class WCLv2Service {
       body: JSON.stringify({ query, variables })
     });
 
-    // Extract rate limit headers
-    this.updateRateLimit(response.headers);
-
     if (!response.ok) {
       const text = await response.text();
       console.error('GraphQL error:', text);
@@ -156,32 +153,38 @@ class WCLv2Service {
       throw new Error(`GraphQL errors: ${data.errors.map(e => e.message).join(', ')}`);
     }
 
+    // Extract rate limit data from GraphQL response
+    if (data.data && data.data.rateLimitData) {
+      this.updateRateLimitFromGraphQL(data.data.rateLimitData);
+    }
+
     return data.data;
   }
 
   /**
-   * Update rate limit info from response headers
+   * Update rate limit info from GraphQL response
    */
-  updateRateLimit(headers) {
+  updateRateLimitFromGraphQL(rateLimitData) {
     try {
-      const limit = headers.get('x-rate-limit-limit');
-      const remaining = headers.get('x-rate-limit-remaining');
-      const reset = headers.get('x-rate-limit-reset');
+      console.log('=== Rate Limit Data from GraphQL ===');
+      console.log('rateLimitData:', rateLimitData);
 
-      console.log('=== Rate Limit Headers ===');
-      console.log('x-rate-limit-limit:', limit);
-      console.log('x-rate-limit-remaining:', remaining);
-      console.log('x-rate-limit-reset:', reset);
-
-      if (limit !== null) this.rateLimit.limit = parseInt(limit, 10);
-      if (remaining !== null) this.rateLimit.remaining = parseInt(remaining, 10);
-      if (reset !== null) this.rateLimit.reset = parseInt(reset, 10);
+      if (rateLimitData.limitPerHour !== undefined) {
+        this.rateLimit.limit = rateLimitData.limitPerHour;
+      }
+      if (rateLimitData.pointsSpentThisHour !== undefined) {
+        // Calculate remaining from spent
+        this.rateLimit.remaining = this.rateLimit.limit - rateLimitData.pointsSpentThisHour;
+      }
+      if (rateLimitData.pointsResetIn !== undefined) {
+        // pointsResetIn is in seconds, convert to timestamp
+        this.rateLimit.reset = Math.floor(Date.now() / 1000) + rateLimitData.pointsResetIn;
+      }
       this.rateLimit.lastUpdated = Date.now();
 
-      console.log('Rate limit state:', this.rateLimit);
+      console.log('Rate limit state after update:', this.rateLimit);
     } catch (error) {
-      // Silently fail if headers aren't available
-      console.debug('Could not parse rate limit headers:', error);
+      console.error('Could not parse rate limit data:', error);
     }
   }
 
@@ -288,6 +291,11 @@ class WCLv2Service {
             }
             table(fightIDs: $fightIDs, dataType: Summary, startTime: $startTime, endTime: $endTime)
           }
+        }
+        rateLimitData {
+          limitPerHour
+          pointsSpentThisHour
+          pointsResetIn
         }
       }
     `;
