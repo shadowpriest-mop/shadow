@@ -28,11 +28,15 @@ function getBossIconUrl(encounterID) {
 const BOSS_ICON_PLACEHOLDER = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNTYiIGhlaWdodD0iNTYiIHZpZXdCb3g9IjAgMCA1NiA1NiIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KICA8cmVjdCB3aWR0aD0iNTYiIGhlaWdodD0iNTYiIGZpbGw9IiMxZTFlMmUiLz4KICA8cGF0aCBkPSJNMjggMTBDMjAgMTAgMTQgMTYgMTQgMjRDMTQgMjggMTYgMzIgMTkgMzVDMjAgMzYgMjEgMzcgMjIgMzhDMjMgNDAgMjQgNDIgMjQgNDRDMjQgNDUgMjUgNDYgMjYgNDZIMzBDMzEgNDYgMzIgNDUgMzIgNDRDMzIgNDIgMzMgNDAgMzQgMzhDMzUgMzcgMzYgMzYgMzcgMzVDNDAgMzIgNDIgMjggNDIgMjRDNDIgMTYgMzYgMTAgMjggMTBaIiBmaWxsPSIjOTMzM2VhIiBvcGFjaXR5PSIwLjMiLz4KICA8Y2lyY2xlIGN4PSIyMiIgY3k9IjI0IiByPSIzIiBmaWxsPSIjOTMzM2VhIi8+CiAgPGNpcmNsZSBjeD0iMzQiIGN5PSIyNCIgcj0iMyIgZmlsbD0iIzkzMzNlYSIvPgogIDx0ZXh0IHg9IjI4IiB5PSI0MCIgZm9udC1mYW1pbHk9IkFyaWFsIiBmb250LXNpemU9IjI0IiBmaWxsPSIjOTMzM2VhIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIj4/PC90ZXh0Pgo8L3N2Zz4=';
 
 // Update boss icon display based on selected encounter
-function updateBossIcon(fightId, encounters) {
-    const bossIcon = document.getElementById('boss-icon');
-    const bossIconContainer = document.getElementById('boss-icon-container');
+// Parameters allow this to work on both landing page and analysis page
+function updateBossIcon(fightId, encounters, iconElementId = 'boss-icon', containerElementId = 'boss-icon-container') {
+    const bossIcon = document.getElementById(iconElementId);
+    const bossIconContainer = document.getElementById(containerElementId);
+
+    console.log('updateBossIcon called:', { fightId, iconElementId, containerElementId, hasIcon: !!bossIcon, hasContainer: !!bossIconContainer });
 
     if (!bossIcon || !bossIconContainer || !encounters || !fightId) {
+        console.log('updateBossIcon: missing required elements or data');
         if (bossIconContainer) {
             bossIconContainer.style.display = 'none';
         }
@@ -42,6 +46,7 @@ function updateBossIcon(fightId, encounters) {
     // Find the selected fight
     const fight = encounters.find(f => f.id === parseInt(fightId));
     if (!fight) {
+        console.log('updateBossIcon: fight not found for id', fightId);
         bossIconContainer.style.display = 'none';
         return;
     }
@@ -57,6 +62,7 @@ function updateBossIcon(fightId, encounters) {
 
     if (!iconUrl) {
         // Show placeholder for invalid encounter IDs
+        console.log('updateBossIcon: invalid iconUrl, showing placeholder');
         bossIcon.src = BOSS_ICON_PLACEHOLDER;
         bossIcon.alt = `${fight.name} (no icon)`;
         bossIcon.title = `${fight.name} (icon not available)`;
@@ -69,6 +75,7 @@ function updateBossIcon(fightId, encounters) {
     bossIcon.alt = `${fight.name} icon`;
     bossIcon.title = fight.name;
     bossIconContainer.style.display = 'flex';
+    console.log('updateBossIcon: icon displayed successfully');
 
     // Handle image load errors (fallback to placeholder)
     bossIcon.onerror = function() {
@@ -265,6 +272,8 @@ window.startAnalysis = function() {
             const playerName = playerSelectAnalysis.value;
             const fightId = encounterSelectAnalysis.value;
             updateHash(reportId, playerName, fightId);
+            // Update boss icon on analysis page
+            updateBossIcon(fightId, currentEncounters, 'boss-icon-analysis', 'boss-icon-container-analysis');
             window.analyzeLog();
         });
     }
@@ -274,6 +283,9 @@ window.startAnalysis = function() {
     const playerName = playerSelect.value;
     const fightId = encounterSelect.value;
     updateHash(reportId, playerName, fightId);
+
+    // Update boss icon on analysis page with initial selection
+    updateBossIcon(fightId, currentEncounters, 'boss-icon-analysis', 'boss-icon-container-analysis');
 
     // Trigger analysis
     window.analyzeLog();
@@ -784,12 +796,12 @@ window.loadReport = async function loadReport() {
         if (!encounterSelect.hasAttribute('data-icon-listener-attached')) {
             encounterSelect.setAttribute('data-icon-listener-attached', 'true');
             encounterSelect.addEventListener('change', (e) => {
-                updateBossIcon(e.target.value, currentEncounters);
+                updateBossIcon(e.target.value, currentEncounters, 'boss-icon', 'boss-icon-container');
             });
         }
 
         // Clear boss icon on initial load (no encounter selected yet)
-        updateBossIcon(null, null);
+        updateBossIcon(null, null, 'boss-icon', 'boss-icon-container');
 
         analyzeBtn.disabled = false;
 
