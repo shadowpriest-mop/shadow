@@ -156,6 +156,33 @@ select option.wipe-option {
     color: #f87171;
 }
 
+/* Boss icon for kills */
+.encounter-select-wrapper {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.encounter-select-wrapper select {
+    flex: 1;
+}
+
+.boss-icon {
+    width: 40px;
+    height: 40px;
+    border-radius: 8px;
+    border: 2px solid rgba(147, 51, 234, 0.5);
+    background: rgba(30, 30, 46, 0.8);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+    transition: all 0.3s ease;
+}
+
+.boss-icon:hover {
+    transform: scale(1.1);
+    border-color: #9333ea;
+    box-shadow: 0 4px 12px rgba(147, 51, 234, 0.4);
+}
+
 .checkbox-group {
     display: flex;
     align-items: center;

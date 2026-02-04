@@ -67,45 +67,34 @@ class BenchmarkLoader {
   }
 
   /**
-   * Unpack WCL encounter ID to get base encounter ID and difficulty
-   * WCL packs encounter IDs as: 50000 + (difficulty * 10) + baseEncounterID
-   * Example: 51565 = 50000 + (6 * 10) + 1505 (Tortos Heroic 25)
+   * Unpack WCL encounter ID to get journal encounter ID
+   * WCL adds 50000 to the journal encounter ID
+   * Example: 51565 = 50000 + 1565 (Tortos journal ID)
+   *          51577 = 50000 + 1577 (Jin'rokh journal ID)
    *
-   * Difficulty codes:
-   * 3 = Normal 10, 4 = Heroic 10, 5 = Normal 25, 6 = Heroic 25
+   * The journal encounter ID matches:
+   * - JournalEncounterID in WoW game data
+   * - Boss icon URLs: https://assets.rpglogs.com/img/warcraft/bosses/{journalID}-icon.jpg
+   * - Wowpedia/Wago.tools database entries
    *
-   * To unpack: We try each difficulty from highest to lowest (6, 5, 4, 3)
-   * This ensures we prefer Heroic 25 over lower difficulties when ambiguous
+   * Difficulty and raid size are provided separately in the fight object,
+   * NOT encoded in the encounterID.
    */
   unpackEncounterID(packedID) {
-    // For packed IDs > 50000, unpack them
+    // For packed IDs > 50000, subtract 50000 to get journal ID
     if (packedID > 50000) {
-      const offset = packedID - 50000;
-
-      // Try each difficulty level from highest to lowest
-      // This ensures we prefer Heroic 25 when multiple difficulties give valid IDs
-      for (let diff = 6; diff >= 3; diff--) {
-        const candidateBase = offset - (diff * 10);
-        // Check if this gives a reasonable encounter ID
-        // ToT Classic IDs are in 1499-1520 range
-        if (candidateBase >= 1490 && candidateBase <= 1600) {
-          return {
-            baseEncounterID: candidateBase,
-            difficulty: diff
-          };
-        }
-      }
-
-      // Fallback: assume no difficulty encoding
+      const journalEncounterID = packedID - 50000;
       return {
-        baseEncounterID: offset,
-        difficulty: null
+        baseEncounterID: journalEncounterID,
+        journalEncounterID: journalEncounterID,
+        difficulty: null // Provided separately in fight object
       };
     }
 
     // Already unpacked - return as-is
     return {
       baseEncounterID: packedID,
+      journalEncounterID: packedID,
       difficulty: null
     };
   }

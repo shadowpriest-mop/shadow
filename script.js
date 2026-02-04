@@ -12,6 +12,61 @@ function roundUp(value) {
     return Math.ceil(cleanedValue * 100) / 100;
 }
 
+// Get boss icon URL from WCL encounterID
+// WCL encounterID format: 50000 + journalEncounterID
+// Example: 51565 -> 1565 (Tortos journal ID)
+// Icon URL: https://assets.rpglogs.com/img/warcraft/bosses/1565-icon.jpg
+function getBossIconUrl(encounterID) {
+    if (!encounterID || encounterID <= 50000) {
+        return null;
+    }
+    const journalID = encounterID - 50000;
+    return `https://assets.rpglogs.com/img/warcraft/bosses/${journalID}-icon.jpg`;
+}
+
+// Update boss icon display based on selected encounter
+// Only shows icon for kills
+function updateBossIcon(fightId, encounters) {
+    const bossIcon = document.getElementById('boss-icon');
+    if (!bossIcon || !encounters || !fightId) {
+        if (bossIcon) {
+            bossIcon.style.display = 'none';
+        }
+        return;
+    }
+
+    // Find the selected fight
+    const fight = encounters.find(f => f.id === parseInt(fightId));
+    if (!fight) {
+        bossIcon.style.display = 'none';
+        return;
+    }
+
+    // Only show icon for kills
+    if (!fight.kill) {
+        bossIcon.style.display = 'none';
+        return;
+    }
+
+    // Get boss icon URL
+    const iconUrl = getBossIconUrl(fight.encounterID);
+    if (!iconUrl) {
+        bossIcon.style.display = 'none';
+        return;
+    }
+
+    // Show the icon
+    bossIcon.src = iconUrl;
+    bossIcon.alt = `${fight.name} icon`;
+    bossIcon.title = fight.name;
+    bossIcon.style.display = 'inline-block';
+
+    // Handle image load errors (fallback to hiding)
+    bossIcon.onerror = function() {
+        this.style.display = 'none';
+    };
+}
+
 // Base DoT information (verified against sim)
 const DOTS = {
     swp: {
@@ -587,6 +642,7 @@ window.switchTab = function switchTab(tabName) {
 
 // Store loaded report data globally
 let currentReportData = null;
+let currentEncounters = null;
 
 // Helper function to calculate DoT uptimes
 function calculateDotUptimes(events, fight, fightDuration) {
@@ -697,6 +753,9 @@ window.loadReport = async function loadReport() {
             return;
         }
 
+        // Store encounters globally for boss icon updates
+        currentEncounters = encounters;
+
         // Populate encounter dropdown
         encounterSelect.innerHTML = '<option value="">Select an encounter</option>' +
             encounters.map(fight => {
@@ -706,6 +765,17 @@ window.loadReport = async function loadReport() {
                 return `<option value="${fight.id}" ${statusClass}>${killStatus} ${fight.name} (${duration}s)</option>`;
             }).join('');
         encounterSelect.disabled = false;
+
+        // Add change listener for boss icon (only once)
+        if (!encounterSelect.hasAttribute('data-icon-listener-attached')) {
+            encounterSelect.setAttribute('data-icon-listener-attached', 'true');
+            encounterSelect.addEventListener('change', (e) => {
+                updateBossIcon(e.target.value, currentEncounters);
+            });
+        }
+
+        // Clear boss icon on initial load (no encounter selected yet)
+        updateBossIcon(null, null);
 
         analyzeBtn.disabled = false;
 
