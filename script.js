@@ -24,6 +24,9 @@ function getBossIconUrl(encounterID) {
     return `https://assets.rpglogs.com/img/warcraft/bosses/${journalID}-icon.jpg`;
 }
 
+// Placeholder icon as data URL (generic boss skull icon)
+const BOSS_ICON_PLACEHOLDER = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNTYiIGhlaWdodD0iNTYiIHZpZXdCb3g9IjAgMCA1NiA1NiIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KICA8cmVjdCB3aWR0aD0iNTYiIGhlaWdodD0iNTYiIGZpbGw9IiMxZTFlMmUiLz4KICA8cGF0aCBkPSJNMjggMTBDMjAgMTAgMTQgMTYgMTQgMjRDMTQgMjggMTYgMzIgMTkgMzVDMjAgMzYgMjEgMzcgMjIgMzhDMjMgNDAgMjQgNDIgMjQgNDRDMjQgNDUgMjUgNDYgMjYgNDZIMzBDMzEgNDYgMzIgNDUgMzIgNDRDMzIgNDIgMzMgNDAgMzQgMzhDMzUgMzcgMzYgMzYgMzcgMzVDNDAgMzIgNDIgMjggNDIgMjRDNDIgMTYgMzYgMTAgMjggMTBaIiBmaWxsPSIjOTMzM2VhIiBvcGFjaXR5PSIwLjMiLz4KICA8Y2lyY2xlIGN4PSIyMiIgY3k9IjI0IiByPSIzIiBmaWxsPSIjOTMzM2VhIi8+CiAgPGNpcmNsZSBjeD0iMzQiIGN5PSIyNCIgcj0iMyIgZmlsbD0iIzkzMzNlYSIvPgogIDx0ZXh0IHg9IjI4IiB5PSI0MCIgZm9udC1mYW1pbHk9IkFyaWFsIiBmb250LXNpemU9IjI0IiBmaWxsPSIjOTMzM2VhIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIj4/PC90ZXh0Pgo8L3N2Zz4=';
+
 // Update boss icon display based on selected encounter
 function updateBossIcon(fightId, encounters) {
     const bossIcon = document.getElementById('boss-icon');
@@ -45,8 +48,19 @@ function updateBossIcon(fightId, encounters) {
 
     // Get boss icon URL
     const iconUrl = getBossIconUrl(fight.encounterID);
+    console.log('Boss Icon Debug:', {
+        fightName: fight.name,
+        encounterID: fight.encounterID,
+        journalID: fight.encounterID - 50000,
+        iconUrl: iconUrl
+    });
+
     if (!iconUrl) {
-        bossIconContainer.style.display = 'none';
+        // Show placeholder for invalid encounter IDs
+        bossIcon.src = BOSS_ICON_PLACEHOLDER;
+        bossIcon.alt = `${fight.name} (no icon)`;
+        bossIcon.title = `${fight.name} (icon not available)`;
+        bossIconContainer.style.display = 'flex';
         return;
     }
 
@@ -56,9 +70,14 @@ function updateBossIcon(fightId, encounters) {
     bossIcon.title = fight.name;
     bossIconContainer.style.display = 'flex';
 
-    // Handle image load errors (fallback to hiding)
+    // Handle image load errors (fallback to placeholder)
     bossIcon.onerror = function() {
-        bossIconContainer.style.display = 'none';
+        console.warn('Boss icon failed to load:', iconUrl);
+        bossIcon.src = BOSS_ICON_PLACEHOLDER;
+        bossIcon.alt = `${fight.name} (no icon)`;
+        bossIcon.title = `${fight.name} (icon not available)`;
+        // Clear onerror to prevent infinite loop if placeholder fails
+        bossIcon.onerror = null;
     };
 }
 
