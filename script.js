@@ -25,12 +25,13 @@ function getBossIconUrl(encounterID) {
 }
 
 // Update boss icon display based on selected encounter
-// Only shows icon for kills
 function updateBossIcon(fightId, encounters) {
     const bossIcon = document.getElementById('boss-icon');
-    if (!bossIcon || !encounters || !fightId) {
-        if (bossIcon) {
-            bossIcon.style.display = 'none';
+    const bossIconContainer = document.getElementById('boss-icon-container');
+
+    if (!bossIcon || !bossIconContainer || !encounters || !fightId) {
+        if (bossIconContainer) {
+            bossIconContainer.style.display = 'none';
         }
         return;
     }
@@ -38,20 +39,14 @@ function updateBossIcon(fightId, encounters) {
     // Find the selected fight
     const fight = encounters.find(f => f.id === parseInt(fightId));
     if (!fight) {
-        bossIcon.style.display = 'none';
-        return;
-    }
-
-    // Only show icon for kills
-    if (!fight.kill) {
-        bossIcon.style.display = 'none';
+        bossIconContainer.style.display = 'none';
         return;
     }
 
     // Get boss icon URL
     const iconUrl = getBossIconUrl(fight.encounterID);
     if (!iconUrl) {
-        bossIcon.style.display = 'none';
+        bossIconContainer.style.display = 'none';
         return;
     }
 
@@ -59,11 +54,11 @@ function updateBossIcon(fightId, encounters) {
     bossIcon.src = iconUrl;
     bossIcon.alt = `${fight.name} icon`;
     bossIcon.title = fight.name;
-    bossIcon.style.display = 'inline-block';
+    bossIconContainer.style.display = 'flex';
 
     // Handle image load errors (fallback to hiding)
     bossIcon.onerror = function() {
-        this.style.display = 'none';
+        bossIconContainer.style.display = 'none';
     };
 }
 

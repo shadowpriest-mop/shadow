@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Shadow Priest - MoP Classic Helper</title>
     <link rel="icon" type="image/x-icon" href="analyzer/icons/favicon.ico">
-    <link rel="stylesheet" href="style.css?v=2.43.0">
+    <link rel="stylesheet" href="style.css?v=2.43.1">
 </head>
 <body>
     <!-- LANDING PAGE -->
@@ -41,7 +41,10 @@
                             <select id="encounter-select" disabled>
                                 <option value="">Load report first</option>
                             </select>
-                            <img id="boss-icon" class="boss-icon" src="" alt="" style="display: none;" />
+                            <div id="boss-icon-container" class="boss-icon-container" style="display: none;">
+                                <span class="boss-icon-label">Boss:</span>
+                                <img id="boss-icon" class="boss-icon" src="" alt="" />
+                            </div>
                         </div>
                     </div>
 
@@ -62,7 +65,7 @@
                     <span class="separator">|</span>
                     <a href="#" id="benchmark-toggle-landing" onclick="toggleBenchmarkDisplay(); return false;">Show Benchmarks</a>
                 </div>
-                <div class="version-label">v2.43.0</div>
+                <div class="version-label">v2.43.1</div>
             </div>
         </div>
     </div>
@@ -95,7 +98,7 @@
                 🗑️ Clear Cache
             </button>
             <span id="api-quota-display" class="api-quota" style="display: none;"></span>
-            <span class="app-version">v2.43.0</span>
+            <span class="app-version">v2.43.1</span>
         </nav>
 
         <!-- Talents Display & Selectors -->
