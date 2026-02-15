@@ -994,8 +994,14 @@ class CastsAnalyzer {
       // Check if this is Mind Flay
       const isMindFlay = (cast.spellId === MF_INSANITY_ID || cast.spellId === MF_REGULAR_ID);
 
-      // For Mind Flay: Calculate wasted time when clipping to cast something else
-      if (isMindFlay) {
+      // For Mind Flay: Calculate tick time and wasted time
+      if (isMindFlay && cast.instances && cast.instances.length > 0) {
+        // Calculate time from cast start to first tick (for all MF casts)
+        const firstTick = cast.instances[0];
+        cast.timeToFirstTick = firstTick.timestamp - cast.castStart;
+        cast.ticksReceived = cast.instances.length;
+
+        // Calculate wasted time when clipping to cast something else
         const nextCast = this.getNextCast(cast);
 
         if (nextCast) {
@@ -1007,20 +1013,20 @@ class CastsAnalyzer {
           const gapToNextCast = nextCast.castStart - cast.castEnd;
 
           if (isTransitionToOther && gapToNextCast <= MOVEMENT_GAP_THRESHOLD) {
-            // Calculate time since last tick
-            // Number of complete ticks = floor(actualDuration / tickInterval)
-            const completeTicks = Math.floor(actualDuration / hastedTickInterval);
-            const lastTickTime = completeTicks * hastedTickInterval;
-            const timeSinceLastTick = actualDuration - lastTickTime;
+            // Get last tick timestamp
+            const lastTick = cast.instances[cast.instances.length - 1];
+            const lastTickTimestamp = lastTick.timestamp;
 
-            // Store wasted time (time we channeled without getting next tick)
-            cast.wastedChannelTime = timeSinceLastTick;
-            cast.ticksReceived = completeTicks;
+            // Calculate wasted time: time from last tick to when channel ended
+            const wastedTime = cast.castEnd - lastTickTimestamp;
+
+            // Store wasted time
+            cast.wastedChannelTime = wastedTime;
 
             // Debug log
-            console.log(`MF Clip: ${(cast.castStart / 1000).toFixed(1)}s, duration: ${actualDuration.toFixed(0)}ms, ` +
-                       `tick interval: ${hastedTickInterval.toFixed(0)}ms, ticks: ${completeTicks}, ` +
-                       `wasted: ${timeSinceLastTick.toFixed(0)}ms → ${nextCast.name}`);
+            console.log(`MF Clip: ${(cast.castStart / 1000).toFixed(1)}s, ticks: ${cast.instances.length}, ` +
+                       `first tick: ${cast.timeToFirstTick.toFixed(0)}ms, ` +
+                       `wasted: ${wastedTime.toFixed(0)}ms → ${nextCast.name}`);
           }
         }
       }

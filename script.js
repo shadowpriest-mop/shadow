@@ -1513,14 +1513,29 @@ function createCastDetailsHTML(cast, fight) {
     // Cast Time / Duration
     // For DoTs, this is the duration of the DoT effect (including pandemic)
     // For other spells, this is the cast time
-    const isDoT = cast.hastedTickInterval !== undefined;
-    const timeLabel = isDoT ? 'Duration:' : 'Cast Time:';
-    html += `
-        <div class="cast-details-item">
-            <span class="cast-details-label">${timeLabel}</span>
-            <span class="cast-details-value">${(cast.castTimeMs / 1000).toFixed(2)}s</span>
-        </div>
-    `;
+    // Skip Cast Time for Mind Flay - we show Tick Time instead
+    const isMindFlay = [15407, 129197].includes(cast.spellId);
+
+    if (!isMindFlay) {
+        const isDoT = cast.hastedTickInterval !== undefined;
+        const timeLabel = isDoT ? 'Duration:' : 'Cast Time:';
+        html += `
+            <div class="cast-details-item">
+                <span class="cast-details-label">${timeLabel}</span>
+                <span class="cast-details-value">${(cast.castTimeMs / 1000).toFixed(2)}s</span>
+            </div>
+        `;
+    }
+
+    // Tick Time for Mind Flay (time from cast start to first tick)
+    if (isMindFlay && cast.timeToFirstTick !== undefined) {
+        html += `
+            <div class="cast-details-item">
+                <span class="cast-details-label">Tick Time:</span>
+                <span class="cast-details-value">${(cast.timeToFirstTick / 1000).toFixed(2)}s</span>
+            </div>
+        `;
+    }
 
     // Haste removed - not useful for players
 
@@ -1535,8 +1550,8 @@ function createCastDetailsHTML(cast, fight) {
         `;
     }
 
-    // Delay (if available)
-    if (cast.nextCastLatency !== undefined) {
+    // Delay (if available) - Skip for Mind Flay
+    if (cast.nextCastLatency !== undefined && !isMindFlay) {
         const status = statHighlights.castLatency(cast);
         const cssClass = statHighlights.getTextClass(status);
         html += `
