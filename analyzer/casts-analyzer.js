@@ -1002,13 +1002,26 @@ class CastsAnalyzer {
         cast.ticksReceived = cast.instances.length;
 
         // Calculate actual tick interval from damage events
+        // Need at least 2 ticks to calculate interval
         if (cast.instances.length >= 2) {
           // Calculate average interval between consecutive ticks
           let totalInterval = 0;
+          let validIntervals = 0;
+
           for (let i = 1; i < cast.instances.length; i++) {
-            totalInterval += cast.instances[i].timestamp - cast.instances[i - 1].timestamp;
+            const interval = cast.instances[i].timestamp - cast.instances[i - 1].timestamp;
+            // Filter out abnormally short intervals (< 100ms)
+            // These are likely from MF → MF "attachment" mechanics
+            if (interval >= 100) {
+              totalInterval += interval;
+              validIntervals++;
+            }
           }
-          cast.actualTickInterval = totalInterval / (cast.instances.length - 1);
+
+          // Only set tick interval if we have at least one valid interval
+          if (validIntervals > 0) {
+            cast.actualTickInterval = totalInterval / validIntervals;
+          }
         }
 
         // Calculate wasted time when clipping to cast something else
