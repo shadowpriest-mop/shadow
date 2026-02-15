@@ -1017,8 +1017,9 @@ class CastsAnalyzer {
             const lastTick = cast.instances[cast.instances.length - 1];
             const lastTickTimestamp = lastTick.timestamp;
 
-            // Calculate wasted time: time from last tick to when channel ended
-            const wastedTime = cast.castEnd - lastTickTimestamp;
+            // Calculate wasted time: time from last tick until next cast begins
+            // (the channel effectively ends when we start the next spell)
+            const wastedTime = nextCast.castStart - lastTickTimestamp;
 
             // Store wasted time
             cast.wastedChannelTime = wastedTime;
