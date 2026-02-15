@@ -1001,6 +1001,16 @@ class CastsAnalyzer {
         cast.timeToFirstTick = firstTick.timestamp - cast.castStart;
         cast.ticksReceived = cast.instances.length;
 
+        // Calculate actual tick interval from damage events
+        if (cast.instances.length >= 2) {
+          // Calculate average interval between consecutive ticks
+          let totalInterval = 0;
+          for (let i = 1; i < cast.instances.length; i++) {
+            totalInterval += cast.instances[i].timestamp - cast.instances[i - 1].timestamp;
+          }
+          cast.actualTickInterval = totalInterval / (cast.instances.length - 1);
+        }
+
         // Calculate wasted time when clipping to cast something else
         const nextCast = this.getNextCast(cast);
 

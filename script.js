@@ -1527,12 +1527,12 @@ function createCastDetailsHTML(cast, fight) {
         `;
     }
 
-    // Tick Time for Mind Flay (time from cast start to first tick)
-    if (isMindFlay && cast.timeToFirstTick !== undefined) {
+    // Tick Interval for Mind Flay (time between ticks)
+    if (isMindFlay && cast.actualTickInterval !== undefined) {
         html += `
             <div class="cast-details-item">
-                <span class="cast-details-label">Tick Time:</span>
-                <span class="cast-details-value">${cast.timeToFirstTick.toFixed(0)}ms</span>
+                <span class="cast-details-label">Tick Interval:</span>
+                <span class="cast-details-value">${cast.actualTickInterval.toFixed(0)}ms</span>
             </div>
         `;
     }
