@@ -9,7 +9,7 @@ A web-based WarcraftLogs analyzer specifically designed for Shadow Priests in Mi
 - **Frontend**: Vanilla JavaScript, HTML, CSS (no framework)
 - **Data Source**: WarcraftLogs API v2 (GraphQL)
 - **Analysis Engine**: Client-side cast analysis with quality scoring
-- **Version**: v2.27.10
+- **Version**: v2.45.7
 
 ### Core Components
 
@@ -115,16 +115,16 @@ const SPELL_IDS = {
 ### Version Control
 - Branch: `claude/shadow-priest-website-01Fzq4UgdUHDyo4mx2CAbHnE`
 - Update version in 3 places when making changes:
-  1. Footer: `<div class="version-label">v2.27.10</div>`
-  2. App bar: `<span class="app-version">v2.27.10</span>`
-  3. CSS cache: `<link rel="stylesheet" href="style.css?v=2.27.10">`
+  1. Footer: `<div class="version-label">v2.45.7</div>`
+  2. App bar: `<span class="app-version">v2.45.7</span>`
+  3. CSS cache: `<link rel="stylesheet" href="style.css?v=2.45.7">`
 - Update script versions when modifying JS files
 
 ---
 
 ## Task Level: Current Work & Future Improvements
 
-### Recently Completed (v2.26.5 → v2.27.10)
+### Recently Completed (v2.26.5 → v2.45.3)
 
 #### Code Cleanup
 - ✅ Removed ~36 debug console.log statements across multiple files
@@ -156,6 +156,25 @@ const SPELL_IDS = {
 #### Talent Display Fixes
 - ✅ v2.27.9: Fixed Dominate Mind icon mapping (WCL returns "Mind Control")
 - ✅ v2.27.10: Fixed tooltip to show "Dominate Mind" instead of "Mind Control"
+
+#### Mind Flay Clipping Analysis (v2.45.0 → v2.45.7)
+- ✅ v2.45.0: Initial implementation with tick-based clipping analysis
+- ✅ v2.45.1: **Bug fix** - Use actual damage timestamps instead of modulo math
+- ✅ v2.45.2: **UI tweak** - Display tick time in milliseconds for consistency
+- ✅ v2.45.3: **Critical fix** - Use nextCast.castStart instead of cast.castEnd for wasted time calculation
+- ✅ v2.45.4: Add color indicators for Mind Flay clipping quality (200-299ms = warning, 300ms+ = error)
+- ✅ v2.45.5: **Bug fix** - Display actual tick interval instead of time to first tick
+- ✅ v2.45.6: **Bug fix** - Filter out MF → MF attachment intervals and handle casts with no ticks
+- ✅ v2.45.7: **UI fixes** - Add green color for good MF clipping (<200ms) and fix delay display logic
+- ✅ Calculate wasted channel time when clipping MF → Other spell
+- ✅ Display wasted time in individual cast details
+- ✅ Show average wasted time in stats panel when filtering Mind Flay
+- ✅ Quality thresholds: <200ms = good (green), 200-299ms = warning (orange), 300ms+ = error (red)
+- ✅ Exclude transitions >1000ms gap (movement mechanics)
+- ✅ **UI Changes**: Removed "Cast Time" for MF, added "Tick Interval" (average time between ticks)
+- ✅ **UI Changes**: Removed "Delay" display for Mind Flay (not useful)
+- ✅ **v2.45.7 fixes**: Changed MF wasted time color from neutral to green for <200ms clipping
+- ✅ **v2.45.7 fixes**: Fixed "Delay" to show delay BEFORE casting (previousCastLatency) instead of after
 
 ### In Progress
 

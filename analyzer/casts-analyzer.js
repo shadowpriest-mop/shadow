@@ -770,6 +770,9 @@ class CastsAnalyzer {
 
       if (latency >= 0 && latency <= MAX_LATENCY) {
         current.nextCastLatency = latency;
+        // Also store this latency on the next cast as previousCastLatency
+        // This makes it easier to display "delay before this cast" in the UI
+        next.previousCastLatency = latency;
       }
     }
   }

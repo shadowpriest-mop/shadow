@@ -12,6 +12,82 @@ function roundUp(value) {
     return Math.ceil(cleanedValue * 100) / 100;
 }
 
+// Get boss icon URL from WCL encounterID
+// WCL encounterID format: 50000 + journalEncounterID
+// Example: 51565 -> 1565 (Tortos journal ID)
+// Icon URL: https://assets.rpglogs.com/img/warcraft/bosses/1565-icon.jpg
+function getBossIconUrl(encounterID) {
+    if (!encounterID || encounterID <= 50000) {
+        return null;
+    }
+    const journalID = encounterID - 50000;
+    return `https://assets.rpglogs.com/img/warcraft/bosses/${journalID}-icon.jpg`;
+}
+
+// Placeholder icon as data URL (generic boss skull icon)
+const BOSS_ICON_PLACEHOLDER = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNTYiIGhlaWdodD0iNTYiIHZpZXdCb3g9IjAgMCA1NiA1NiIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KICA8cmVjdCB3aWR0aD0iNTYiIGhlaWdodD0iNTYiIGZpbGw9IiMxZTFlMmUiLz4KICA8cGF0aCBkPSJNMjggMTBDMjAgMTAgMTQgMTYgMTQgMjRDMTQgMjggMTYgMzIgMTkgMzVDMjAgMzYgMjEgMzcgMjIgMzhDMjMgNDAgMjQgNDIgMjQgNDRDMjQgNDUgMjUgNDYgMjYgNDZIMzBDMzEgNDYgMzIgNDUgMzIgNDRDMzIgNDIgMzMgNDAgMzQgMzhDMzUgMzcgMzYgMzYgMzcgMzVDNDAgMzIgNDIgMjggNDIgMjRDNDIgMTYgMzYgMTAgMjggMTBaIiBmaWxsPSIjOTMzM2VhIiBvcGFjaXR5PSIwLjMiLz4KICA8Y2lyY2xlIGN4PSIyMiIgY3k9IjI0IiByPSIzIiBmaWxsPSIjOTMzM2VhIi8+CiAgPGNpcmNsZSBjeD0iMzQiIGN5PSIyNCIgcj0iMyIgZmlsbD0iIzkzMzNlYSIvPgogIDx0ZXh0IHg9IjI4IiB5PSI0MCIgZm9udC1mYW1pbHk9IkFyaWFsIiBmb250LXNpemU9IjI0IiBmaWxsPSIjOTMzM2VhIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIj4/PC90ZXh0Pgo8L3N2Zz4=';
+
+// Update boss icon display based on selected encounter
+// Parameters allow this to work on both landing page and analysis page
+function updateBossIcon(fightId, encounters, iconElementId = 'boss-icon', containerElementId = 'boss-icon-container') {
+    const bossIcon = document.getElementById(iconElementId);
+    const bossIconContainer = document.getElementById(containerElementId);
+
+    console.log('updateBossIcon called:', { fightId, iconElementId, containerElementId, hasIcon: !!bossIcon, hasContainer: !!bossIconContainer });
+
+    if (!bossIcon || !bossIconContainer || !encounters || !fightId) {
+        console.log('updateBossIcon: missing required elements or data');
+        if (bossIconContainer) {
+            bossIconContainer.style.display = 'none';
+        }
+        return;
+    }
+
+    // Find the selected fight
+    const fight = encounters.find(f => f.id === parseInt(fightId));
+    if (!fight) {
+        console.log('updateBossIcon: fight not found for id', fightId);
+        bossIconContainer.style.display = 'none';
+        return;
+    }
+
+    // Get boss icon URL
+    const iconUrl = getBossIconUrl(fight.encounterID);
+    console.log('Boss Icon Debug:', {
+        fightName: fight.name,
+        encounterID: fight.encounterID,
+        journalID: fight.encounterID - 50000,
+        iconUrl: iconUrl
+    });
+
+    if (!iconUrl) {
+        // Show placeholder for invalid encounter IDs
+        console.log('updateBossIcon: invalid iconUrl, showing placeholder');
+        bossIcon.src = BOSS_ICON_PLACEHOLDER;
+        bossIcon.alt = `${fight.name} (no icon)`;
+        bossIcon.title = `${fight.name} (icon not available)`;
+        bossIconContainer.style.display = 'flex';
+        return;
+    }
+
+    // Show the icon
+    bossIcon.src = iconUrl;
+    bossIcon.alt = `${fight.name} icon`;
+    bossIcon.title = fight.name;
+    bossIconContainer.style.display = 'flex';
+    console.log('updateBossIcon: icon displayed successfully');
+
+    // Handle image load errors (fallback to placeholder)
+    bossIcon.onerror = function() {
+        console.warn('Boss icon failed to load:', iconUrl);
+        bossIcon.src = BOSS_ICON_PLACEHOLDER;
+        bossIcon.alt = `${fight.name} (no icon)`;
+        bossIcon.title = `${fight.name} (icon not available)`;
+        // Clear onerror to prevent infinite loop if placeholder fails
+        bossIcon.onerror = null;
+    };
+}
+
 // Base DoT information (verified against sim)
 const DOTS = {
     swp: {
@@ -196,6 +272,8 @@ window.startAnalysis = function() {
             const playerName = playerSelectAnalysis.value;
             const fightId = encounterSelectAnalysis.value;
             updateHash(reportId, playerName, fightId);
+            // Update boss icon on analysis page
+            updateBossIcon(fightId, currentEncounters, 'boss-icon-analysis', 'boss-icon-container-analysis');
             window.analyzeLog();
         });
     }
@@ -205,6 +283,9 @@ window.startAnalysis = function() {
     const playerName = playerSelect.value;
     const fightId = encounterSelect.value;
     updateHash(reportId, playerName, fightId);
+
+    // Update boss icon on analysis page with initial selection
+    updateBossIcon(fightId, currentEncounters, 'boss-icon-analysis', 'boss-icon-container-analysis');
 
     // Trigger analysis
     window.analyzeLog();
@@ -237,6 +318,40 @@ window.showAbout = function() {
  */
 window.hideAbout = function() {
     document.getElementById('about-overlay').style.display = 'none';
+};
+
+/**
+ * Show benchmark instructions overlay
+ */
+window.showBenchmarkInstructions = function() {
+    document.getElementById('benchmark-instructions-overlay').style.display = 'flex';
+};
+
+/**
+ * Hide benchmark instructions overlay
+ */
+window.hideBenchmarkInstructions = function() {
+    document.getElementById('benchmark-instructions-overlay').style.display = 'none';
+};
+
+/**
+ * Copy text to clipboard
+ */
+window.copyToClipboard = function(text) {
+    navigator.clipboard.writeText(text).then(() => {
+        // Show temporary success message
+        const btn = event.target;
+        const originalText = btn.textContent;
+        btn.textContent = '✓ Copied!';
+        btn.style.background = '#10b981';
+        setTimeout(() => {
+            btn.textContent = originalText;
+            btn.style.background = '';
+        }, 2000);
+    }).catch(err => {
+        console.error('Failed to copy:', err);
+        alert('Failed to copy to clipboard. Please copy manually.');
+    });
 };
 
 // Initialize
@@ -272,6 +387,9 @@ document.addEventListener('DOMContentLoaded', function() {
     if (window.location.hash) {
         loadFromHash();
     }
+
+    // Initialize benchmark toggle state
+    initBenchmarkToggle();
 });
 
 function updateRacialOptions() {
@@ -550,6 +668,7 @@ window.switchTab = function switchTab(tabName) {
 
 // Store loaded report data globally
 let currentReportData = null;
+let currentEncounters = null;
 
 // Helper function to calculate DoT uptimes
 function calculateDotUptimes(events, fight, fightDuration) {
@@ -660,6 +779,9 @@ window.loadReport = async function loadReport() {
             return;
         }
 
+        // Store encounters globally for boss icon updates
+        currentEncounters = encounters;
+
         // Populate encounter dropdown
         encounterSelect.innerHTML = '<option value="">Select an encounter</option>' +
             encounters.map(fight => {
@@ -669,6 +791,17 @@ window.loadReport = async function loadReport() {
                 return `<option value="${fight.id}" ${statusClass}>${killStatus} ${fight.name} (${duration}s)</option>`;
             }).join('');
         encounterSelect.disabled = false;
+
+        // Add change listener for boss icon (only once)
+        if (!encounterSelect.hasAttribute('data-icon-listener-attached')) {
+            encounterSelect.setAttribute('data-icon-listener-attached', 'true');
+            encounterSelect.addEventListener('change', (e) => {
+                updateBossIcon(e.target.value, currentEncounters, 'boss-icon', 'boss-icon-container');
+            });
+        }
+
+        // Clear boss icon on initial load (no encounter selected yet)
+        updateBossIcon(null, null, 'boss-icon', 'boss-icon-container');
 
         analyzeBtn.disabled = false;
 
@@ -941,14 +1074,7 @@ window.analyzeLog = async function analyzeLog() {
 
         // ❌ Removed all UI updates for mfTicks and DoT uptimes
 
-        // Run pre-pull checker
-        // Get player ID from the first event with a sourceID
-        // All events are filtered for this player, so any sourceID is the player's ID
-        const playerID = events.find(e => e.sourceID)?.sourceID || null;
-        const prePullChecker = new PrePullChecker(events, buffEvents, fight.startTime, playerID, playerName);
-        const prePullResults = prePullChecker.analyze();
-
-        // Analyze casts with quality metrics
+        // Analyze casts with quality metrics (need to get talents first)
         const castsAnalyzer = new CastsAnalyzer(events, buffEvents, {
             playerDetails: eventsData.playerDetails,
             playerName: playerName,
@@ -958,6 +1084,13 @@ window.analyzeLog = async function analyzeLog() {
         const analysisResult = castsAnalyzer.analyze();
         const casts = analysisResult.casts;
         const talents = analysisResult.talents;
+
+        // Run pre-pull checker
+        // Get player ID from the first event with a sourceID
+        // All events are filtered for this player, so any sourceID is the player's ID
+        const playerID = events.find(e => e.sourceID)?.sourceID || null;
+        const prePullChecker = new PrePullChecker(events, buffEvents, fight.startTime, playerID, playerName, talents);
+        const prePullResults = prePullChecker.analyze();
 
         // Add target names to casts
         const enemyNames = new Map();
@@ -998,6 +1131,12 @@ window.analyzeLog = async function analyzeLog() {
 
         // Render quick overview (default to Summary view)
         renderQuickOverview();
+
+        // Load and display benchmark comparison if enabled
+        loadAndDisplayBenchmark();
+
+        // Update API quota display
+        updateQuotaDisplay();
 
         // Add target filter event listener
         targetFilter.addEventListener('change', () => {
@@ -1070,14 +1209,16 @@ function renderPrePullCheck(results) {
     let html = '<div class="prepull-check-label">Pre-Pull:</div>';
     html += '<div class="prepull-check-items">';
 
-    // Halo check
-    const haloStatus = results.halo.status;
+    // Tier-90 talent check (Halo/Cascade/Divine Star)
+    const tier90Status = results.tier90Talent.status;
+    const tier90Name = results.tier90TalentName || 'Tier-90';
     html += `<div class="prepull-item">`;
-    html += `<span class="prepull-icon ${haloStatus}"></span>`;
-    if (results.halo.found) {
-        html += `<span class="prepull-item-text ${haloStatus}">Halo (+${results.halo.timing.toFixed(1)}s)</span>`;
+    html += `<span class="prepull-icon ${tier90Status}"></span>`;
+    if (results.tier90Talent.found) {
+        const spellName = results.tier90Talent.spellName || tier90Name;
+        html += `<span class="prepull-item-text ${tier90Status}">${spellName} (+${results.tier90Talent.timing.toFixed(1)}s)</span>`;
     } else {
-        html += `<span class="prepull-item-text ${haloStatus}">Halo (missing)</span>`;
+        html += `<span class="prepull-item-text ${tier90Status}">${tier90Name} (missing)</span>`;
     }
     html += `</div>`;
 
@@ -1372,14 +1513,29 @@ function createCastDetailsHTML(cast, fight) {
     // Cast Time / Duration
     // For DoTs, this is the duration of the DoT effect (including pandemic)
     // For other spells, this is the cast time
-    const isDoT = cast.hastedTickInterval !== undefined;
-    const timeLabel = isDoT ? 'Duration:' : 'Cast Time:';
-    html += `
-        <div class="cast-details-item">
-            <span class="cast-details-label">${timeLabel}</span>
-            <span class="cast-details-value">${(cast.castTimeMs / 1000).toFixed(2)}s</span>
-        </div>
-    `;
+    // Skip Cast Time for Mind Flay - we show Tick Time instead
+    const isMindFlay = [15407, 129197].includes(cast.spellId);
+
+    if (!isMindFlay) {
+        const isDoT = cast.hastedTickInterval !== undefined;
+        const timeLabel = isDoT ? 'Duration:' : 'Cast Time:';
+        html += `
+            <div class="cast-details-item">
+                <span class="cast-details-label">${timeLabel}</span>
+                <span class="cast-details-value">${(cast.castTimeMs / 1000).toFixed(2)}s</span>
+            </div>
+        `;
+    }
+
+    // Tick Interval for Mind Flay (time between ticks)
+    if (isMindFlay && cast.actualTickInterval !== undefined) {
+        html += `
+            <div class="cast-details-item">
+                <span class="cast-details-label">Tick Interval:</span>
+                <span class="cast-details-value">${cast.actualTickInterval.toFixed(0)}ms</span>
+            </div>
+        `;
+    }
 
     // Haste removed - not useful for players
 
@@ -1394,14 +1550,18 @@ function createCastDetailsHTML(cast, fight) {
         `;
     }
 
-    // Delay (if available)
-    if (cast.nextCastLatency !== undefined) {
-        const status = statHighlights.castLatency(cast);
+    // Delay (if available) - Skip for Mind Flay
+    // Show delay BEFORE this cast (from previous cast)
+    if (cast.previousCastLatency !== undefined && !isMindFlay) {
+        // Create a temporary object with nextCastLatency for the status check
+        // (statHighlights.castLatency expects nextCastLatency field)
+        const tempCast = { nextCastLatency: cast.previousCastLatency };
+        const status = statHighlights.castLatency(tempCast);
         const cssClass = statHighlights.getTextClass(status);
         html += `
             <div class="cast-details-item">
                 <span class="cast-details-label">Delay:</span>
-                <span class="cast-details-value ${cssClass}">${cast.nextCastLatency}ms</span>
+                <span class="cast-details-value ${cssClass}">${cast.previousCastLatency}ms</span>
             </div>
         `;
     }
@@ -1482,6 +1642,24 @@ function createCastDetailsHTML(cast, fight) {
             <div class="cast-details-item">
                 <span class="cast-details-label">Pandemic:</span>
                 <span class="cast-details-value table-accent">+${(cast.pandemicCarryover / 1000).toFixed(1)}s carried over</span>
+            </div>
+        `;
+    }
+
+    // Mind Flay wasted channel time
+    if (cast.wastedChannelTime !== undefined && [15407, 129197].includes(cast.spellId)) {
+        // Determine quality based on wasted time
+        let cssClass = 'text-good'; // green (good clipping, < 200ms)
+        if (cast.wastedChannelTime >= 300) {
+            cssClass = 'text-error'; // red (bad, >= 300ms)
+        } else if (cast.wastedChannelTime >= 200) {
+            cssClass = 'text-warning'; // orange (warning, 200-299ms)
+        }
+
+        html += `
+            <div class="cast-details-item">
+                <span class="cast-details-label">Wasted Time:</span>
+                <span class="cast-details-value ${cssClass}">${cast.wastedChannelTime.toFixed(0)}ms since last tick</span>
             </div>
         `;
     }
@@ -1734,6 +1912,22 @@ function renderStatsOverview(filter) {
         }
     }
 
+    // Mind Flay wasted time stats (when filtering by MF)
+    if ([15407, 129197].includes(parseInt(filter))) {
+        const mfClipStats = window.statsCalculator.calculateMindFlayClipStats(filteredCasts);
+        if (mfClipStats.clipsCount > 0) {
+            // Color code based on quality status
+            let wastedClass = 'table-accent'; // green (good)
+            if (mfClipStats.qualityStatus === 'ERROR') {
+                wastedClass = 'text-error'; // red (bad)
+            } else if (mfClipStats.qualityStatus === 'WARNING') {
+                wastedClass = 'text-warning'; // orange (warning)
+            }
+
+            html += createStatField('Avg Wasted Time', mfClipStats.avgWastedTime.toFixed(0) + 'ms', wastedClass);
+        }
+    }
+
     statsOverview.innerHTML = html;
 }
 
@@ -1813,6 +2007,304 @@ function toggleView(view) {
 
         // Render detailed stats (already rendered, but refresh)
         renderStatsOverview(window.currentSpellFilter || 'timeline');
+    }
+}
+
+/**
+ * Toggle benchmark comparison display
+ */
+function toggleBenchmarkDisplay() {
+    // Get current state from localStorage (default: hidden)
+    const isEnabled = localStorage.getItem('benchmarksEnabled') === 'true';
+    const newState = !isEnabled;
+
+    // Save new state
+    localStorage.setItem('benchmarksEnabled', newState.toString());
+
+    // Update button text and active state
+    const landingBtn = document.getElementById('benchmark-toggle-landing');
+    const analysisBtn = document.getElementById('benchmark-toggle-analysis');
+
+    const buttonText = newState ? 'Hide Benchmarks' : 'Show Benchmarks';
+    if (landingBtn) {
+        landingBtn.textContent = buttonText;
+        if (newState) {
+            landingBtn.classList.add('active');
+        } else {
+            landingBtn.classList.remove('active');
+        }
+    }
+    if (analysisBtn) {
+        analysisBtn.textContent = buttonText;
+        if (newState) {
+            analysisBtn.classList.add('active');
+        } else {
+            analysisBtn.classList.remove('active');
+        }
+    }
+
+    // Show/hide benchmark comparison panel
+    const benchmarkPanel = document.getElementById('benchmark-comparison');
+    if (benchmarkPanel) {
+        benchmarkPanel.style.display = newState ? 'block' : 'none';
+    }
+
+    // Reload benchmark data if enabled and we're on analysis page
+    if (newState && window.currentFight) {
+        loadAndDisplayBenchmark();
+    }
+}
+
+/**
+ * Load and display benchmark comparison for current fight
+ */
+async function loadAndDisplayBenchmark() {
+    const benchmarkPanel = document.getElementById('benchmark-comparison');
+    if (!benchmarkPanel || !window.currentFight) return;
+
+    const isEnabled = localStorage.getItem('benchmarksEnabled') === 'true';
+    if (!isEnabled) {
+        benchmarkPanel.style.display = 'none';
+        return;
+    }
+
+    benchmarkPanel.style.display = 'block';
+    benchmarkPanel.innerHTML = '<div class="benchmark-loading">Loading benchmark data...</div>';
+
+    try {
+        // Initialize benchmark loader if not already done
+        if (!window.benchmarkLoader) {
+            window.benchmarkLoader = new BenchmarkLoader();
+        }
+
+        // Load benchmark for current encounter
+        const benchmark = await window.benchmarkLoader.getBenchmarkForFight(window.currentFight);
+
+        if (!benchmark) {
+            benchmarkPanel.innerHTML = `
+                <div class="benchmark-unavailable">
+                    <p>No benchmark data available for this encounter/difficulty.</p>
+                    <p class="benchmark-note">Benchmarks are updated weekly via GitHub Actions.</p>
+                </div>
+            `;
+            return;
+        }
+
+        // Render benchmark comparison
+        renderBenchmarkComparison(benchmark);
+    } catch (error) {
+        console.error('Error loading benchmark:', error);
+        benchmarkPanel.innerHTML = `
+            <div class="benchmark-error">
+                Failed to load benchmark data. Please try again later.
+            </div>
+        `;
+    }
+}
+
+/**
+ * Calculate player's actual CPM for a specific spell
+ */
+function calculatePlayerCpm(spellId) {
+    if (!window.allCasts || !window.currentFight) return 0;
+
+    const fightDurationMs = window.currentFight.endTime - window.currentFight.startTime;
+    const fightDurationMinutes = fightDurationMs / 1000 / 60;
+
+    const castCount = window.allCasts.filter(cast => cast.spellId === spellId).length;
+
+    return (castCount / fightDurationMinutes).toFixed(1);
+}
+
+/**
+ * Generate comparison HTML for a single spell metric
+ */
+function renderMetricComparison(label, benchmarkCpm, spellId, iconPath) {
+    const playerCpm = parseFloat(calculatePlayerCpm(spellId));
+    const benchmark = parseFloat(benchmarkCpm);
+    const diff = playerCpm - benchmark;
+    const diffPercent = ((diff / benchmark) * 100).toFixed(1);
+
+    // Color code based on performance
+    // Green if within 5% or better, yellow if 5-15% behind, red if >15% behind
+    let diffClass = 'neutral';
+    if (diff >= 0 || Math.abs(diffPercent) <= 5) {
+        diffClass = 'good'; // Green
+    } else if (Math.abs(diffPercent) <= 15) {
+        diffClass = 'medium'; // Yellow
+    } else {
+        diffClass = 'bad'; // Red
+    }
+
+    const diffSign = diff >= 0 ? '+' : '';
+
+    return `
+        <div class="benchmark-metric">
+            <div class="metric-header">
+                <span class="metric-label">${label}</span>
+                <img src="${iconPath}" alt="${label}" class="metric-icon">
+            </div>
+            <div class="metric-comparison">
+                <div class="metric-row">
+                    <span class="metric-sublabel">Benchmark:</span>
+                    <span class="metric-value">${benchmarkCpm} CPM</span>
+                </div>
+                <div class="metric-row">
+                    <span class="metric-sublabel">Your CPM:</span>
+                    <span class="metric-value player-value">${playerCpm} CPM</span>
+                </div>
+                <div class="metric-row">
+                    <span class="metric-sublabel">Difference:</span>
+                    <span class="metric-diff ${diffClass}">${diffSign}${diff.toFixed(1)} (${diffSign}${diffPercent}%)</span>
+                </div>
+            </div>
+        </div>
+    `;
+}
+
+/**
+ * Render benchmark comparison UI
+ */
+function renderBenchmarkComparison(benchmark) {
+    const benchmarkPanel = document.getElementById('benchmark-comparison');
+    if (!benchmarkPanel) return;
+
+    const { encounterName, difficultyName, rankRange, sampleSize, lastUpdated, metrics } = benchmark;
+
+    // Spell ID mappings
+    const SPELL_IDS = {
+        mindBlast: 8092,
+        devouringPlague: 2944,
+        vampiricTouch: 34914,
+        shadowWordPain: 589,
+        shadowWordDeath: 32379,
+        mindFlay: 15407,
+        mindFlayInsanity: 129197
+    };
+
+    // Check if benchmark should be collapsed (default: expanded)
+    const isCollapsed = localStorage.getItem('benchmarkCollapsed') === 'true';
+    const collapsedClass = isCollapsed ? 'collapsed' : '';
+    const chevron = isCollapsed ? '▶' : '▼';
+
+    let html = `
+        <div class="benchmark-header">
+            <div class="benchmark-title-row" onclick="toggleBenchmarkCollapse()">
+                <h3><span class="benchmark-chevron">${chevron}</span> 📊 Benchmark Comparison</h3>
+            </div>
+            <div class="benchmark-note ${collapsedClass}">
+                This is reference data from similar logs, not an indicator of perfect play.
+            </div>
+        </div>
+        <div class="benchmark-metrics ${collapsedClass}">
+            ${renderMetricComparison('Mind Blast', metrics.mindBlast.cpm, SPELL_IDS.mindBlast, 'analyzer/icons/mb.jpg')}
+            ${renderMetricComparison('Devouring Plague', metrics.devouringPlague.cpm, SPELL_IDS.devouringPlague, 'analyzer/icons/plague.jpg')}
+            ${renderMetricComparison('Vampiric Touch', metrics.vampiricTouch.cpm, SPELL_IDS.vampiricTouch, 'analyzer/icons/vt.jpg')}
+            ${renderMetricComparison('Shadow Word: Pain', metrics.shadowWordPain.cpm, SPELL_IDS.shadowWordPain, 'analyzer/icons/swp.jpg')}
+            ${renderMetricComparison('Shadow Word: Death', metrics.shadowWordDeath.cpm, SPELL_IDS.shadowWordDeath, 'analyzer/icons/swd.jpg')}
+            ${renderMetricComparison('Mind Flay', metrics.mindFlay.cpm, SPELL_IDS.mindFlay, 'analyzer/icons/flay.jpg')}
+            ${renderMetricComparison('Mind Flay: Insanity', metrics.mindFlayInsanity.cpm, SPELL_IDS.mindFlayInsanity, 'analyzer/icons/mfinsanity.jpg')}
+        </div>
+    `;
+
+    benchmarkPanel.innerHTML = html;
+}
+
+/**
+ * Toggle benchmark comparison collapse state
+ */
+function toggleBenchmarkCollapse() {
+    const benchmarkPanel = document.getElementById('benchmark-comparison');
+    if (!benchmarkPanel) return;
+
+    const metrics = benchmarkPanel.querySelector('.benchmark-metrics');
+    const note = benchmarkPanel.querySelector('.benchmark-note');
+    const chevron = benchmarkPanel.querySelector('.benchmark-chevron');
+
+    if (metrics && note && chevron) {
+        const isCurrentlyCollapsed = metrics.classList.contains('collapsed');
+
+        if (isCurrentlyCollapsed) {
+            metrics.classList.remove('collapsed');
+            note.classList.remove('collapsed');
+            chevron.textContent = '▼';
+            localStorage.setItem('benchmarkCollapsed', 'false');
+        } else {
+            metrics.classList.add('collapsed');
+            note.classList.add('collapsed');
+            chevron.textContent = '▶';
+            localStorage.setItem('benchmarkCollapsed', 'true');
+        }
+    }
+}
+
+/**
+ * Update API quota display
+ */
+function updateQuotaDisplay() {
+    const quotaDisplay = document.getElementById('api-quota-display');
+
+    if (!quotaDisplay || !window.wclV2Service) {
+        return;
+    }
+
+    const rateLimit = window.wclV2Service.getRateLimit();
+
+    // Only show if we have rate limit data
+    if (rateLimit.limit === null || rateLimit.remaining === null) {
+        quotaDisplay.style.display = 'none';
+        return;
+    }
+
+    const pointsUsed = rateLimit.pointsUsed || 0;
+    const remaining = rateLimit.remaining;
+    const limit = rateLimit.limit;
+
+    // Calculate percentage remaining
+    const percentRemaining = (remaining / limit) * 100;
+
+    // Set color class based on remaining quota
+    quotaDisplay.classList.remove('low', 'critical');
+    if (percentRemaining < 10) {
+        quotaDisplay.classList.add('critical');
+    } else if (percentRemaining < 25) {
+        quotaDisplay.classList.add('low');
+    }
+
+    quotaDisplay.textContent = `API: ${remaining.toFixed(1)}/${limit} points`;
+    quotaDisplay.title = `${pointsUsed.toFixed(1)} points used this hour`;
+    quotaDisplay.style.display = 'inline-block';
+}
+
+/**
+ * Clear cached fight data
+ */
+function clearFightCache() {
+    if (!window.wclV2Service) {
+        alert('WCL service not available');
+        return;
+    }
+
+    const count = window.wclV2Service.clearCache();
+    alert(`Cleared ${count} cached fight${count !== 1 ? 's' : ''} from local storage.\n\nNext fight analysis will use fresh data from WCL.`);
+}
+
+/**
+ * Initialize benchmark toggle state on page load
+ */
+function initBenchmarkToggle() {
+    const isEnabled = localStorage.getItem('benchmarksEnabled') === 'true';
+    const landingBtn = document.getElementById('benchmark-toggle-landing');
+    const analysisBtn = document.getElementById('benchmark-toggle-analysis');
+
+    const buttonText = isEnabled ? 'Hide Benchmarks' : 'Show Benchmarks';
+    if (landingBtn) {
+        landingBtn.textContent = buttonText;
+        if (isEnabled) landingBtn.classList.add('active');
+    }
+    if (analysisBtn) {
+        analysisBtn.textContent = buttonText;
+        if (isEnabled) analysisBtn.classList.add('active');
     }
 }
 
