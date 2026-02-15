@@ -1024,6 +1024,16 @@ class CastsAnalyzer {
             // Store wasted time
             cast.wastedChannelTime = wastedTime;
 
+            // Set quality status based on wasted time
+            // 200-299ms = warning, 300-999ms = error
+            if (wastedTime >= 300) {
+              cast.mfClipQuality = 'error';
+            } else if (wastedTime >= 200) {
+              cast.mfClipQuality = 'warning';
+            } else {
+              cast.mfClipQuality = 'good';
+            }
+
             // Debug log
             console.log(`MF Clip: ${(cast.castStart / 1000).toFixed(1)}s, ticks: ${cast.instances.length}, ` +
                        `first tick: ${cast.timeToFirstTick.toFixed(0)}ms, ` +

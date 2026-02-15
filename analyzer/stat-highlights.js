@@ -15,7 +15,7 @@ class StatHighlights {
    * Get overall cast quality status (with MoP Pandemic support)
    */
   overall(cast) {
-    // Check for major issues (WARNING)
+    // Check for major issues (WARNING/ERROR)
     // Check if this spell should be expected to deal damage
     const shouldCheckDamage = this._shouldCheckDamage(cast);
 
@@ -23,6 +23,12 @@ class StatHighlights {
 
     // Missed Insanity optimization (should have clipped MF for 3 extra ticks)
     if (cast.missedInsanityOptimization) return Status.WARNING;
+
+    // Mind Flay clipping quality (wasted channel time)
+    if (cast.mfClipQuality) {
+      if (cast.mfClipQuality === 'error') return Status.ERROR;  // 300ms+ wasted
+      if (cast.mfClipQuality === 'warning') return Status.WARNING;  // 200-299ms wasted
+    }
 
     // Devouring Plague quality check
     // IMPORTANT: Check end-of-fight DP casts first to skip all other penalties
