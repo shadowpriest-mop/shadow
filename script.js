@@ -1627,6 +1627,24 @@ function createCastDetailsHTML(cast, fight) {
         `;
     }
 
+    // Mind Flay wasted channel time
+    if (cast.wastedChannelTime !== undefined && [15407, 129197].includes(cast.spellId)) {
+        // Determine quality based on wasted time
+        let cssClass = 'table-accent'; // green (good)
+        if (cast.wastedChannelTime >= 300) {
+            cssClass = 'text-error'; // red (bad)
+        } else if (cast.wastedChannelTime >= 200) {
+            cssClass = 'text-warning'; // orange (warning)
+        }
+
+        html += `
+            <div class="cast-details-item">
+                <span class="cast-details-label">Wasted Time:</span>
+                <span class="cast-details-value ${cssClass}">${cast.wastedChannelTime.toFixed(0)}ms since last tick</span>
+            </div>
+        `;
+    }
+
     // Clipped early (for channels)
     if (cast.clippedEarly !== undefined) {
         html += `
@@ -1872,6 +1890,22 @@ function renderStatsOverview(filter) {
                 delayClass = 'text-warning';
             }
             html += createStatField('Avg MF Delay', stats.avgMfDelay.toFixed(0) + 'ms', delayClass);
+        }
+    }
+
+    // Mind Flay wasted time stats (when filtering by MF)
+    if ([15407, 129197].includes(parseInt(filter))) {
+        const mfClipStats = window.statsCalculator.calculateMindFlayClipStats(filteredCasts);
+        if (mfClipStats.clipsCount > 0) {
+            // Color code based on quality status
+            let wastedClass = 'table-accent'; // green (good)
+            if (mfClipStats.qualityStatus === 'ERROR') {
+                wastedClass = 'text-error'; // red (bad)
+            } else if (mfClipStats.qualityStatus === 'WARNING') {
+                wastedClass = 'text-warning'; // orange (warning)
+            }
+
+            html += createStatField('Avg Wasted Time', mfClipStats.avgWastedTime.toFixed(0) + 'ms', wastedClass);
         }
     }
 

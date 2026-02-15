@@ -970,11 +970,13 @@ class CastsAnalyzer {
 
   /**
    * Calculate channel metrics: early clipping of Mind Flay and other channels
+   * Now also tracks wasted channel time (time since last tick when clipped)
    */
   calculateChannelMetrics() {
     const EARLY_CLIP_THRESHOLD = 0.67; // 67% to next tick
     const MF_INSANITY_ID = 129197;
     const MF_REGULAR_ID = 15407;
+    const MOVEMENT_GAP_THRESHOLD = 1000; // 1 second = assume movement
 
     for (const cast of this.casts) {
       const spellData = getSpellData(cast.spellId);
@@ -986,7 +988,44 @@ class CastsAnalyzer {
 
       const actualDuration = cast.castTimeMs;
 
-      // Check if we stopped early
+      // Store tick interval for display
+      cast.tickInterval = hastedTickInterval;
+
+      // Check if this is Mind Flay
+      const isMindFlay = (cast.spellId === MF_INSANITY_ID || cast.spellId === MF_REGULAR_ID);
+
+      // For Mind Flay: Calculate wasted time when clipping to cast something else
+      if (isMindFlay) {
+        const nextCast = this.getNextCast(cast);
+
+        if (nextCast) {
+          // Check if we're transitioning to a non-Mind Flay spell
+          const isTransitionToOther = nextCast.spellId !== MF_INSANITY_ID &&
+                                       nextCast.spellId !== MF_REGULAR_ID;
+
+          // Calculate gap between MF end and next cast start
+          const gapToNextCast = nextCast.castStart - cast.castEnd;
+
+          if (isTransitionToOther && gapToNextCast <= MOVEMENT_GAP_THRESHOLD) {
+            // Calculate time since last tick
+            // Number of complete ticks = floor(actualDuration / tickInterval)
+            const completeTicks = Math.floor(actualDuration / hastedTickInterval);
+            const lastTickTime = completeTicks * hastedTickInterval;
+            const timeSinceLastTick = actualDuration - lastTickTime;
+
+            // Store wasted time (time we channeled without getting next tick)
+            cast.wastedChannelTime = timeSinceLastTick;
+            cast.ticksReceived = completeTicks;
+
+            // Debug log
+            console.log(`MF Clip: ${(cast.castStart / 1000).toFixed(1)}s, duration: ${actualDuration.toFixed(0)}ms, ` +
+                       `tick interval: ${hastedTickInterval.toFixed(0)}ms, ticks: ${completeTicks}, ` +
+                       `wasted: ${timeSinceLastTick.toFixed(0)}ms → ${nextCast.name}`);
+          }
+        }
+      }
+
+      // Check if we stopped early (existing logic)
       if (actualDuration < expectedDuration) {
         const lastTickTime = Math.floor(actualDuration / hastedTickInterval) * hastedTickInterval;
         const timeToNextTick = lastTickTime + hastedTickInterval - actualDuration;
@@ -994,7 +1033,6 @@ class CastsAnalyzer {
         // If we were close to the next tick, flag as early clip
         if (timeToNextTick < hastedTickInterval * EARLY_CLIP_THRESHOLD) {
           // Check if this is an optimal MF clip for Insanity pandemic optimization
-          const isMindFlay = (cast.spellId === MF_INSANITY_ID || cast.spellId === MF_REGULAR_ID);
           const isInsanityOptimization = isMindFlay && this.isMindFlayInsanityOptimization(cast);
 
           // Check if we clipped to cast an optimal DoT refresh

@@ -236,6 +236,49 @@ class CastStatsCalculator {
   }
 
   /**
+   * Calculate Mind Flay clip stats
+   * Returns: { avgWastedTime, qualityStatus, clipsCount }
+   */
+  calculateMindFlayClipStats(mfCasts) {
+    const MF_INSANITY_ID = 129197;
+    const MF_REGULAR_ID = 15407;
+
+    // Filter to only MF casts that have wasted channel time
+    const clippedCasts = mfCasts.filter(cast =>
+      (cast.spellId === MF_INSANITY_ID || cast.spellId === MF_REGULAR_ID) &&
+      cast.wastedChannelTime !== undefined &&
+      cast.wastedChannelTime >= 0
+    );
+
+    if (clippedCasts.length === 0) {
+      return { avgWastedTime: 0, qualityStatus: 'NORMAL', clipsCount: 0 };
+    }
+
+    // Calculate average wasted time
+    const totalWastedTime = clippedCasts.reduce((sum, cast) => sum + cast.wastedChannelTime, 0);
+    const avgWastedTime = totalWastedTime / clippedCasts.length;
+
+    // Determine quality status based on thresholds
+    // <200ms = NORMAL (good)
+    // 200-300ms = WARNING (orange)
+    // 300ms+ = ERROR (red)
+    let qualityStatus;
+    if (avgWastedTime < 200) {
+      qualityStatus = 'NORMAL';
+    } else if (avgWastedTime < 300) {
+      qualityStatus = 'WARNING';
+    } else {
+      qualityStatus = 'ERROR';
+    }
+
+    return {
+      avgWastedTime,
+      qualityStatus,
+      clipsCount: clippedCasts.length
+    };
+  }
+
+  /**
    * Filter casts by spell ID
    */
   filterBySpell(spellId) {

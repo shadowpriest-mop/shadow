@@ -9,7 +9,7 @@ A web-based WarcraftLogs analyzer specifically designed for Shadow Priests in Mi
 - **Frontend**: Vanilla JavaScript, HTML, CSS (no framework)
 - **Data Source**: WarcraftLogs API v2 (GraphQL)
 - **Analysis Engine**: Client-side cast analysis with quality scoring
-- **Version**: v2.27.10
+- **Version**: v2.45.0
 
 ### Core Components
 
@@ -115,16 +115,16 @@ const SPELL_IDS = {
 ### Version Control
 - Branch: `claude/shadow-priest-website-01Fzq4UgdUHDyo4mx2CAbHnE`
 - Update version in 3 places when making changes:
-  1. Footer: `<div class="version-label">v2.27.10</div>`
-  2. App bar: `<span class="app-version">v2.27.10</span>`
-  3. CSS cache: `<link rel="stylesheet" href="style.css?v=2.27.10">`
+  1. Footer: `<div class="version-label">v2.45.0</div>`
+  2. App bar: `<span class="app-version">v2.45.0</span>`
+  3. CSS cache: `<link rel="stylesheet" href="style.css?v=2.45.0">`
 - Update script versions when modifying JS files
 
 ---
 
 ## Task Level: Current Work & Future Improvements
 
-### Recently Completed (v2.26.5 → v2.27.10)
+### Recently Completed (v2.26.5 → v2.45.0)
 
 #### Code Cleanup
 - ✅ Removed ~36 debug console.log statements across multiple files
@@ -156,6 +156,14 @@ const SPELL_IDS = {
 #### Talent Display Fixes
 - ✅ v2.27.9: Fixed Dominate Mind icon mapping (WCL returns "Mind Control")
 - ✅ v2.27.10: Fixed tooltip to show "Dominate Mind" instead of "Mind Control"
+
+#### Mind Flay Clipping Analysis (v2.45.0)
+- ✅ Track tick intervals based on haste for Mind Flay
+- ✅ Calculate wasted channel time when clipping MF → Other spell
+- ✅ Display wasted time in individual cast details
+- ✅ Show average wasted time in stats panel when filtering Mind Flay
+- ✅ Quality thresholds: <200ms = good, 200-300ms = warning, 300ms+ = error
+- ✅ Exclude transitions >1000ms gap (movement mechanics)
 
 ### In Progress
 
