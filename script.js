@@ -1532,7 +1532,7 @@ function createCastDetailsHTML(cast, fight) {
         html += `
             <div class="cast-details-item">
                 <span class="cast-details-label">Tick Time:</span>
-                <span class="cast-details-value">${(cast.timeToFirstTick / 1000).toFixed(2)}s</span>
+                <span class="cast-details-value">${cast.timeToFirstTick.toFixed(0)}ms</span>
             </div>
         `;
     }
