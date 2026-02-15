@@ -1649,11 +1649,11 @@ function createCastDetailsHTML(cast, fight) {
     // Mind Flay wasted channel time
     if (cast.wastedChannelTime !== undefined && [15407, 129197].includes(cast.spellId)) {
         // Determine quality based on wasted time
-        let cssClass = 'text-good'; // green (good clipping, < 200ms)
-        if (cast.wastedChannelTime >= 300) {
-            cssClass = 'text-error'; // red (bad, >= 300ms)
-        } else if (cast.wastedChannelTime >= 200) {
-            cssClass = 'text-warning'; // orange (warning, 200-299ms)
+        let cssClass = 'text-good'; // green (excellent clipping, < 100ms)
+        if (cast.wastedChannelTime >= 200) {
+            cssClass = 'text-error'; // red (bad, >= 200ms)
+        } else if (cast.wastedChannelTime >= 100) {
+            cssClass = 'text-notice'; // orange (acceptable, 100-199ms)
         }
 
         html += `
